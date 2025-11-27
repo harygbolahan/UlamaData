@@ -1,0 +1,457 @@
+import { useServices } from '@/contexts/services-context';
+import { useTheme } from '@/contexts/theme-context';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+const CABLE_IMAGES = {
+    dstv: require('@/assets/cableLogos/dstv.png'),
+    gotv: require('@/assets/cableLogos/gotv.png'),
+    startimes: require('@/assets/cableLogos/startimes.png'),
+    showmax: require('@/assets/cableLogos/showmax.png'),
+};
+
+export default function CableTVScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const servicesContext = useServices();
+    
+    // Debug: Log what's available in the context
+    console.log('Services Context Keys:', Object.keys(servicesContext));
+    console.log('fetchCableProviders type:', typeof servicesContext.fetchCableProviders);
+    
+    const { fetchCableProviders, fetchCablePlans, validateCable } = servicesContext;
+    const [smartCardNumber, setSmartCardNumber] = useState('');
+    const [selectedProvider, setSelectedProvider] = useState(null);
+    const [showProviderModal, setShowProviderModal] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verifiedInfo, setVerifiedInfo] = useState(null);
+    const [providers, setProviders] = useState([]);
+    const [plans, setPlans] = useState([]);
+    const [loadingProviders, setLoadingProviders] = useState(true);
+    const [loadingPlans, setLoadingPlans] = useState(false);
+
+    useEffect(() => {
+        loadProviders();
+    }, []);
+
+    useEffect(() => {
+        if (selectedProvider) {
+            loadPlans();
+        }
+    }, [selectedProvider]);
+
+    const loadProviders = async () => {
+        try {
+            setLoadingProviders(true);
+            const data = await fetchCableProviders();
+            setProviders(data);
+        } catch (error) {
+            Alert.alert('Error', error.message || 'Failed to load cable providers');
+        } finally {
+            setLoadingProviders(false);
+        }
+    };
+
+    const loadPlans = async () => {
+        try {
+            setLoadingPlans(true);
+            setPlans([]);
+            const data = await fetchCablePlans(selectedProvider.name);
+            setPlans(data);
+        } catch (error) {
+            Alert.alert('Error', error.message || 'Failed to load plans');
+        } finally {
+            setLoadingPlans(false);
+        }
+    };
+
+    const handleVerify = async () => {
+        if (!selectedProvider || !smartCardNumber || smartCardNumber.length < 10) return;
+
+        setIsVerifying(true);
+        try {
+            const data = await validateCable(selectedProvider.name, smartCardNumber);
+            setVerifiedInfo({
+                name: data.name,
+                outstandingAmount: data.outstandingAmount
+            });
+        } catch (error) {
+            Alert.alert('Verification Failed', error.message || 'Could not verify smart card number');
+            setVerifiedInfo(null);
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handlePlanSelect = (plan) => {
+        if (!selectedProvider || !smartCardNumber || !verifiedInfo) return;
+
+        router.push({
+            pathname: '/(services)/transaction-summary',
+            params: {
+                service: 'cable',
+                serviceType: 'Cable TV Subscription',
+                beneficiary: smartCardNumber,
+                amount: plan.price.toString(),
+                provider: selectedProvider.name,
+                planId: plan.name, // Use plan name (e.g., "GOtv Smallie - monthly N1900")
+                planName: plan.name,
+                customerName: verifiedInfo.name,
+            }
+        });
+    };
+
+    return (
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
+                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                    Cable TV
+                </Text>
+                <View style={{ width: 24 }} />
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {loadingProviders ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                            Loading providers...
+                        </Text>
+                    </View>
+                ) : (
+                    <>
+                        {/* Provider & Smart Card Input */}
+                        <View style={[styles.inputContainer, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                            <TouchableOpacity
+                                style={styles.providerButton}
+                                onPress={() => setShowProviderModal(true)}
+                            >
+                                {selectedProvider ? (
+                                    <View style={styles.providerIcon}>
+                                        <Image
+                                            source={CABLE_IMAGES[selectedProvider.pid] || CABLE_IMAGES[selectedProvider.name.toLowerCase()]}
+                                            style={styles.providerImage}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
+                                ) : (
+                                    <View style={[styles.providerIcon, { backgroundColor: colors.icon + '30' }]}>
+                                        <Ionicons name="tv-outline" size={16} color={colors.icon} />
+                                    </View>
+                                )}
+                                <Ionicons name="chevron-down" size={16} color={colors.icon} />
+                            </TouchableOpacity>
+
+                    <TextInput
+                        placeholder="Smart Card Number"
+                        placeholderTextColor={colors.icon}
+                        value={smartCardNumber}
+                        onChangeText={(text) => {
+                            setSmartCardNumber(text);
+                            setVerifiedInfo(null);
+                        }}
+                        keyboardType="numeric"
+                        style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                    />
+
+                    <TouchableOpacity
+                        style={[styles.verifyButton, { backgroundColor: colors.primary }]}
+                        onPress={handleVerify}
+                        disabled={isVerifying || !selectedProvider || smartCardNumber.length < 10}
+                    >
+                        {isVerifying ? (
+                            <Text style={[styles.verifyText, { fontFamily: fonts.inter.semiBold }]}>...</Text>
+                        ) : (
+                            <Text style={[styles.verifyText, { fontFamily: fonts.inter.semiBold }]}>Verify</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+
+                        {/* Verified Info */}
+                        {verifiedInfo && (
+                            <View style={[styles.verifiedCard, { backgroundColor: colors.success + '15' }]}>
+                                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                                <View style={styles.verifiedInfo}>
+                                    <Text style={[styles.verifiedName, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        {verifiedInfo.name}
+                                    </Text>
+                                    {verifiedInfo.outstandingAmount && (
+                                        <Text style={[styles.verifiedPackage, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                            Outstanding: ₦{verifiedInfo.outstandingAmount}
+                                        </Text>
+                                    )}
+                                </View>
+                            </View>
+                        )}
+
+                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                            Select Plan
+                        </Text>
+
+                        {loadingPlans ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color={colors.primary} />
+                                <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                    Loading plans...
+                                </Text>
+                            </View>
+                        ) : plans.length === 0 ? (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
+                                <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                    {selectedProvider ? 'No plans available' : 'Select a provider to view plans'}
+                                </Text>
+                            </View>
+                        ) : (
+                            <View style={styles.plansGrid}>
+                                {plans.map((plan) => (
+                                    <TouchableOpacity
+                                        key={plan.id}
+                                        style={[
+                                            styles.planCard,
+                                            { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
+                                            !verifiedInfo && { opacity: 0.5 }
+                                        ]}
+                                        onPress={() => handlePlanSelect(plan)}
+                                        activeOpacity={0.7}
+                                        disabled={!verifiedInfo}
+                                    >
+                                        <View style={[styles.planLabel, { backgroundColor: colors.primary + '20' }]}>
+                                            <Text style={[styles.planLabelText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                                {selectedProvider?.name || 'Cable TV'}
+                                            </Text>
+                                        </View>
+                                        <Text style={[styles.planName, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                            {plan.name}
+                                        </Text>
+                                        <View style={styles.planDetails}>
+                                            <Text style={[styles.planPrice, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                                ₦{parseFloat(plan.price).toLocaleString()}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+
+                        <View style={{ height: 30 }} />
+                    </>
+                )}
+            </ScrollView>
+
+            <Modal visible={showProviderModal} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+                        <View style={styles.modalHandle} />
+                        <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                            Select Provider
+                        </Text>
+                        {providers.map((provider) => (
+                            <TouchableOpacity
+                                key={provider.id}
+                                style={[styles.option, { borderBottomColor: isDark ? '#2a2a2a' : '#f0f0f0' }]}
+                                onPress={() => {
+                                    setSelectedProvider(provider);
+                                    setShowProviderModal(false);
+                                    setVerifiedInfo(null);
+                                    setSmartCardNumber('');
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.optionLeft}>
+                                    <View style={styles.icon}>
+                                        <Image
+                                            source={CABLE_IMAGES[provider.pid] || CABLE_IMAGES[provider.name.toLowerCase()]}
+                                            style={styles.iconImage}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
+                                    <View>
+                                        <Text style={[styles.optionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                            {provider.name}
+                                        </Text>
+                                        {provider.discount && (
+                                            <Text style={[styles.discountText, { color: colors.success, fontFamily: fonts.inter.regular }]}>
+                                                {provider.discount}
+                                            </Text>
+                                        )}
+                                    </View>
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            </Modal>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 50,
+        marginBottom: 20,
+    },
+    headerTitle: { fontSize: 18 },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        gap: 10,
+    },
+    providerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    providerIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    providerImage: {
+        width: 32,
+        height: 32,
+    },
+    input: {
+        flex: 1,
+        fontSize: 14,
+        paddingVertical: 4,
+    },
+    verifyButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+    },
+    verifyText: {
+        color: '#fff',
+        fontSize: 12,
+    },
+    verifiedCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 20,
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        gap: 10,
+    },
+    verifiedInfo: {
+        flex: 1,
+    },
+    verifiedName: {
+        fontSize: 14,
+        marginBottom: 2,
+    },
+    verifiedPackage: {
+        fontSize: 12,
+    },
+    sectionTitle: { fontSize: 16, paddingHorizontal: 20, marginBottom: 12 },
+    plansGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingHorizontal: 14,
+    },
+    planCard: {
+        width: '47%',
+        margin: '1.5%',
+        padding: 16,
+        borderRadius: 12,
+    },
+    planLabel: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+        marginBottom: 8,
+    },
+    planLabelText: { fontSize: 10 },
+    planName: { fontSize: 16, marginBottom: 8 },
+    planDetails: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    planPrice: { fontSize: 16 },
+    planDuration: { fontSize: 12 },
+    loadingContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    loadingText: {
+        fontSize: 14,
+    },
+    emptyContainer: {
+        paddingVertical: 60,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    emptyText: {
+        fontSize: 14,
+    },
+    discountText: {
+        fontSize: 11,
+        marginTop: 2,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        paddingBottom: 40,
+    },
+    modalHandle: {
+        width: 40,
+        height: 4,
+        backgroundColor: '#ccc',
+        borderRadius: 2,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: { fontSize: 20, marginBottom: 20, textAlign: 'center' },
+    option: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+    },
+    optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    icon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    iconImage: {
+        width: 40,
+        height: 40,
+    },
+    optionText: { fontSize: 15 },
+});
