@@ -3,7 +3,11 @@ import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function SupportScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -60,7 +64,7 @@ export default function SupportScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     Help & Support
@@ -90,7 +94,7 @@ export default function SupportScreen() {
                                     onPress={option.action}
                                 >
                                     <View style={[styles.gridIcon, { backgroundColor: colors.primary + '20' }]}>
-                                        <Ionicons name={option.icon} size={24} color={colors.primary} />
+                                        <Ionicons name={option.icon} size={24 * scale} color={colors.primary} />
                                     </View>
                                     <Text style={[styles.gridText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                                         {option.title}
@@ -112,12 +116,12 @@ export default function SupportScreen() {
                         onPress={option.action}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: colors.primary + '20' }]}>
-                            <Ionicons name={option.icon} size={20} color={colors.primary} />
+                            <Ionicons name={option.icon} size={20 * scale} color={colors.primary} />
                         </View>
                         <Text style={[styles.optionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                             {option.title}
                         </Text>
-                        <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                        <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                     </TouchableOpacity>
                 ))}
             </ScrollView>
@@ -131,72 +135,72 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
-    headerTitle: { fontSize: 18 },
+    headerTitle: { fontSize: 18 * scale },
     sectionTitle: {
-        fontSize: 16,
-        marginHorizontal: 20,
-        marginBottom: 12,
-        marginTop: 8,
+        fontSize: 16 * scale,
+        marginHorizontal: 20 * scale,
+        marginBottom: 12 * scale,
+        marginTop: 8 * scale,
     },
     loadingContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 40,
+        paddingVertical: 40 * scale,
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 14,
+        marginTop: 12 * scale,
+        fontSize: 14 * scale,
     },
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 20,
-        marginBottom: 8,
+        paddingHorizontal: 20 * scale,
+        marginBottom: 8 * scale,
     },
     gridItem: {
         width: '29%',
         aspectRatio: 1,
         marginRight: '3.5%',
-        marginBottom: 12,
-        borderRadius: 12,
+        marginBottom: 12 * scale,
+        borderRadius: 12 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 12,
+        padding: 12 * scale,
     },
     gridIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 48 * scale,
+        height: 48 * scale,
+        borderRadius: 24 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 8 * scale,
     },
     gridText: {
-        fontSize: 12,
+        fontSize: 12 * scale,
         textAlign: 'center',
     },
     optionCard: {
-        marginHorizontal: 20,
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 12,
+        marginHorizontal: 20 * scale,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 12 * scale,
         flexDirection: 'row',
         alignItems: 'center',
     },
     optionIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 40 * scale,
+        height: 40 * scale,
+        borderRadius: 20 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 12 * scale,
     },
     optionText: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 14 * scale,
     },
 });

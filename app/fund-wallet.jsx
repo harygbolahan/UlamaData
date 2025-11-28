@@ -34,7 +34,6 @@ export default function FundWallet() {
                 icon: 'flash',
                 color: '#10B981',
                 description: 'Instant virtual account transfer',
-                enabled: false
             },
             {
                 id: 'manual',
@@ -42,7 +41,6 @@ export default function FundWallet() {
                 icon: 'swap-horizontal',
                 color: '#3B82F6',
                 description: 'Transfer to our bank account',
-                enabled: false
             },
             {
                 id: 'onetime',
@@ -50,7 +48,6 @@ export default function FundWallet() {
                 icon: 'time',
                 color: '#F59E0B',
                 description: 'Generate temporary account',
-                enabled: false
             },
             {
                 id: 'card',
@@ -58,7 +55,6 @@ export default function FundWallet() {
                 icon: 'card',
                 color: '#8B5CF6',
                 description: 'Pay with debit/credit card',
-                enabled: false
             },
             {
                 id: 'coupon',
@@ -66,7 +62,6 @@ export default function FundWallet() {
                 icon: 'pricetag',
                 color: '#EC4899',
                 description: 'Redeem coupon code',
-                enabled: false
             }
         ];
 
@@ -74,19 +69,11 @@ export default function FundWallet() {
         const availableMethods = getAvailablePaymentMethods();
         const availableIds = availableMethods.map(m => m.id);
 
-        // Mark methods as enabled based on API settings
-        return allMethods.map(method => ({
-            ...method,
-            enabled: availableIds.includes(method.id)
-        }));
+        // Only return methods that are available
+        return allMethods.filter(method => availableIds.includes(method.id));
     };
 
     const handleMethodSelect = (method) => {
-        // if (!method.enabled) {
-        //     showToast('info', `${method.name} is currently unavailable`);
-        //     return;
-        // }
-
         const routes = {
             auto: '/(fund-wallet)/auto-funding',
             manual: '/(fund-wallet)/manual-funding',
@@ -147,10 +134,7 @@ export default function FundWallet() {
                             key={method.id}
                             style={[
                                 styles.methodCard,
-                                { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
-                                !method.enabled && {
-                                    opacity: 0.6
-                                }
+                                { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }
                             ]}
                             onPress={() => handleMethodSelect(method)}
                             activeOpacity={0.7}
@@ -175,36 +159,13 @@ export default function FundWallet() {
                             </View>
 
                             <View style={styles.methodAction}>
-                                {method.enabled ? (
-                                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
-                                ) : (
-                                    <View style={[styles.disabledBadge, { backgroundColor: '#EF4444' + '15' }]}>
-                                        <Text style={[styles.disabledText, { color: '#EF4444', fontFamily: fonts.inter.medium }]}>
-                                            Unavailable
-                                        </Text>
-                                    </View>
-                                )}
+                                <Ionicons name="chevron-forward" size={20} color={colors.icon} />
                             </View>
                         </TouchableOpacity>
                     ))}
                 </View>
 
-                {/* Info Cards */}
-                <View style={styles.infoSection}>
-                    <View style={[styles.infoCard, { backgroundColor: colors.primary + '10' }]}>
-                        <Ionicons name="flash" size={20} color={colors.primary} />
-                        <Text style={[styles.infoText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                            Most methods credit your wallet instantly
-                        </Text>
-                    </View>
-
-                    <View style={[styles.infoCard, { backgroundColor: '#10B981' + '10' }]}>
-                        <Ionicons name="shield-checkmark" size={20} color="#10B981" />
-                        <Text style={[styles.infoText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                            All transactions are secure and encrypted
-                        </Text>
-                    </View>
-                </View>
+                
 
             </ScrollView>
         </View>

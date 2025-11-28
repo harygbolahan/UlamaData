@@ -1,10 +1,13 @@
-import Button from '@/components/ui/Button';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function PersonalInformationScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -18,7 +21,7 @@ export default function PersonalInformationScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     Personal Information
@@ -64,7 +67,7 @@ export default function PersonalInformationScreen() {
                 </View>
 
                 <View style={[styles.infoCard, { backgroundColor: colors.primary + '15' }]}>
-                    <Ionicons name="information-circle" size={20} color={colors.primary} />
+                    <Ionicons name="information-circle" size={20 * scale} color={colors.primary} />
                     <Text style={[styles.infoText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
                         Contact support to update your personal information
                     </Text>
@@ -82,40 +85,40 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
-    headerTitle: { fontSize: 18 },
+    headerTitle: { fontSize: 18 * scale },
     content: {
-        paddingHorizontal: 20,
-        paddingBottom: 30,
+        paddingHorizontal: 20 * scale,
+        paddingBottom: 30 * scale,
     },
     inputGroup: {
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 16,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 16 * scale,
     },
     label: {
-        fontSize: 12,
-        marginBottom: 8,
+        fontSize: 12 * scale,
+        marginBottom: 8 * scale,
     },
     input: {
-        fontSize: 15,
+        fontSize: 15 * scale,
     },
     saveButton: {
-        marginTop: 20,
+        marginTop: 20 * scale,
     },
     infoCard: {
         flexDirection: 'row',
-        padding: 12,
-        borderRadius: 12,
-        gap: 10,
+        padding: 12 * scale,
+        borderRadius: 12 * scale,
+        gap: 10 * scale,
         alignItems: 'center',
-        marginTop: 4,
+        marginTop: 4 * scale,
     },
     infoText: {
         flex: 1,
-        fontSize: 12,
+        fontSize: 12 * scale,
     },
 });

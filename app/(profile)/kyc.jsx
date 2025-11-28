@@ -7,7 +7,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function KYCScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -106,7 +110,7 @@ export default function KYCScreen() {
         >
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     KYC Verification
@@ -120,7 +124,7 @@ export default function KYCScreen() {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={[styles.infoCard, { backgroundColor: colors.primary + '15' }]}>
-                    <Ionicons name="information-circle" size={20} color={colors.primary} />
+                    <Ionicons name="information-circle" size={20 * scale} color={colors.primary} />
                     <Text style={[styles.infoText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
                         Complete your KYC verification to unlock higher transaction limits and full account features.
                     </Text>
@@ -142,7 +146,7 @@ export default function KYCScreen() {
                             <Image source={{ uri: formData.image.uri }} style={styles.uploadedImage} />
                         ) : (
                             <>
-                                <Ionicons name="cloud-upload-outline" size={40} color={colors.icon} />
+                                <Ionicons name="cloud-upload-outline" size={40 * scale} color={colors.icon} />
                                 <Text style={[styles.uploadText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                                     Tap to upload ID photo
                                 </Text>
@@ -177,7 +181,7 @@ export default function KYCScreen() {
                                 onPress={() => setShowDatePicker(true)}
                                 disabled={isLoading}
                             >
-                                <Ionicons name="calendar-outline" size={20} color={colors.icon} />
+                                <Ionicons name="calendar-outline" size={20 * scale} color={colors.icon} />
                                 <Text style={[styles.dateText, { 
                                     color: formData.dob ? colors.text : colors.icon,
                                     fontFamily: fonts.inter.medium 
@@ -320,7 +324,7 @@ export default function KYCScreen() {
                                 Select Date of Birth
                             </Text>
                             <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                <Ionicons name="close" size={24} color={colors.icon} />
+                                <Ionicons name="close" size={24 * scale} color={colors.icon} />
                             </TouchableOpacity>
                         </View>
 
@@ -442,35 +446,35 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
-    headerTitle: { fontSize: 18 },
+    headerTitle: { fontSize: 18 * scale },
     content: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingBottom: 20 * scale,
     },
     infoCard: {
         flexDirection: 'row',
-        padding: 12,
-        borderRadius: 12,
-        gap: 10,
+        padding: 12 * scale,
+        borderRadius: 12 * scale,
+        gap: 10 * scale,
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 20 * scale,
     },
-    infoText: { flex: 1, fontSize: 12 },
+    infoText: { flex: 1, fontSize: 12 * scale },
     section: {
-        marginBottom: 20,
+        marginBottom: 20 * scale,
     },
     sectionTitle: {
-        fontSize: 14,
-        marginBottom: 12,
+        fontSize: 14 * scale,
+        marginBottom: 12 * scale,
     },
     imageUpload: {
-        height: 200,
-        borderRadius: 12,
-        borderWidth: 2,
+        height: 200 * scale,
+        borderRadius: 12 * scale,
+        borderWidth: 2 * scale,
         borderStyle: 'dashed',
         justifyContent: 'center',
         alignItems: 'center',
@@ -482,45 +486,45 @@ const styles = StyleSheet.create({
         resizeMode: 'cover',
     },
     uploadText: {
-        fontSize: 13,
-        marginTop: 8,
+        fontSize: 13 * scale,
+        marginTop: 8 * scale,
     },
     formCard: {
-        padding: 20,
-        borderRadius: 16,
-        gap: 16,
+        padding: 20 * scale,
+        borderRadius: 16 * scale,
+        gap: 16 * scale,
     },
     inputWrapper: {
-        marginBottom: 8,
+        marginBottom: 8 * scale,
     },
     label: {
-        fontSize: 12,
-        marginBottom: 8,
+        fontSize: 12 * scale,
+        marginBottom: 8 * scale,
     },
     idTypeContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
+        gap: 8 * scale,
     },
     idTypeButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingHorizontal: 12 * scale,
+        paddingVertical: 8 * scale,
+        borderRadius: 8 * scale,
         borderWidth: 1,
     },
     idTypeText: {
-        fontSize: 12,
+        fontSize: 12 * scale,
     },
     datePickerButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
-        padding: 14,
-        borderRadius: 12,
+        gap: 12 * scale,
+        padding: 14 * scale,
+        borderRadius: 12 * scale,
         borderWidth: 1,
     },
     dateText: {
-        fontSize: 15,
+        fontSize: 15 * scale,
         flex: 1,
     },
     modalOverlay: {
@@ -529,62 +533,62 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     datePickerModal: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: 30,
+        borderTopLeftRadius: 20 * scale,
+        borderTopRightRadius: 20 * scale,
+        paddingBottom: 30 * scale,
     },
     datePickerHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        padding: 20 * scale,
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
     },
     datePickerTitle: {
-        fontSize: 18,
+        fontSize: 18 * scale,
     },
     pickersContainer: {
         flexDirection: 'row',
-        padding: 20,
-        gap: 10,
+        padding: 20 * scale,
+        gap: 10 * scale,
     },
     pickerWrapper: {
         flex: 1,
     },
     pickerLabel: {
-        fontSize: 12,
-        marginBottom: 8,
+        fontSize: 12 * scale,
+        marginBottom: 8 * scale,
         textAlign: 'center',
     },
     scrollPicker: {
-        height: 200,
-        borderRadius: 12,
+        height: 200 * scale,
+        borderRadius: 12 * scale,
     },
     pickerItem: {
-        paddingVertical: 12,
-        paddingHorizontal: 8,
+        paddingVertical: 12 * scale,
+        paddingHorizontal: 8 * scale,
         alignItems: 'center',
-        borderRadius: 8,
-        marginHorizontal: 4,
-        marginVertical: 2,
+        borderRadius: 8 * scale,
+        marginHorizontal: 4 * scale,
+        marginVertical: 2 * scale,
     },
     pickerItemText: {
-        fontSize: 14,
+        fontSize: 14 * scale,
     },
     datePickerActions: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 20 * scale,
     },
     dateActionButton: {
-        paddingVertical: 14,
-        borderRadius: 12,
+        paddingVertical: 14 * scale,
+        borderRadius: 12 * scale,
         alignItems: 'center',
     },
     dateActionText: {
-        fontSize: 15,
+        fontSize: 15 * scale,
     },
     footer: {
-        padding: 20,
-        paddingBottom: 30,
+        padding: 20 * scale,
+        paddingBottom: 30 * scale,
     },
 });

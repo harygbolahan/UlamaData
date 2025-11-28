@@ -5,7 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function UpgradeScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -72,7 +76,7 @@ export default function UpgradeScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     Upgrade Account
@@ -95,7 +99,7 @@ export default function UpgradeScreen() {
                         style={[styles.fundButton, { backgroundColor: colors.primary }]}
                         onPress={() => router.push('/fund-wallet')}
                     >
-                        <Ionicons name="add" size={18} color="#fff" />
+                        <Ionicons name="add" size={18 * scale} color="#fff" />
                         <Text style={[styles.fundButtonText, { fontFamily: fonts.inter.semiBold }]}>
                             Fund
                         </Text>
@@ -110,7 +114,7 @@ export default function UpgradeScreen() {
                     }]}>
                         <View style={styles.currentLevelContent}>
                             <View style={[styles.currentLevelIcon, { backgroundColor: colors.primary + '20' }]}>
-                                <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
+                                <Ionicons name="shield-checkmark" size={20 * scale} color={colors.primary} />
                             </View>
                             <View style={styles.currentLevelInfo}>
                                 <Text style={[styles.currentLevelLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -156,7 +160,7 @@ export default function UpgradeScreen() {
                                 >
                                     <View style={styles.levelHeader}>
                                         <View style={[styles.levelIcon, { backgroundColor: levelColor + '20' }]}>
-                                            <Ionicons name={getLevelIcon(level.name)} size={24} color={levelColor} />
+                                            <Ionicons name={getLevelIcon(level.name)} size={24 * scale} color={levelColor} />
                                         </View>
                                         <View style={styles.levelInfo}>
                                             <View style={styles.levelNameRow}>
@@ -181,7 +185,7 @@ export default function UpgradeScreen() {
                                         <>
                                             {!canAfford && (
                                                 <View style={[styles.warningBadge, { backgroundColor: colors.error + '15' }]}>
-                                                    <Ionicons name="alert-circle" size={14} color={colors.error} />
+                                                    <Ionicons name="alert-circle" size={14 * scale} color={colors.error} />
                                                     <Text style={[styles.warningText, { color: colors.error, fontFamily: fonts.inter.regular }]}>
                                                         Insufficient balance
                                                     </Text>
@@ -198,7 +202,7 @@ export default function UpgradeScreen() {
                                                 <Text style={[styles.upgradeButtonText, { fontFamily: fonts.inter.semiBold }]}>
                                                     {isUpgrading ? 'Processing...' : 'Upgrade Now'}
                                                 </Text>
-                                                <Ionicons name="arrow-forward" size={18} color="#fff" />
+                                                <Ionicons name="arrow-forward" size={18 * scale} color="#fff" />
                                             </TouchableOpacity>
                                         </>
                                     )}
@@ -211,7 +215,7 @@ export default function UpgradeScreen() {
                 {/* Empty State */}
                 {!isLoading && levels.length === 0 && (
                     <View style={styles.emptyState}>
-                        <Ionicons name="layers-outline" size={64} color={colors.icon} />
+                        <Ionicons name="layers-outline" size={64 * scale} color={colors.icon} />
                         <Text style={[styles.emptyStateText, { color: colors.icon, fontFamily: fonts.inter.medium }]}>
                             No upgrade levels available
                         </Text>
@@ -235,7 +239,7 @@ export default function UpgradeScreen() {
                         onPress={(e) => e.stopPropagation()}
                     >
                         <View style={[styles.dialogIcon, { backgroundColor: colors.primary + '15' }]}>
-                            <Ionicons name="arrow-up-circle" size={32} color={colors.primary} />
+                            <Ionicons name="arrow-up-circle" size={32 * scale} color={colors.primary} />
                         </View>
 
                         <Text style={[styles.dialogTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
@@ -288,58 +292,58 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
-    headerTitle: { fontSize: 18 },
+    headerTitle: { fontSize: 18 * scale },
     content: {
-        paddingHorizontal: 20,
-        paddingBottom: 30,
+        paddingHorizontal: 20 * scale,
+        paddingBottom: 30 * scale,
     },
     walletCard: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 20,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 20 * scale,
     },
     walletLeft: {},
     walletLabel: {
-        fontSize: 12,
-        marginBottom: 4,
+        fontSize: 12 * scale,
+        marginBottom: 4 * scale,
     },
     walletAmount: {
-        fontSize: 20,
+        fontSize: 20 * scale,
     },
     fundButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 8,
+        gap: 6 * scale,
+        paddingHorizontal: 16 * scale,
+        paddingVertical: 10 * scale,
+        borderRadius: 8 * scale,
     },
     fundButtonText: {
         color: '#fff',
-        fontSize: 13,
+        fontSize: 13 * scale,
     },
     currentLevelCard: {
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 24,
-        borderWidth: 2,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 24 * scale,
+        borderWidth: 2 * scale,
     },
     currentLevelContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 12 * scale,
     },
     currentLevelIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 44 * scale,
+        height: 44 * scale,
+        borderRadius: 22 * scale,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -347,42 +351,42 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     currentLevelLabel: {
-        fontSize: 12,
-        marginBottom: 4,
+        fontSize: 12 * scale,
+        marginBottom: 4 * scale,
     },
     currentLevelName: {
-        fontSize: 17,
+        fontSize: 17 * scale,
     },
     loadingContainer: {
         alignItems: 'center',
-        paddingVertical: 40,
+        paddingVertical: 40 * scale,
     },
     loadingText: {
-        fontSize: 14,
-        marginTop: 12,
+        fontSize: 14 * scale,
+        marginTop: 12 * scale,
     },
     levelsContainer: {
-        marginBottom: 20,
+        marginBottom: 20 * scale,
     },
     sectionTitle: {
-        fontSize: 16,
-        marginBottom: 16,
+        fontSize: 16 * scale,
+        marginBottom: 16 * scale,
     },
     levelCard: {
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 16,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 16 * scale,
     },
     levelHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
-        marginBottom: 12,
+        gap: 12 * scale,
+        marginBottom: 12 * scale,
     },
     levelIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 48 * scale,
+        height: 48 * scale,
+        borderRadius: 24 * scale,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -392,120 +396,120 @@ const styles = StyleSheet.create({
     levelNameRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginBottom: 4,
+        gap: 8 * scale,
+        marginBottom: 4 * scale,
     },
     levelName: {
-        fontSize: 16,
+        fontSize: 16 * scale,
     },
     currentBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
+        paddingHorizontal: 8 * scale,
+        paddingVertical: 3 * scale,
+        borderRadius: 8 * scale,
     },
     currentBadgeText: {
-        fontSize: 10,
+        fontSize: 10 * scale,
     },
     levelPrice: {
-        fontSize: 18,
+        fontSize: 18 * scale,
     },
     warningBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 8,
-        marginBottom: 12,
+        gap: 6 * scale,
+        paddingHorizontal: 10 * scale,
+        paddingVertical: 6 * scale,
+        borderRadius: 8 * scale,
+        marginBottom: 12 * scale,
     },
     warningText: {
-        fontSize: 12,
+        fontSize: 12 * scale,
     },
     upgradeButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 12,
-        borderRadius: 10,
+        gap: 8 * scale,
+        paddingVertical: 12 * scale,
+        borderRadius: 10 * scale,
     },
     upgradeButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 14 * scale,
     },
     emptyState: {
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: 60 * scale,
     },
     emptyStateText: {
-        fontSize: 14,
-        marginTop: 16,
+        fontSize: 14 * scale,
+        marginTop: 16 * scale,
     },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: 20 * scale,
     },
     dialogContainer: {
         width: '100%',
-        maxWidth: 340,
-        borderRadius: 20,
-        padding: 24,
+        maxWidth: 340 * scale,
+        borderRadius: 20 * scale,
+        padding: 24 * scale,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 4 * scale },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowRadius: 8 * scale,
         elevation: 8,
     },
     dialogIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 64 * scale,
+        height: 64 * scale,
+        borderRadius: 32 * scale,
         justifyContent: 'center',
         alignItems: 'center',
         alignSelf: 'center',
-        marginBottom: 16,
+        marginBottom: 16 * scale,
     },
     dialogTitle: {
-        fontSize: 22,
+        fontSize: 22 * scale,
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 12 * scale,
     },
     dialogMessage: {
-        fontSize: 14,
+        fontSize: 14 * scale,
         textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: 24,
+        lineHeight: 20 * scale,
+        marginBottom: 24 * scale,
     },
     dialogButtons: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 12 * scale,
     },
     dialogButton: {
         flex: 1,
-        borderRadius: 12,
+        borderRadius: 12 * scale,
         overflow: 'hidden',
     },
     cancelButton: {
-        borderWidth: 1.5,
+        borderWidth: 1.5 * scale,
     },
     cancelButtonText: {
-        fontSize: 15,
+        fontSize: 15 * scale,
         textAlign: 'center',
-        paddingVertical: 14,
+        paddingVertical: 14 * scale,
     },
     confirmButton: {
         overflow: 'hidden',
     },
     gradientButton: {
-        paddingVertical: 14,
+        paddingVertical: 14 * scale,
         alignItems: 'center',
         justifyContent: 'center',
     },
     confirmButtonText: {
         color: '#fff',
-        fontSize: 15,
+        fontSize: 15 * scale,
     },
 });

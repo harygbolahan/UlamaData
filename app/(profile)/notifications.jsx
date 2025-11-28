@@ -1,7 +1,11 @@
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function NotificationsScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -17,7 +21,7 @@ export default function NotificationsScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     Notifications
@@ -57,28 +61,28 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
-    headerTitle: { fontSize: 18 },
+    headerTitle: { fontSize: 18 * scale },
     settingCard: {
-        marginHorizontal: 20,
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 12,
+        marginHorizontal: 20 * scale,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 12 * scale,
         flexDirection: 'row',
         alignItems: 'center',
     },
     settingInfo: {
         flex: 1,
-        marginRight: 12,
+        marginRight: 12 * scale,
     },
     settingTitle: {
-        fontSize: 14,
-        marginBottom: 4,
+        fontSize: 14 * scale,
+        marginBottom: 4 * scale,
     },
     settingDesc: {
-        fontSize: 12,
+        fontSize: 12 * scale,
     },
 });

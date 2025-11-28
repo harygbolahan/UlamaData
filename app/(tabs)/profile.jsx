@@ -5,7 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function ProfileTab() {
     const { colors, fonts, toggleTheme, isDark } = useTheme();
@@ -38,7 +42,10 @@ export default function ProfileTab() {
         // { id: '7', title: 'Transaction History', icon: 'time-outline', route: '/(profile)/history' },
         { id: '8', title: 'Notifications', icon: 'notifications-outline', route: '/(profile)/notifications' },
         { id: '9', title: 'Help & Support', icon: 'help-circle-outline', route: '/(profile)/support' },
-        { id: '10', title: 'About', icon: 'information-circle-outline', route: '/(profile)/about' },
+        { id: '10', title: 'Privacy Policy', icon: 'shield-outline', route: '/(profile)/privacy-policy' },
+        { id: '11', title: 'Terms & Conditions', icon: 'document-text-outline', route: '/(profile)/terms-conditions' },
+        { id: '12', title: 'About', icon: 'information-circle-outline', route: '/(profile)/about' },
+        { id: '13', title: 'Terminate Account', icon: 'trash-outline', route: '/(profile)/terminate-account', danger: true },
     ];
 
     const isKycVerified = user?.KycStatus === 'verified';
@@ -50,7 +57,7 @@ export default function ProfileTab() {
                     Profile
                 </Text>
                 <TouchableOpacity>
-                    <Ionicons name="settings-outline" size={24} color={colors.text} />
+                    <Ionicons name="settings-outline" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
@@ -65,7 +72,7 @@ export default function ProfileTab() {
                         onPress={() => router.push('/(profile)/kyc')}
                     >
                         <View style={[styles.kycIconContainer, { backgroundColor: colors.warning + '20' }]}>
-                            <Ionicons name="alert-circle" size={24} color={colors.warning} />
+                            <Ionicons name="alert-circle" size={24 * scale} color={colors.warning} />
                         </View>
                         <View style={styles.kycContent}>
                             <Text style={[styles.kycTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
@@ -75,7 +82,7 @@ export default function ProfileTab() {
                                 Verify your identity to unlock higher limits
                             </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.warning} />
+                        <Ionicons name="chevron-forward" size={20 * scale} color={colors.warning} />
                     </TouchableOpacity>
                 )}
 
@@ -90,7 +97,7 @@ export default function ProfileTab() {
                                 style={styles.avatarImage}
                             />
                             <TouchableOpacity style={styles.editAvatar}>
-                                <Ionicons name="camera" size={14} color="#fff" />
+                                <Ionicons name="camera" size={14 * scale} color="#fff" />
                             </TouchableOpacity>
                         </View>
                         <View style={styles.nameContainer}>
@@ -103,7 +110,7 @@ export default function ProfileTab() {
                                 }]}>
                                     <Ionicons 
                                         name={user.KycStatus === 'verified' ? 'checkmark-circle' : 'alert-circle'} 
-                                        size={12} 
+                                        size={12 * scale} 
                                         color={user.KycStatus === 'verified' ? colors.success : colors.warning} 
                                     />
                                     <Text style={[styles.verificationText, { 
@@ -174,13 +181,22 @@ export default function ProfileTab() {
                             }]}
                             onPress={() => item.route && router.push(item.route)}
                         >
-                            <View style={[styles.menuIcon, { backgroundColor: colors.primary + '20' }]}>
-                                <Ionicons name={item.icon} size={18} color={colors.primary} />
+                            <View style={[styles.menuIcon, { 
+                                backgroundColor: item.danger ? colors.error + '20' : colors.primary + '20' 
+                            }]}>
+                                <Ionicons 
+                                    name={item.icon} 
+                                    size={18 * scale} 
+                                    color={item.danger ? colors.error : colors.primary} 
+                                />
                             </View>
-                            <Text style={[styles.menuText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                            <Text style={[styles.menuText, { 
+                                color: item.danger ? colors.error : colors.text, 
+                                fontFamily: fonts.inter.medium 
+                            }]}>
                                 {item.title}
                             </Text>
-                            <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                            <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -191,7 +207,7 @@ export default function ProfileTab() {
                 }]}>
                     <View style={styles.themeLeft}>
                         <View style={[styles.themeIcon, { backgroundColor: colors.primary + '20' }]}>
-                            <Ionicons name={isDark ? 'moon' : 'sunny'} size={18} color={colors.primary} />
+                            <Ionicons name={isDark ? 'moon' : 'sunny'} size={18 * scale} color={colors.primary} />
                         </View>
                         <Text style={[styles.themeText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                             Dark Mode
@@ -214,7 +230,7 @@ export default function ProfileTab() {
                     onPress={handleLogout}
                     disabled={isLoggingOut}
                 >
-                    <Ionicons name="log-out-outline" size={20} color={colors.error} />
+                    <Ionicons name="log-out-outline" size={20 * scale} color={colors.error} />
                     <Text style={[styles.logoutText, { color: colors.error, fontFamily: fonts.inter.semiBold }]}>
                         {isLoggingOut ? 'Logging out...' : 'Logout'}
                     </Text>
@@ -240,7 +256,7 @@ export default function ProfileTab() {
                     >
                         {/* Icon */}
                         <View style={[styles.dialogIcon, { backgroundColor: colors.error + '15' }]}>
-                            <Ionicons name="log-out-outline" size={32} color={colors.error} />
+                            <Ionicons name="log-out-outline" size={32 * scale} color={colors.error} />
                         </View>
 
                         {/* Title */}
@@ -298,29 +314,29 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
     headerTitle: {
-        fontSize: 22,
+        fontSize: 22 * scale,
     },
     profileCard: {
-        marginHorizontal: 20,
-        padding: 20,
-        borderRadius: 16,
-        marginBottom: 20,
+        marginHorizontal: 20 * scale,
+        padding: 20 * scale,
+        borderRadius: 16 * scale,
+        marginBottom: 20 * scale,
     },
     profileHeader: {
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 20 * scale,
     },
     avatarLarge: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 80 * scale,
+        height: 80 * scale,
+        borderRadius: 40 * scale,
         overflow: 'hidden',
-        marginBottom: 12,
+        marginBottom: 12 * scale,
         position: 'relative',
     },
     avatarImage: {
@@ -332,50 +348,50 @@ const styles = StyleSheet.create({
         bottom: 0,
         right: 0,
         backgroundColor: '#2196F3',
-        width: 26,
-        height: 26,
-        borderRadius: 13,
+        width: 26 * scale,
+        height: 26 * scale,
+        borderRadius: 13 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
+        borderWidth: 2 * scale,
         borderColor: '#fff',
     },
     nameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginBottom: 6,
+        gap: 8 * scale,
+        marginBottom: 6 * scale,
     },
     profileName: {
-        fontSize: 20,
+        fontSize: 20 * scale,
     },
     verificationBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 12,
+        gap: 4 * scale,
+        paddingHorizontal: 8 * scale,
+        paddingVertical: 3 * scale,
+        borderRadius: 12 * scale,
     },
     verificationText: {
-        fontSize: 10,
+        fontSize: 10 * scale,
     },
     profileEmail: {
-        fontSize: 12,
-        marginBottom: 2,
+        fontSize: 12 * scale,
+        marginBottom: 2 * scale,
     },
     profilePhone: {
-        fontSize: 12,
-        marginBottom: 8,
+        fontSize: 12 * scale,
+        marginBottom: 8 * scale,
     },
     accountTypeBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginTop: 4,
+        paddingHorizontal: 12 * scale,
+        paddingVertical: 4 * scale,
+        borderRadius: 12 * scale,
+        marginTop: 4 * scale,
     },
     accountTypeText: {
-        fontSize: 11,
+        fontSize: 11 * scale,
     },
     statsContainer: {
         flexDirection: 'row',
@@ -386,73 +402,73 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     statValue: {
-        fontSize: 17,
-        marginBottom: 3,
+        fontSize: 17 * scale,
+        marginBottom: 3 * scale,
     },
     statLabel: {
-        fontSize: 11,
+        fontSize: 11 * scale,
     },
     statDivider: {
         width: 1,
-        height: 40,
+        height: 40 * scale,
     },
     quickActions: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 20,
-        gap: 10,
-        marginBottom: 24,
+        paddingHorizontal: 20 * scale,
+        gap: 10 * scale,
+        marginBottom: 24 * scale,
     },
     quickActionCard: {
         width: '48%',
-        padding: 12,
-        borderRadius: 12,
+        padding: 12 * scale,
+        borderRadius: 12 * scale,
         alignItems: 'center',
     },
     quickActionIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 40 * scale,
+        height: 40 * scale,
+        borderRadius: 20 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 6 * scale,
     },
     quickActionText: {
-        fontSize: 11,
+        fontSize: 11 * scale,
     },
     section: {
-        marginBottom: 20,
+        marginBottom: 20 * scale,
     },
     sectionTitle: {
-        fontSize: 16,
-        paddingHorizontal: 20,
-        marginBottom: 12,
+        fontSize: 16 * scale,
+        paddingHorizontal: 20 * scale,
+        marginBottom: 12 * scale,
     },
     menuItem: {
-        marginHorizontal: 20,
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 10,
+        marginHorizontal: 20 * scale,
+        padding: 12 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 10 * scale,
         flexDirection: 'row',
         alignItems: 'center',
     },
     menuIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 36 * scale,
+        height: 36 * scale,
+        borderRadius: 18 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 10,
+        marginRight: 10 * scale,
     },
     menuText: {
         flex: 1,
-        fontSize: 13,
+        fontSize: 13 * scale,
     },
     themeCard: {
-        marginHorizontal: 20,
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 20,
+        marginHorizontal: 20 * scale,
+        padding: 12 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 20 * scale,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -462,125 +478,125 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     themeIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 36 * scale,
+        height: 36 * scale,
+        borderRadius: 18 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 10,
+        marginRight: 10 * scale,
     },
     themeText: {
-        fontSize: 13,
+        fontSize: 13 * scale,
     },
     toggle: {
-        width: 50,
-        height: 28,
-        borderRadius: 14,
+        width: 50 * scale,
+        height: 28 * scale,
+        borderRadius: 14 * scale,
         backgroundColor: '#ccc',
-        padding: 2,
+        padding: 2 * scale,
     },
     toggleThumb: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 24 * scale,
+        height: 24 * scale,
+        borderRadius: 12 * scale,
         backgroundColor: '#fff',
     },
     toggleThumbActive: {
-        transform: [{ translateX: 22 }],
+        transform: [{ translateX: 22 * scale }],
     },
     logoutButton: {
-        marginHorizontal: 20,
-        padding: 12,
-        borderRadius: 12,
+        marginHorizontal: 20 * scale,
+        padding: 12 * scale,
+        borderRadius: 12 * scale,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 10,
+        gap: 10 * scale,
     },
     logoutText: {
-        fontSize: 14,
+        fontSize: 14 * scale,
     },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: 20 * scale,
     },
     dialogContainer: {
         width: '100%',
-        maxWidth: 340,
-        borderRadius: 20,
-        padding: 24,
+        maxWidth: 340 * scale,
+        borderRadius: 20 * scale,
+        padding: 24 * scale,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 4 * scale },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowRadius: 8 * scale,
         elevation: 8,
     },
     dialogIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 64 * scale,
+        height: 64 * scale,
+        borderRadius: 32 * scale,
         justifyContent: 'center',
         alignItems: 'center',
         alignSelf: 'center',
-        marginBottom: 16,
+        marginBottom: 16 * scale,
     },
     dialogTitle: {
-        fontSize: 22,
+        fontSize: 22 * scale,
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 12 * scale,
     },
     dialogMessage: {
-        fontSize: 14,
+        fontSize: 14 * scale,
         textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: 24,
+        lineHeight: 20 * scale,
+        marginBottom: 24 * scale,
     },
     dialogButtons: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 12 * scale,
     },
     dialogButton: {
         flex: 1,
-        borderRadius: 12,
+        borderRadius: 12 * scale,
         overflow: 'hidden',
     },
     cancelButton: {
-        borderWidth: 1.5,
+        borderWidth: 1.5 * scale,
     },
     cancelButtonText: {
-        fontSize: 15,
+        fontSize: 15 * scale,
         textAlign: 'center',
-        paddingVertical: 14,
+        paddingVertical: 14 * scale,
     },
     logoutDialogButton: {
         overflow: 'hidden',
     },
     gradientButton: {
-        paddingVertical: 14,
+        paddingVertical: 14 * scale,
         alignItems: 'center',
         justifyContent: 'center',
     },
     logoutDialogButtonText: {
         color: '#fff',
-        fontSize: 15,
+        fontSize: 15 * scale,
     },
     kycAlert: {
-        marginHorizontal: 20,
-        marginBottom: 16,
-        padding: 16,
-        borderRadius: 12,
+        marginHorizontal: 20 * scale,
+        marginBottom: 16 * scale,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 12 * scale,
         borderWidth: 1,
     },
     kycIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 40 * scale,
+        height: 40 * scale,
+        borderRadius: 20 * scale,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -588,10 +604,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     kycTitle: {
-        fontSize: 14,
-        marginBottom: 2,
+        fontSize: 14 * scale,
+        marginBottom: 2 * scale,
     },
     kycMessage: {
-        fontSize: 12,
+        fontSize: 12 * scale,
     },
 });

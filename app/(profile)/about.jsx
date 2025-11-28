@@ -1,7 +1,11 @@
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function AboutScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -10,7 +14,7 @@ export default function AboutScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     About
@@ -20,7 +24,11 @@ export default function AboutScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
                 <View style={[styles.logoContainer, { backgroundColor: colors.primary + '20' }]}>
-                    <Text style={styles.logoText}>💳</Text>
+                    <Image 
+                        source={require('@/assets/images/logo.png')} 
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
                 </View>
 
                 <Text style={[styles.appName, { color: colors.text, fontFamily: fonts.inter.bold }]}>
@@ -37,25 +45,34 @@ export default function AboutScreen() {
                 </View>
 
                 <View style={[styles.linkCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                    <TouchableOpacity style={styles.linkItem}>
+                    <TouchableOpacity 
+                        style={styles.linkItem}
+                        onPress={() => router.push('/(profile)/terms-conditions')}
+                    >
                         <Text style={[styles.linkText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                             Terms of Service
                         </Text>
-                        <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                        <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                     </TouchableOpacity>
                     <View style={[styles.linkDivider, { backgroundColor: colors.icon + '20' }]} />
-                    <TouchableOpacity style={styles.linkItem}>
+                    <TouchableOpacity 
+                        style={styles.linkItem}
+                        onPress={() => router.push('/(profile)/privacy-policy')}
+                    >
                         <Text style={[styles.linkText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                             Privacy Policy
                         </Text>
-                        <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                        <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                     </TouchableOpacity>
                     <View style={[styles.linkDivider, { backgroundColor: colors.icon + '20' }]} />
-                    <TouchableOpacity style={styles.linkItem}>
+                    <TouchableOpacity 
+                        style={styles.linkItem}
+                        onPress={() => router.push('/support')}
+                    >
                         <Text style={[styles.linkText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                            Licenses
+                            Contact Support
                         </Text>
-                        <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                        <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                     </TouchableOpacity>
                 </View>
 
@@ -73,53 +90,57 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
-    headerTitle: { fontSize: 18 },
+    headerTitle: { fontSize: 18 * scale },
     content: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 20 * scale,
         alignItems: 'center',
     },
     logoContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 100 * scale,
+        height: 100 * scale,
+        borderRadius: 50 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 20 * scale,
+        overflow: 'hidden',
     },
-    logoText: { fontSize: 50 },
-    appName: { fontSize: 28, marginBottom: 8 },
-    version: { fontSize: 14, marginBottom: 24 },
+    logoImage: { 
+        width: '80%', 
+        height: '80%',
+    },
+    appName: { fontSize: 28 * scale, marginBottom: 8 * scale },
+    version: { fontSize: 14 * scale, marginBottom: 24 * scale },
     infoCard: {
         width: '100%',
-        padding: 20,
-        borderRadius: 16,
-        marginBottom: 20,
+        padding: 20 * scale,
+        borderRadius: 16 * scale,
+        marginBottom: 20 * scale,
     },
     description: {
-        fontSize: 14,
+        fontSize: 14 * scale,
         textAlign: 'center',
-        lineHeight: 22,
+        lineHeight: 22 * scale,
     },
     linkCard: {
         width: '100%',
-        padding: 16,
-        borderRadius: 16,
-        marginBottom: 24,
+        padding: 16 * scale,
+        borderRadius: 16 * scale,
+        marginBottom: 24 * scale,
     },
     linkItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 12 * scale,
     },
-    linkText: { fontSize: 14 },
+    linkText: { fontSize: 14 * scale },
     linkDivider: { height: 1 },
     copyright: {
-        fontSize: 12,
+        fontSize: 12 * scale,
         textAlign: 'center',
     },
 });

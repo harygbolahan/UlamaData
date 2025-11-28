@@ -1,7 +1,11 @@
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+const scale = isSmallScreen ? 0.7 : 1;
 
 export default function SecurityScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -17,7 +21,7 @@ export default function SecurityScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     Security & Privacy
@@ -33,7 +37,7 @@ export default function SecurityScreen() {
                         onPress={() => option.route && router.push(option.route)}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: colors.primary + '20' }]}>
-                            <Ionicons name={option.icon} size={20} color={colors.primary} />
+                            <Ionicons name={option.icon} size={20 * scale} color={colors.primary} />
                         </View>
                         <View style={styles.optionContent}>
                             <Text style={[styles.optionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
@@ -45,7 +49,7 @@ export default function SecurityScreen() {
                                 </Text>
                             )}
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                        <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                     </TouchableOpacity>
                 ))}
             </ScrollView>
@@ -59,35 +63,35 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        marginBottom: 20,
+        paddingHorizontal: 20 * scale,
+        paddingTop: 50 * scale,
+        marginBottom: 20 * scale,
     },
-    headerTitle: { fontSize: 18 },
+    headerTitle: { fontSize: 18 * scale },
     optionCard: {
-        marginHorizontal: 20,
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 12,
+        marginHorizontal: 20 * scale,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 12 * scale,
         flexDirection: 'row',
         alignItems: 'center',
     },
     optionIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 40 * scale,
+        height: 40 * scale,
+        borderRadius: 20 * scale,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 12 * scale,
     },
     optionContent: {
         flex: 1,
     },
     optionText: {
-        fontSize: 14,
-        marginBottom: 2,
+        fontSize: 14 * scale,
+        marginBottom: 2 * scale,
     },
     optionDescription: {
-        fontSize: 12,
+        fontSize: 12 * scale,
     },
 });

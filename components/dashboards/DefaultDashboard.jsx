@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
         opacity: 0.85, 
         marginBottom: 4,
         textTransform: 'uppercase',
-        letterSpacing: 0.5
+        letterSpacing: 0.5,
     },
     balanceAmountRow: { 
         flexDirection: 'row', 
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
-    topUpText: { fontSize: 13, fontWeight: '600' },
+    topUpText: { fontSize: 13,  },
     
     // Sections
     section: { marginBottom: 20 },

@@ -1,9 +1,9 @@
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LocalAuthentication } from 'expo-local-authentication';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LocalAuthentication } from 'expo-local-authentication';
 
 
 /**
@@ -236,7 +236,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                             >
                                 <Ionicons 
                                     name="backspace-outline" 
-                                    size={24} 
+                                    size={22} 
                                     color={pin.length === 0 ? colors.icon + '40' : colors.icon} 
                                 />
                             </TouchableOpacity>
@@ -250,7 +250,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                                 onPress={handleBiometricAuth}
                                 activeOpacity={0.7}
                             >
-                                <Ionicons name="finger-print" size={20} color={colors.primary} />
+                                <Ionicons name="finger-print" size={18} color={colors.primary} />
                                 <Text style={[styles.biometricText, { color: colors.primary, fontFamily: fonts.inter.medium }]}>
                                     Use Biometric
                                 </Text>
@@ -285,82 +285,82 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     modalContent: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingHorizontal: 20,
-        paddingTop: 12,
-        paddingBottom: 24,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 16,
     },
     modalHandle: {
-        width: 48,
-        height: 5,
-        borderRadius: 3,
+        width: 40,
+        height: 4,
+        borderRadius: 2,
         alignSelf: 'center',
-        marginBottom: 16,
+        marginBottom: 10,
     },
     modalTitle: {
-        fontSize: 20,
-        marginBottom: 6,
+        fontSize: 16,
+        marginBottom: 2,
         textAlign: 'center',
     },
     modalSubtitle: {
-        fontSize: 13,
+        fontSize: 12,
         textAlign: 'center',
-        marginBottom: 24,
-        minHeight: 18,
+        marginBottom: 14,
+        minHeight: 16,
     },
     pinDisplay: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 24,
+        marginBottom: 14,
     },
     pinDot: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        marginHorizontal: 6,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginHorizontal: 4,
     },
     numberPad: {
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 6,
     },
     numberRow: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     numberButton: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: 12,
+        marginHorizontal: 8,
     },
     numberText: {
-        fontSize: 24,
+        fontSize: 20,
     },
     bottomActions: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 24,
+        gap: 16,
     },
     biometricAction: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
+        gap: 4,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
     },
     biometricText: {
-        fontSize: 14,
+        fontSize: 13,
     },
     forgotPin: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
     },
     forgotPinText: {
-        fontSize: 14,
+        fontSize: 13,
     },
 });

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from './theme-context';
 const { width } = Dimensions.get('window');
 const ToastContext = createContext(null);
@@ -27,16 +27,24 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <View style={styles.toastContainer} pointerEvents="box-none">
-        {toasts.map((toast, index) => (
-          <Toast
-            key={toast.id}
-            toast={toast}
-            index={index}
-            onDismiss={() => removeToast(toast.id)}
-          />
-        ))}
-      </View>
+      <Modal
+        visible={toasts.length > 0}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        pointerEvents="box-none"
+      >
+        <View style={styles.toastContainer} pointerEvents="box-none">
+          {toasts.map((toast, index) => (
+            <Toast
+              key={toast.id}
+              toast={toast}
+              index={index}
+              onDismiss={() => removeToast(toast.id)}
+            />
+          ))}
+        </View>
+      </Modal>
     </ToastContext.Provider>
   );
 }
@@ -239,7 +247,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 9999,
+    zIndex: 999999,
+    elevation: 999999,
     pointerEvents: 'box-none',
   },
   toast: {
@@ -247,6 +256,8 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     maxWidth: width - 32,
+    zIndex: 999999,
+    elevation: 999999,
   },
   toastPressable: {
     borderRadius: 16,
