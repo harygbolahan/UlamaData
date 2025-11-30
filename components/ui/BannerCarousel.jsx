@@ -2,17 +2,18 @@ import { useBanners } from '@/contexts/banner-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    View
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  View
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BANNER_WIDTH = SCREEN_WIDTH - 32; // 16px padding on each side
+const BANNER_WIDTH = SCREEN_WIDTH * 0.90; // 85% of screen width
 const BANNER_HEIGHT = 80;
+const BANNER_SPACING = 28; // Space between banners
 const AUTO_SCROLL_INTERVAL = 4000; // 4 seconds
 
 export default function BannerCarousel() {
@@ -28,7 +29,7 @@ export default function BannerCarousel() {
       setCurrentIndex((prevIndex) => {
         const nextIndex = (prevIndex + 1) % banners.length;
         scrollViewRef.current?.scrollTo({
-          x: nextIndex * BANNER_WIDTH,
+          x: nextIndex * (BANNER_WIDTH + BANNER_SPACING),
           animated: true,
         });
         return nextIndex;
@@ -40,7 +41,7 @@ export default function BannerCarousel() {
 
   const handleScroll = (event) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollPosition / BANNER_WIDTH);
+    const index = Math.round(scrollPosition / (BANNER_WIDTH + BANNER_SPACING));
     setCurrentIndex(index);
   };
 
@@ -61,13 +62,13 @@ export default function BannerCarousel() {
       <ScrollView
         ref={scrollViewRef}
         horizontal
-        pagingEnabled
+        pagingEnabled={false}
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         decelerationRate="fast"
-        snapToInterval={BANNER_WIDTH}
-        snapToAlignment="center"
+        snapToInterval={BANNER_WIDTH + BANNER_SPACING}
+        snapToAlignment="start"
         contentContainerStyle={styles.scrollContent}
       >
         {banners.map((banner) => (
@@ -112,11 +113,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingRight: 16 + (SCREEN_WIDTH - BANNER_WIDTH) / 2,
   },
   bannerWrapper: {
     width: BANNER_WIDTH,
     height: BANNER_HEIGHT,
-    marginRight: 0,
+    marginRight: BANNER_SPACING,
   },
   bannerImage: {
     width: '100%',

@@ -9,14 +9,16 @@ export default function ServicesTab() {
     const allServices = [
         { id: '1', name: 'Data', icon: 'wifi', color: '#2196F3', category: 'Recharge', route: '/(services)/buy-data' },
         { id: '2', name: 'Airtime', icon: 'phone-portrait', color: '#4CAF50', category: 'Recharge', route: '/(services)/buy-airtime' },
-        { id: '3', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
-        { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
-        { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
-        { id: '6', name: 'Bulk Order', icon: 'layers', color: '#795548', category: 'Business', route: '/(services)/bulk-order' },
-        { id: '7', name: 'Bulk SMS', icon: 'chatbubbles', color: '#00BCD4', category: 'Business', route: '/(services)/bulk-sms' },
-        { id: '8', name: 'Schedule', icon: 'time', color: '#9C27B0', category: 'Automation', route: '/(services)/schedule-transaction' },
-        { id: '9', name: 'Airtime Swap', icon: 'swap-horizontal', color: '#3F51B5', category: 'Convert', route: '/(services)/airtime-swap' },
-        { id: '10', name: 'Pricing', icon: 'pricetag', color: '#607D8B', category: 'Info', route: '/(services)/pricing' },
+        { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
+        { id: '4', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
+        { id: '5', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
+        { id: '6', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
+        { id: '7', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
+        { id: '8', name: 'Bulk Order', icon: 'layers', color: '#795548', category: 'Business', route: '/(services)/bulk-order' },
+        { id: '9', name: 'Bulk SMS', icon: 'chatbubbles', color: '#00BCD4', category: 'Business', route: '/(services)/bulk-sms' },
+        { id: '10', name: 'Schedule', icon: 'time', color: '#9C27B0', category: 'Automation', route: '/(services)/schedule-transaction' },
+        { id: '11', name: 'Airtime Swap', icon: 'swap-horizontal', color: '#3F51B5', category: 'Convert', route: '/(services)/airtime-swap' },
+        { id: '12', name: 'Pricing', icon: 'pricetag', color: '#607D8B', category: 'Info', route: '/(services)/pricing' },
     ];
 
     return (

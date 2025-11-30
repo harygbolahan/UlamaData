@@ -1,11 +1,24 @@
+import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+// Network images
+const networkImages = {
+    MTN: require('@/assets/networks/mtn.png'),
+    GLO: require('@/assets/networks/glo.png'),
+    AIRTEL: require('@/assets/networks/airtel.png'),
+    '9MOBILE': require('@/assets/networks/9mobile.png'),
+};
 
 export default function BulkOrderScreen() {
     const { colors, fonts, isDark } = useTheme();
+    const { fetchDataNetworks, fetchDataTypes, fetchDataPlans, fetchAirtimeNetworks, fetchAirtimeTypes } = useServices();
+    const { showToast } = useToast();
+    
     const [serviceType, setServiceType] = useState('data');
     const [selectedNetwork, setSelectedNetwork] = useState(null);
     const [phoneNumbers, setPhoneNumbers] = useState('');
@@ -13,19 +26,97 @@ export default function BulkOrderScreen() {
     const [amount, setAmount] = useState('');
     const [showNetworkModal, setShowNetworkModal] = useState(false);
 
-    const networks = [
-        { id: 'mtn', name: 'MTN', icon: '📱', color: '#FFCC00' },
-        { id: 'airtel', name: 'AIRTEL', icon: '📱', color: '#FF0000' },
-        { id: '9mobile', name: '9MOBILE', icon: '📱', color: '#00A65A' },
-        { id: 'glo', name: 'GLO', icon: '📱', color: '#00A859' },
-    ];
+    const [networks, setNetworks] = useState([]);
+    const [types, setTypes] = useState([]);
+    const [selectedType, setSelectedType] = useState(null);
+    const [dataPlans, setDataPlans] = useState([]);
+    
+    const [loadingNetworks, setLoadingNetworks] = useState(false);
+    const [loadingTypes, setLoadingTypes] = useState(false);
+    const [loadingPlans, setLoadingPlans] = useState(false);
 
-    const dataPlans = [
-        { id: '1', size: '1GB', price: 300 },
-        { id: '2', size: '2GB', price: 600 },
-        { id: '3', size: '5GB', price: 1500 },
-        { id: '4', size: '10GB', price: 3000 },
-    ];
+    // Fetch networks when service type changes
+    useEffect(() => {
+        loadNetworks();
+    }, [serviceType]);
+
+    // Fetch types when network is selected
+    useEffect(() => {
+        if (selectedNetwork) {
+            loadTypes();
+        } else {
+            setTypes([]);
+            setSelectedType(null);
+            setDataPlans([]);
+        }
+    }, [selectedNetwork, serviceType]);
+
+    // Fetch data plans when type is selected (only for data)
+    useEffect(() => {
+        if (serviceType === 'data' && selectedNetwork && selectedType) {
+            loadDataPlans();
+        } else if (serviceType === 'data') {
+            setDataPlans([]);
+        }
+    }, [selectedNetwork, selectedType, serviceType]);
+
+    const loadNetworks = async () => {
+        setLoadingNetworks(true);
+        try {
+            const data = serviceType === 'data' 
+                ? await fetchDataNetworks()
+                : await fetchAirtimeNetworks();
+            setNetworks(data);
+            // Reset selections when service type changes
+            setSelectedNetwork(null);
+            setSelectedType(null);
+            setDataPlans([]);
+            setSelectedPlan(null);
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load networks');
+        } finally {
+            setLoadingNetworks(false);
+        }
+    };
+
+    const loadTypes = async () => {
+        setLoadingTypes(true);
+        try {
+            const typesData = serviceType === 'data'
+                ? await fetchDataTypes(selectedNetwork.name)
+                : await fetchAirtimeTypes();
+            
+            if (serviceType === 'data') {
+                setTypes(typesData);
+                if (typesData.length > 0) {
+                    setSelectedType(typesData[0]);
+                }
+            } else {
+                setTypes(typesData);
+                if (typesData.length > 0) {
+                    setSelectedType(typesData[0].type);
+                }
+            }
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load types');
+            setTypes([]);
+        } finally {
+            setLoadingTypes(false);
+        }
+    };
+
+    const loadDataPlans = async () => {
+        setLoadingPlans(true);
+        try {
+            const plans = await fetchDataPlans(selectedNetwork.name, selectedType);
+            setDataPlans(plans);
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load data plans');
+            setDataPlans([]);
+        } finally {
+            setLoadingPlans(false);
+        }
+    };
 
     const getPhoneCount = () => {
         const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
@@ -44,25 +135,56 @@ export default function BulkOrderScreen() {
 
     const handleContinue = () => {
         const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
-        if (!selectedNetwork || numbers.length === 0) return;
+        
+        if (!selectedNetwork || numbers.length === 0) {
+            showToast('warning', 'Please select network and enter phone numbers');
+            return;
+        }
 
-        if (serviceType === 'data' && !selectedPlan) return;
-        if (serviceType === 'airtime' && !amount) return;
+        if (serviceType === 'data' && !selectedPlan) {
+            showToast('warning', 'Please select a data plan');
+            return;
+        }
+        
+        if (serviceType === 'airtime' && !amount) {
+            showToast('warning', 'Please enter amount per number');
+            return;
+        }
+
+        if (serviceType === 'airtime' && parseFloat(amount) < 50) {
+            showToast('warning', 'Minimum amount is ₦50');
+            return;
+        }
+
+        // Validate phone numbers
+        const invalidNumbers = numbers.filter(n => n.trim().length !== 11);
+        if (invalidNumbers.length > 0) {
+            showToast('warning', `${invalidNumbers.length} invalid phone number(s). All numbers must be 11 digits.`);
+            return;
+        }
 
         router.push({
             pathname: '/(services)/transaction-summary',
             params: {
-                service: `Bulk ${serviceType === 'data' ? 'Data' : 'Airtime'} Order`,
+                service: serviceType === 'data' ? 'Bulk Data' : 'Bulk Airtime',
                 beneficiary: `${numbers.length} recipients`,
                 amount: getTotalAmount().toString(),
                 network: selectedNetwork.name,
-                planSize: serviceType === 'data' ? selectedPlan.size : `₦${amount} each`,
+                planSize: serviceType === 'data' ? selectedPlan.datasize : `₦${amount} each`,
+                bulkPhones: numbers.join(','),
+                bulkType: selectedType,
+                planId: serviceType === 'data' ? selectedPlan.id.toString() : undefined,
+                isBulk: 'true',
             }
         });
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <KeyboardAvoidingView 
+            style={[styles.container, { backgroundColor: colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -73,7 +195,10 @@ export default function BulkOrderScreen() {
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
                 {/* Service Type Toggle */}
                 <View style={styles.serviceTypes}>
                     <TouchableOpacity
@@ -118,26 +243,37 @@ export default function BulkOrderScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                     Select Network
                 </Text>
-                <TouchableOpacity
-                    style={[styles.networkCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
-                    onPress={() => setShowNetworkModal(true)}
-                >
-                    {selectedNetwork ? (
-                        <View style={styles.networkSelected}>
-                            <View style={[styles.networkIcon, { backgroundColor: selectedNetwork.color }]}>
-                                <Text style={styles.networkEmoji}>{selectedNetwork.icon}</Text>
-                            </View>
-                            <Text style={[styles.networkName, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                {selectedNetwork.name}
-                            </Text>
-                        </View>
-                    ) : (
-                        <Text style={[styles.placeholder, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Tap to select network
+                {loadingNetworks ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                            Loading networks...
                         </Text>
-                    )}
-                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
-                </TouchableOpacity>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        style={[styles.networkCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
+                        onPress={() => setShowNetworkModal(true)}
+                    >
+                        {selectedNetwork ? (
+                            <View style={styles.networkSelected}>
+                                <Image 
+                                    source={networkImages[selectedNetwork.name]} 
+                                    style={styles.networkImage}
+                                    resizeMode="contain"
+                                />
+                                <Text style={[styles.networkName, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                    {selectedNetwork.name}
+                                </Text>
+                            </View>
+                        ) : (
+                            <Text style={[styles.placeholder, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                Tap to select network
+                            </Text>
+                        )}
+                        <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                    </TouchableOpacity>
+                )}
 
                 {/* Phone Numbers Input */}
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
@@ -151,7 +287,10 @@ export default function BulkOrderScreen() {
                         onChangeText={setPhoneNumbers}
                         multiline
                         numberOfLines={6}
-                        keyboardType="phone-pad"
+                        keyboardType="default"
+                        returnKeyType="default"
+                        blurOnSubmit={false}
+                        textAlignVertical="top"
                         style={[styles.textArea, { color: colors.text, fontFamily: fonts.inter.regular }]}
                     />
                     <View style={styles.countBadge}>
@@ -161,37 +300,113 @@ export default function BulkOrderScreen() {
                     </View>
                 </View>
 
+                {/* Type Selector */}
+                {selectedNetwork && types.length > 0 && (
+                    <>
+                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                            Select Type
+                        </Text>
+                        {loadingTypes ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="small" color={colors.primary} />
+                            </View>
+                        ) : (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.typesContainer}
+                            >
+                                {types.map((type) => {
+                                    const typeValue = serviceType === 'data' ? type : type.type;
+                                    return (
+                                        <TouchableOpacity
+                                            key={typeValue}
+                                            style={[
+                                                styles.typeChip,
+                                                { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
+                                                selectedType === typeValue && { backgroundColor: colors.primary }
+                                            ]}
+                                            onPress={() => setSelectedType(typeValue)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={[
+                                                styles.typeText,
+                                                { fontFamily: fonts.inter.semiBold },
+                                                selectedType === typeValue ? { color: '#fff' } : { color: colors.text }
+                                            ]}>
+                                                {typeValue}
+                                            </Text>
+                                            {serviceType === 'airtime' && type.discount && (
+                                                <Text style={[
+                                                    styles.typeDiscount,
+                                                    { fontFamily: fonts.inter.regular },
+                                                    selectedType === typeValue ? { color: '#fff' } : { color: colors.icon }
+                                                ]}>
+                                                    {type.discount}
+                                                </Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        )}
+                    </>
+                )}
+
                 {/* Data Plans or Amount */}
                 {serviceType === 'data' ? (
                     <>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Select Plan
-                        </Text>
-                        <View style={styles.plansGrid}>
-                            {dataPlans.map((plan) => (
-                                <TouchableOpacity
-                                    key={plan.id}
-                                    style={[
-                                        styles.planCard,
-                                        { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
-                                        selectedPlan?.id === plan.id && {
-                                            backgroundColor: colors.primary + '20',
-                                            borderColor: colors.primary,
-                                            borderWidth: 2
-                                        }
-                                    ]}
-                                    onPress={() => setSelectedPlan(plan)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                        {plan.size}
-                                    </Text>
-                                    <Text style={[styles.planPrice, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                        ₦{plan.price}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        {selectedNetwork && selectedType && (
+                            <>
+                                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                    Select Plan
+                                </Text>
+                                {loadingPlans ? (
+                                    <View style={styles.loadingContainer}>
+                                        <ActivityIndicator size="small" color={colors.primary} />
+                                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                            Loading plans...
+                                        </Text>
+                                    </View>
+                                ) : dataPlans.length > 0 ? (
+                                    <View style={styles.plansGrid}>
+                                        {dataPlans.map((plan) => (
+                                            <TouchableOpacity
+                                                key={plan.id}
+                                                style={[
+                                                    styles.planCard,
+                                                    { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
+                                                    selectedPlan?.id === plan.id && {
+                                                        backgroundColor: colors.primary + '20',
+                                                        borderColor: colors.primary,
+                                                        borderWidth: 2
+                                                    }
+                                                ]}
+                                                onPress={() => setSelectedPlan(plan)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                                    {plan.datasize}
+                                                </Text>
+                                                <Text style={[styles.planPrice, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                                    ₦{plan.price}
+                                                </Text>
+                                                <Text style={[styles.planDays, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                                    {plan.day} {plan.day === '1' ? 'day' : 'days'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <View style={styles.emptyContainer}>
+                                        <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
+                                        <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                            No plans available
+                                        </Text>
+                                    </View>
+                                )}
+                            </>
+                        )}
                     </>
                 ) : (
                     <>
@@ -225,10 +440,10 @@ export default function BulkOrderScreen() {
                         </View>
                         <View style={styles.summaryRow}>
                             <Text style={[styles.summaryLabel, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                                Amount per number
+                                {serviceType === 'data' ? 'Plan' : 'Amount per number'}
                             </Text>
                             <Text style={[styles.summaryValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                ₦{serviceType === 'data' ? selectedPlan?.price : amount}
+                                {serviceType === 'data' ? `${selectedPlan?.datasize} - ₦${selectedPlan?.price}` : `₦${amount}`}
                             </Text>
                         </View>
                         <View style={[styles.summaryRow, styles.totalRow]}>
@@ -278,20 +493,25 @@ export default function BulkOrderScreen() {
                         </Text>
                         {networks.map((network) => (
                             <TouchableOpacity
-                                key={network.id}
+                                key={network.network}
                                 style={[styles.option, { borderBottomColor: isDark ? '#2a2a2a' : '#f0f0f0' }]}
                                 onPress={() => {
-                                    setSelectedNetwork(network);
+                                    setSelectedNetwork({ 
+                                        id: network.network.toLowerCase(), 
+                                        name: network.network.toUpperCase() 
+                                    });
                                     setShowNetworkModal(false);
                                 }}
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.optionLeft}>
-                                    <View style={[styles.icon, { backgroundColor: network.color }]}>
-                                        <Text style={styles.iconEmoji}>{network.icon}</Text>
-                                    </View>
+                                    <Image 
+                                        source={networkImages[network.network.toUpperCase()]} 
+                                        style={styles.networkImageSmall}
+                                        resizeMode="contain"
+                                    />
                                     <Text style={[styles.optionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                        {network.name}
+                                        {network.network.toUpperCase()}
                                     </Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={20} color={colors.icon} />
@@ -300,7 +520,7 @@ export default function BulkOrderScreen() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -346,14 +566,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
-    networkIcon: {
+    networkImage: {
         width: 32,
         height: 32,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
-    networkEmoji: { fontSize: 16 },
+    networkImageSmall: {
+        width: 28,
+        height: 28,
+    },
     networkName: { fontSize: 14 },
     placeholder: { fontSize: 14 },
     textAreaContainer: {
@@ -386,7 +606,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     planSize: { fontSize: 18, marginBottom: 4 },
-    planPrice: { fontSize: 14 },
+    planPrice: { fontSize: 14, marginBottom: 4 },
+    planDays: { fontSize: 12 },
     amountInput: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -466,13 +687,32 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    icon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    iconEmoji: { fontSize: 20 },
     optionText: { fontSize: 15 },
+    loadingContainer: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    loadingText: { fontSize: 14 },
+    emptyContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    emptyText: { fontSize: 14 },
+    typesContainer: {
+        paddingHorizontal: 20,
+        gap: 10,
+        marginBottom: 16,
+    },
+    typeChip: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+        gap: 4,
+    },
+    typeText: { fontSize: 13 },
+    typeDiscount: { fontSize: 10 },
 });

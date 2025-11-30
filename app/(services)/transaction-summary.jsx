@@ -15,7 +15,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 export default function TransactionSummaryScreen() {
     const params = useLocalSearchParams();
     const { colors, fonts, isDark } = useTheme();
-    const { purchaseData, purchaseAirtime, purchaseCable, purchaseElectricity, purchaseExam } = useServices();
+    const { purchaseData, purchaseAirtime, purchaseCable, purchaseElectricity, purchaseExam, purchaseBulkSMS, purchaseDataPin, purchaseAirtimePin, purchaseBulkData, purchaseBulkAirtime, scheduleDataPurchase, scheduleAirtimePurchase } = useServices();
     const { showToast } = useToast();
     const { user, updateUser, refreshUser } = useAuth();
     const [useCashback, setUseCashback] = useState(false);
@@ -48,6 +48,18 @@ export default function TransactionSummaryScreen() {
         outstandingAmount,
         quantity,
         examName,
+        senderName,
+        subject,
+        phoneNumbers,
+        message,
+        pinSize,
+        bulkPhones,
+        bulkType,
+        isBulk,
+        scheduleType,
+        scheduleFrequency,
+        scheduleDate,
+        isSchedule,
     } = params;
 
     useEffect(() => {
@@ -132,8 +144,44 @@ export default function TransactionSummaryScreen() {
     };
 
     const handlePinConfirm = async (pin) => {
-        if (service === 'Data Subscription' && planId && planType) {
+        if (isSchedule === 'true' && service === 'Schedule Data' && planId && scheduleType && scheduleDate) {
+            const success = await processScheduleDataPurchase(pin);
+            if (success) {
+                setShowPinModal(false);
+            }
+            return success;
+        } else if (isSchedule === 'true' && service === 'Schedule Airtime' && scheduleType && scheduleDate) {
+            const success = await processScheduleAirtimePurchase(pin);
+            if (success) {
+                setShowPinModal(false);
+            }
+            return success;
+        } else if (isBulk === 'true' && service === 'Bulk Data' && planId && bulkType && bulkPhones) {
+            const success = await processBulkDataPurchase(pin);
+            if (success) {
+                setShowPinModal(false);
+            }
+            return success;
+        } else if (isBulk === 'true' && service === 'Bulk Airtime' && bulkType && bulkPhones) {
+            const success = await processBulkAirtimePurchase(pin);
+            if (success) {
+                setShowPinModal(false);
+            }
+            return success;
+        } else if (service === 'Data Subscription' && planId && planType) {
             const success = await processDataPurchase(pin);
+            if (success) {
+                setShowPinModal(false);
+            }
+            return success;
+        } else if (service === 'Data Pin' && planId && planType && quantity) {
+            const success = await processDataPinPurchase(pin);
+            if (success) {
+                setShowPinModal(false);
+            }
+            return success;
+        } else if (service === 'Airtime Pin' && pinSize && quantity) {
+            const success = await processAirtimePinPurchase(pin);
             if (success) {
                 setShowPinModal(false);
             }
@@ -158,6 +206,12 @@ export default function TransactionSummaryScreen() {
             return success;
         } else if (service === 'exam' && planId && quantity) {
             const success = await processExamPurchase(pin);
+            if (success) {
+                setShowPinModal(false);
+            }
+            return success;
+        } else if (service === 'Bulk SMS' && senderName && subject && phoneNumbers && message) {
+            const success = await processBulkSMSPurchase(pin);
             if (success) {
                 setShowPinModal(false);
             }
@@ -361,6 +415,278 @@ export default function TransactionSummaryScreen() {
         }
     };
 
+    const processBulkSMSPurchase = async (pin) => {
+        setProcessing(true);
+        try {
+            // Convert phone numbers from newline-separated to comma-separated
+            const bulkPhones = phoneNumbers
+                .split('\n')
+                .filter(n => n.trim().length > 0)
+                .join(',');
+
+            const response = await purchaseBulkSMS(
+                senderName || 'Default',
+                subject,
+                message,
+                amount,
+                bulkPhones,
+                pin
+            );
+
+            // Update user balance
+            if (response.user) {
+                await updateUser(response.user);
+            } else if (response.new_balance) {
+                await updateUser({ ...user, balance: response.new_balance });
+            } else if (response.balance) {
+                await updateUser({ ...user, balance: response.balance });
+            }
+
+            setProcessing(false);
+            showToast('success', response.message || 'Bulk SMS sent successfully!');
+            handleSuccess(response);
+            return true;
+        } catch (error) {
+            setProcessing(false);
+            
+            const errorMessage = error.message || 'Purchase failed. Please try again.';
+            showToast('error', errorMessage);
+            
+            if (errorMessage.toLowerCase().includes('pin')) {
+                return false;
+            }
+            
+            return false;
+        }
+    };
+
+    const processDataPinPurchase = async (pin) => {
+        setProcessing(true);
+        try {
+            const response = await purchaseDataPin(
+                network,
+                planType,
+                planId,
+                parseInt(quantity),
+                amount,
+                pin
+            );
+
+            if (response.user) {
+                await updateUser(response.user);
+            } else if (response.balance) {
+                await updateUser({ ...user, balance: response.balance });
+            }
+
+            setProcessing(false);
+            showToast('success', response.message || 'Data PIN purchase successful!');
+            handleSuccess(response);
+            return true;
+        } catch (error) {
+            setProcessing(false);
+            
+            const errorMessage = error.message || 'Purchase failed. Please try again.';
+            showToast('error', errorMessage);
+            
+            if (errorMessage.toLowerCase().includes('pin')) {
+                return false;
+            }
+            
+            return false;
+        }
+    };
+
+    const processAirtimePinPurchase = async (pin) => {
+        setProcessing(true);
+        try {
+            const response = await purchaseAirtimePin(
+                network,
+                pinSize,
+                amount,
+                parseInt(quantity),
+                pin
+            );
+
+            if (response.user) {
+                await updateUser(response.user);
+            } else if (response.new_balance) {
+                await updateUser({ ...user, balance: response.new_balance });
+            } else if (response.balance) {
+                await updateUser({ ...user, balance: response.balance });
+            }
+
+            setProcessing(false);
+            showToast('success', response.message || 'Airtime PIN purchase successful!');
+            handleSuccess(response);
+            return true;
+        } catch (error) {
+            setProcessing(false);
+            
+            const errorMessage = error.message || 'Purchase failed. Please try again.';
+            showToast('error', errorMessage);
+            
+            if (errorMessage.toLowerCase().includes('pin')) {
+                return false;
+            }
+            
+            return false;
+        }
+    };
+
+    const processBulkDataPurchase = async (pin) => {
+        setProcessing(true);
+        try {
+            const response = await purchaseBulkData(
+                network,
+                bulkType,
+                parseInt(planId),
+                amount,
+                bulkPhones,
+                pin
+            );
+
+            if (response.user) {
+                await updateUser(response.user);
+            } else if (response.new_balance) {
+                await updateUser({ ...user, balance: response.new_balance });
+            } else if (response.balance) {
+                await updateUser({ ...user, balance: response.balance });
+            }
+
+            setProcessing(false);
+            showToast('success', response.message || 'Bulk data purchase successful!');
+            handleSuccess(response);
+            return true;
+        } catch (error) {
+            setProcessing(false);
+            
+            const errorMessage = error.message || 'Purchase failed. Please try again.';
+            showToast('error', errorMessage);
+            
+            if (errorMessage.toLowerCase().includes('pin')) {
+                return false;
+            }
+            
+            return false;
+        }
+    };
+
+    const processBulkAirtimePurchase = async (pin) => {
+        setProcessing(true);
+        try {
+            const response = await purchaseBulkAirtime(
+                network,
+                bulkType,
+                parseFloat(amount),
+                bulkPhones,
+                pin
+            );
+
+            if (response.user) {
+                await updateUser(response.user);
+            } else if (response.new_balance) {
+                await updateUser({ ...user, balance: response.new_balance });
+            } else if (response.balance) {
+                await updateUser({ ...user, balance: response.balance });
+            }
+
+            setProcessing(false);
+            showToast('success', response.message || 'Bulk airtime purchase successful!');
+            handleSuccess(response);
+            return true;
+        } catch (error) {
+            setProcessing(false);
+            
+            const errorMessage = error.message || 'Purchase failed. Please try again.';
+            showToast('error', errorMessage);
+            
+            if (errorMessage.toLowerCase().includes('pin')) {
+                return false;
+            }
+            
+            return false;
+        }
+    };
+
+    const processScheduleDataPurchase = async (pin) => {
+        setProcessing(true);
+        try {
+            const response = await scheduleDataPurchase(
+                network,
+                scheduleType,
+                parseInt(planId),
+                amount,
+                beneficiary,
+                pin,
+                scheduleFrequency,
+                scheduleDate
+            );
+
+            if (response.user) {
+                await updateUser(response.user);
+            } else if (response.new_balance) {
+                await updateUser({ ...user, balance: response.new_balance });
+            } else if (response.balance) {
+                await updateUser({ ...user, balance: response.balance });
+            }
+
+            setProcessing(false);
+            showToast('success', response.message || 'Data purchase scheduled successfully!');
+            handleSuccess(response);
+            return true;
+        } catch (error) {
+            setProcessing(false);
+            
+            const errorMessage = error.message || 'Schedule failed. Please try again.';
+            showToast('error', errorMessage);
+            
+            if (errorMessage.toLowerCase().includes('pin')) {
+                return false;
+            }
+            
+            return false;
+        }
+    };
+
+    const processScheduleAirtimePurchase = async (pin) => {
+        setProcessing(true);
+        try {
+            const response = await scheduleAirtimePurchase(
+                network,
+                scheduleType,
+                parseFloat(amount),
+                beneficiary,
+                pin,
+                scheduleFrequency,
+                scheduleDate
+            );
+
+            if (response.user) {
+                await updateUser(response.user);
+            } else if (response.new_balance) {
+                await updateUser({ ...user, balance: response.new_balance });
+            } else if (response.balance) {
+                await updateUser({ ...user, balance: response.balance });
+            }
+
+            setProcessing(false);
+            showToast('success', response.message || 'Airtime purchase scheduled successfully!');
+            handleSuccess(response);
+            return true;
+        } catch (error) {
+            setProcessing(false);
+            
+            const errorMessage = error.message || 'Schedule failed. Please try again.';
+            showToast('error', errorMessage);
+            
+            if (errorMessage.toLowerCase().includes('pin')) {
+                return false;
+            }
+            
+            return false;
+        }
+    };
+
     const handleSuccess = (response = null) => {
         const successParams = { 
             service: service === 'airtime' ? 'Airtime Purchase' : service === 'electricity' ? 'Electricity Bill' : service === 'exam' ? 'Education Service' : (serviceType || service), 
@@ -397,6 +723,14 @@ export default function TransactionSummaryScreen() {
             // Add exam-specific fields
             if (response.pins) successParams.pins = JSON.stringify(response.pins);
             if (response.exam_name) successParams.examName = response.exam_name;
+            
+            // Add data pin-specific fields
+            if (response.data_pins) successParams.dataPins = JSON.stringify(response.data_pins);
+            
+            // Add airtime pin-specific fields
+            if (response.serial) successParams.serial = response.serial;
+            if (response.pin) successParams.airtimePin = response.pin;
+            if (response.pinsize) successParams.pinSize = response.pinsize;
         }
 
         // Add additional details

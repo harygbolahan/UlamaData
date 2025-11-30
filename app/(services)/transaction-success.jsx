@@ -41,6 +41,11 @@ export default function TransactionSuccessScreen() {
         meterNumber,
         discoName,
         customerAddress,
+        dataPins,
+        quantity,
+        serial,
+        airtimePin,
+        pinSize,
     } = params;
 
     const additionalDetails = [];
@@ -86,6 +91,34 @@ export default function TransactionSuccessScreen() {
     }
     if (units) {
         additionalDetails.push({ label: 'Units', value: units });
+    }
+    if (quantity && (service === 'Data Pin' || service === 'Airtime Pin')) {
+        additionalDetails.push({ label: 'Quantity', value: `${quantity} PIN(s)` });
+    }
+    if (pinSize && service === 'Airtime Pin') {
+        additionalDetails.push({ label: 'Pin Size', value: `₦${pinSize}` });
+    }
+    if (serial) {
+        additionalDetails.push({ label: 'Serial Number', value: serial, highlight: true });
+    }
+    if (airtimePin) {
+        additionalDetails.push({ label: 'PIN', value: airtimePin, highlight: true });
+    }
+    if (dataPins) {
+        try {
+            const pins = JSON.parse(dataPins);
+            if (Array.isArray(pins) && pins.length > 0) {
+                pins.forEach((pin, index) => {
+                    additionalDetails.push({ 
+                        label: `PIN ${index + 1}`, 
+                        value: pin, 
+                        highlight: true 
+                    });
+                });
+            }
+        } catch (e) {
+            console.error('Error parsing data pins:', e);
+        }
     }
     if (oldBalance) {
         additionalDetails.push({ label: 'Previous Balance', value: `₦${parseFloat(oldBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}` });

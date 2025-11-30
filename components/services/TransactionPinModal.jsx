@@ -236,7 +236,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                             >
                                 <Ionicons 
                                     name="backspace-outline" 
-                                    size={22} 
+                                    size={26.4} 
                                     color={pin.length === 0 ? colors.icon + '40' : colors.icon} 
                                 />
                             </TouchableOpacity>
@@ -250,7 +250,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                                 onPress={handleBiometricAuth}
                                 activeOpacity={0.7}
                             >
-                                <Ionicons name="finger-print" size={18} color={colors.primary} />
+                                <Ionicons name="finger-print" size={21.6} color={colors.primary} />
                                 <Text style={[styles.biometricText, { color: colors.primary, fontFamily: fonts.inter.medium }]}>
                                     Use Biometric
                                 </Text>
@@ -285,82 +285,82 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     modalContent: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: 16,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 19.2,
+        paddingTop: 9.6,
+        paddingBottom: 19.2,
     },
     modalHandle: {
-        width: 40,
-        height: 4,
-        borderRadius: 2,
+        width: 48,
+        height: 4.8,
+        borderRadius: 2.4,
         alignSelf: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     modalTitle: {
-        fontSize: 16,
-        marginBottom: 2,
+        fontSize: 19.2,
+        marginBottom: 2.4,
         textAlign: 'center',
     },
     modalSubtitle: {
-        fontSize: 12,
+        fontSize: 14.4,
         textAlign: 'center',
-        marginBottom: 14,
-        minHeight: 16,
+        marginBottom: 16.8,
+        minHeight: 19.2,
     },
     pinDisplay: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 14,
+        marginBottom: 16.8,
     },
     pinDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        marginHorizontal: 4,
+        width: 14.4,
+        height: 14.4,
+        borderRadius: 7.2,
+        marginHorizontal: 4.8,
     },
     numberPad: {
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 7.2,
     },
     numberRow: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 8,
+        marginBottom: 9.6,
     },
     numberButton: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: 8,
+        marginHorizontal: 9.6,
     },
     numberText: {
-        fontSize: 20,
+        fontSize: 24,
     },
     bottomActions: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 16,
+        gap: 19.2,
     },
     biometricAction: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
+        gap: 4.8,
+        paddingVertical: 7.2,
+        paddingHorizontal: 14.4,
     },
     biometricText: {
-        fontSize: 13,
+        fontSize: 15.6,
     },
     forgotPin: {
-        paddingVertical: 6,
-        paddingHorizontal: 12,
+        paddingVertical: 7.2,
+        paddingHorizontal: 14.4,
     },
     forgotPinText: {
-        fontSize: 13,
+        fontSize: 15.6,
     },
 });

@@ -1,16 +1,22 @@
+import TransactionPinModal from '@/components/services/TransactionPinModal';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function EarnTab() {
     const { colors, fonts, isDark } = useTheme();
-    const { getReferralData, user } = useAuth();
+    const { getReferralData, user, withdrawCashback } = useAuth();
+    const { showToast } = useToast();
     const [referralData, setReferralData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [showPinModal, setShowPinModal] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -30,7 +36,7 @@ export default function EarnTab() {
     const handleCopyCode = async () => {
         if (referralData?.referralCode) {
             await Clipboard.setStringAsync(referralData.referralCode);
-            Alert.alert('Copied!', 'Referral code copied to clipboard');
+            showToast('success', 'Referral code copied to clipboard');
         }
     };
 
@@ -43,6 +49,47 @@ export default function EarnTab() {
             } catch (error) {
                 console.error('Error sharing:', error);
             }
+        }
+    };
+
+    const handleWithdrawPress = () => {
+        const cashback = parseFloat(user?.cashback || 0);
+        if (cashback <= 0) {
+            showToast('error', 'You have no cashback to withdraw');
+            return;
+        }
+        setShowWithdrawModal(true);
+    };
+
+    const handleWithdrawConfirm = () => {
+        const amount = parseFloat(withdrawAmount);
+        const cashback = parseFloat(user?.cashback || 0);
+
+        if (!withdrawAmount || amount <= 0) {
+            showToast('error', 'Please enter a valid amount');
+            return;
+        }
+
+        if (amount > cashback) {
+            showToast('error', 'Amount exceeds available cashback');
+            return;
+        }
+
+        setShowWithdrawModal(false);
+        setShowPinModal(true);
+    };
+
+    const handlePinConfirm = async (pin) => {
+        const amount = parseFloat(withdrawAmount);
+        
+        const result = await withdrawCashback(amount, pin);
+        
+        if (result.success) {
+            setShowPinModal(false);
+            setWithdrawAmount('');
+            return true;
+        } else {
+            return false;
         }
     };
 
@@ -84,6 +131,16 @@ export default function EarnTab() {
                             </Text>
                         </View>
                     </View>
+                    <TouchableOpacity 
+                        style={styles.withdrawButton}
+                        onPress={handleWithdrawPress}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="wallet-outline" size={18} color={colors.primary} />
+                        <Text style={[styles.withdrawButtonText, { fontFamily: fonts.inter.semiBold }]}>
+                            Withdraw to Wallet
+                        </Text>
+                    </TouchableOpacity>
                 </View>
 
 
@@ -113,6 +170,87 @@ export default function EarnTab() {
 
                 <View style={{ height: 20 }} />
             </ScrollView>
+
+            {/* Withdraw Amount Modal */}
+            {showWithdrawModal && (
+                <View style={styles.modalOverlay}>
+                    <TouchableOpacity
+                        style={styles.backdrop}
+                        activeOpacity={1}
+                        onPress={() => {
+                            setShowWithdrawModal(false);
+                            setWithdrawAmount('');
+                        }}
+                    />
+                    <View style={[styles.withdrawModalContent, { backgroundColor: colors.background }]}>
+                        <View style={[styles.modalHandle, { backgroundColor: isDark ? '#3a3a3a' : '#d0d0d0' }]} />
+                        
+                        <Text style={[styles.withdrawModalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                            Withdraw Cashback
+                        </Text>
+                        <Text style={[styles.withdrawModalSubtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                            Available: ₦{user?.cashback || '0'}
+                        </Text>
+
+                        <View style={[styles.inputContainer, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                            <Text style={[styles.currencySymbol, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                ₦
+                            </Text>
+                            <TextInput
+                                style={[styles.amountInput, { color: colors.text, fontFamily: fonts.inter.semiBold }]}
+                                placeholder="0.00"
+                                placeholderTextColor={colors.icon}
+                                keyboardType="numeric"
+                                value={withdrawAmount}
+                                onChangeText={setWithdrawAmount}
+                                autoFocus
+                            />
+                        </View>
+
+                        <View style={styles.quickAmounts}>
+                            {['25', '50', '100', 'All'].map((amount) => (
+                                <TouchableOpacity
+                                    key={amount}
+                                    style={[styles.quickAmountButton, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
+                                    onPress={() => {
+                                        if (amount === 'All') {
+                                            setWithdrawAmount(user?.cashback || '0');
+                                        } else {
+                                            setWithdrawAmount(amount);
+                                        }
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.quickAmountText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                        {amount === 'All' ? 'All' : `₦${amount}`}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.confirmButton, { backgroundColor: colors.primary }]}
+                            onPress={handleWithdrawConfirm}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.confirmButtonText, { fontFamily: fonts.inter.semiBold }]}>
+                                Continue
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+            {/* Transaction PIN Modal */}
+            <TransactionPinModal
+                visible={showPinModal}
+                onClose={() => {
+                    setShowPinModal(false);
+                    setWithdrawAmount('');
+                }}
+                onConfirm={handlePinConfirm}
+                enableBiometric={false}
+            />
         </View>
     );
 }
@@ -138,6 +276,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 16,
+    },
+    withdrawButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#fff',
+        paddingVertical: 12,
+        borderRadius: 10,
+        gap: 6,
+    },
+    withdrawButtonText: {
+        fontSize: 14,
     },
     balanceLabel: { color: '#fff', fontSize: 12, opacity: 0.9, marginBottom: 6 },
     balanceAmount: { color: '#fff', fontSize: 28 },
@@ -203,4 +354,81 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     shareText: { color: '#fff', fontSize: 14 },
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'flex-end',
+    },
+    backdrop: {
+        flex: 1,
+    },
+    withdrawModalContent: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 30,
+    },
+    modalHandle: {
+        width: 48,
+        height: 5,
+        borderRadius: 2.5,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    withdrawModalTitle: {
+        fontSize: 20,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    withdrawModalSubtitle: {
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderRadius: 12,
+        marginBottom: 16,
+    },
+    currencySymbol: {
+        fontSize: 24,
+        marginRight: 8,
+    },
+    amountInput: {
+        flex: 1,
+        fontSize: 24,
+        padding: 0,
+    },
+    quickAmounts: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 24,
+        gap: 8,
+    },
+    quickAmountButton: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    quickAmountText: {
+        fontSize: 13,
+    },
+    confirmButton: {
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    confirmButtonText: {
+        color: '#fff',
+        fontSize: 16,
+    },
 });

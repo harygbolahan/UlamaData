@@ -1,0 +1,277 @@
+import { useNotification } from '@/contexts/notification-context';
+import { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// Lazy load to avoid crashes in Expo Go
+let sendTestPushNotification = null;
+try {
+  const notificationService = require('@/services/notification-service');
+  sendTestPushNotification = notificationService.sendTestPushNotification;
+} catch (error) {
+  console.warn('Notification service not available');
+}
+
+export default function NotificationsTestScreen() {
+  const { expoPushToken, notification, isRegistering, error, isSupported } = useNotification();
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendTestNotification = async () => {
+    if (!isSupported || !sendTestPushNotification) {
+      Alert.alert(
+        'Not Available',
+        'Push notifications require a development build.\n\nRun: eas build --profile development'
+      );
+      return;
+    }
+
+    if (!expoPushToken) {
+      Alert.alert('Error', 'No push token available. Make sure you are on a physical device.');
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      await sendTestPushNotification(expoPushToken, {
+        title: 'DataBeta Transaction',
+        body: 'Your data purchase was successful!',
+        data: { 
+          type: 'transaction',
+          transactionId: '12345',
+          amount: '₦500'
+        },
+      });
+      Alert.alert('Success', 'Test notification sent!');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to send notification: ' + err.message);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Push Notifications Test</Text>
+        
+        {/* Development Build Warning */}
+        {!isSupported && (
+          <View style={styles.warningBanner}>
+            <Text style={styles.warningBannerTitle}>⚠️ Development Build Required</Text>
+            <Text style={styles.warningBannerText}>
+              Push notifications don't work in Expo Go. You need to create a development build:
+            </Text>
+            <Text style={styles.codeText}>eas build --profile development</Text>
+            <Text style={styles.warningBannerText}>
+              See docs/PUSH_NOTIFICATIONS.md for complete setup instructions.
+            </Text>
+          </View>
+        )}
+        
+        {/* Push Token Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Expo Push Token</Text>
+          {isRegistering ? (
+            <Text style={styles.loadingText}>Registering for notifications...</Text>
+          ) : error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : expoPushToken ? (
+            <View style={styles.tokenContainer}>
+              <Text style={styles.tokenText} selectable>
+                {expoPushToken}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.warningText}>
+              No push token. Make sure you're on a physical device.
+            </Text>
+          )}
+        </View>
+
+        {/* Test Button */}
+        <TouchableOpacity
+          style={[styles.button, (!expoPushToken || isSending) && styles.buttonDisabled]}
+          onPress={handleSendTestNotification}
+          disabled={!expoPushToken || isSending}
+        >
+          <Text style={styles.buttonText}>
+            {isSending ? 'Sending...' : 'Send Test Notification'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Last Notification Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Last Received Notification</Text>
+          {notification ? (
+            <View style={styles.notificationCard}>
+              <Text style={styles.notificationTitle}>
+                Title: {notification.request.content.title}
+              </Text>
+              <Text style={styles.notificationBody}>
+                Body: {notification.request.content.body}
+              </Text>
+              <Text style={styles.notificationData}>
+                Data: {JSON.stringify(notification.request.content.data, null, 2)}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.infoText}>No notifications received yet</Text>
+          )}
+        </View>
+
+        {/* Instructions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Instructions</Text>
+          <Text style={styles.instructionText}>
+            1. Make sure you're on a physical device (not simulator)
+          </Text>
+          <Text style={styles.instructionText}>
+            2. Grant notification permissions when prompted
+          </Text>
+          <Text style={styles.instructionText}>
+            3. Copy your push token above
+          </Text>
+          <Text style={styles.instructionText}>
+            4. Use the test button or visit expo.dev/notifications
+          </Text>
+          <Text style={styles.instructionText}>
+            5. Paste your token and send a notification
+          </Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  content: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  section: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#333',
+  },
+  tokenContainer: {
+    backgroundColor: '#f0f0f0',
+    padding: 12,
+    borderRadius: 8,
+  },
+  tokenText: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#e74c3c',
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#f39c12',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  buttonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  notificationCard: {
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
+  },
+  notificationTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  notificationBody: {
+    fontSize: 14,
+    marginBottom: 8,
+    color: '#666',
+  },
+  notificationData: {
+    fontSize: 12,
+    color: '#999',
+    fontFamily: 'monospace',
+  },
+  instructionText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  warningBanner: {
+    backgroundColor: '#fff3cd',
+    borderLeftWidth: 4,
+    borderLeftColor: '#f39c12',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  warningBannerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  warningBannerText: {
+    fontSize: 14,
+    color: '#856404',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  codeText: {
+    fontFamily: 'monospace',
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 4,
+    fontSize: 12,
+    color: '#333',
+    marginVertical: 8,
+  },
+});

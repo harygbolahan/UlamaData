@@ -290,6 +290,35 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const withdrawCashback = async (amount, pin) => {
+    try {
+      const response = await api.post('/withdraw-cashback', {
+        amount: amount.toString(),
+        pin,
+      });
+      
+      if (response.status === 'success') {
+        showToast('success', response.message || 'Cashback successfully transferred to wallet');
+        // Update user data with new balances
+        if (response.cashback !== undefined && response.wallet !== undefined) {
+          const updatedUser = {
+            ...user,
+            cashback: response.cashback.toString(),
+            balance: response.wallet.toString(),
+            wallet: response.wallet.toString(),
+          };
+          await updateUser(updatedUser);
+        }
+        return { success: true, data: response };
+      }
+      
+      return { success: false, message: response.message };
+    } catch (error) {
+      showToast('error', error.message || 'Failed to withdraw cashback');
+      return { success: false, message: error.message };
+    }
+  };
+
   const value = {
     user,
     token,
@@ -306,6 +335,7 @@ export function AuthProvider({ children }) {
     getReferralData,
     refreshUser,
     getSupportData,
+    withdrawCashback,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

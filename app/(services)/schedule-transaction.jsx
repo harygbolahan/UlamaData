@@ -1,43 +1,184 @@
 import NetworkSelector from '@/components/services/NetworkSelector';
+import DatePicker from '@/components/ui/DatePicker';
+import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ScheduleTransactionScreen() {
     const { colors, fonts, isDark } = useTheme();
+    const { fetchDataNetworks, fetchDataTypes, fetchDataPlans, fetchAirtimeNetworks, fetchAirtimeTypes } = useServices();
+    const { showToast } = useToast();
+    
     const [serviceType, setServiceType] = useState('data');
     const [selectedNetwork, setSelectedNetwork] = useState(null);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [selectedPlan, setSelectedPlan] = useState(null);
-    const [frequency, setFrequency] = useState('daily');
+    const [amount, setAmount] = useState('');
+    const [frequency, setFrequency] = useState('Everyday');
+    const [scheduleDate, setScheduleDate] = useState('');
     const [showFrequencyModal, setShowFrequencyModal] = useState(false);
 
-    const dataPlans = [
-        { id: '1', size: '1GB', price: 300 },
-        { id: '2', size: '2GB', price: 600 },
-        { id: '3', size: '5GB', price: 1500 },
-    ];
+    const [networks, setNetworks] = useState([]);
+    const [types, setTypes] = useState([]);
+    const [selectedType, setSelectedType] = useState(null);
+    const [dataPlans, setDataPlans] = useState([]);
+    
+    const [loadingNetworks, setLoadingNetworks] = useState(false);
+    const [loadingTypes, setLoadingTypes] = useState(false);
+    const [loadingPlans, setLoadingPlans] = useState(false);
 
     const frequencies = [
-        { id: 'daily', name: 'Daily', icon: 'calendar', description: 'Every day at 12:00 AM' },
-        { id: 'weekly', name: 'Weekly', icon: 'calendar-outline', description: 'Every Monday at 12:00 AM' },
-        { id: 'monthly', name: 'Monthly', icon: 'calendar-number', description: '1st of every month' },
+        { id: 'Everyday', name: 'Everyday', icon: 'calendar', description: 'Every day at 12:00 AM' },
+        { id: 'Sunday', name: 'Sunday', icon: 'calendar-outline', description: 'Every Sunday at 12:00 AM' },
+        { id: 'Monday', name: 'Monday', icon: 'calendar-outline', description: 'Every Monday at 12:00 AM' },
+        { id: 'Tuesday', name: 'Tuesday', icon: 'calendar-outline', description: 'Every Tuesday at 12:00 AM' },
+        { id: 'Wednesday', name: 'Wednesday', icon: 'calendar-outline', description: 'Every Wednesday at 12:00 AM' },
+        { id: 'Thursday', name: 'Thursday', icon: 'calendar-outline', description: 'Every Thursday at 12:00 AM' },
+        { id: 'Friday', name: 'Friday', icon: 'calendar-outline', description: 'Every Friday at 12:00 AM' },
+        { id: 'Saturday', name: 'Saturday', icon: 'calendar-outline', description: 'Every Saturday at 12:00 AM' },
     ];
 
+    // Fetch networks when service type changes
+    useEffect(() => {
+        loadNetworks();
+    }, [serviceType]);
+
+    // Fetch types when network is selected
+    useEffect(() => {
+        if (selectedNetwork) {
+            loadTypes();
+        } else {
+            setTypes([]);
+            setSelectedType(null);
+            setDataPlans([]);
+        }
+    }, [selectedNetwork, serviceType]);
+
+    // Fetch data plans when type is selected (only for data)
+    useEffect(() => {
+        if (serviceType === 'data' && selectedNetwork && selectedType) {
+            loadDataPlans();
+        } else if (serviceType === 'data') {
+            setDataPlans([]);
+        }
+    }, [selectedNetwork, selectedType, serviceType]);
+
+    // Set default schedule date to tomorrow
+    useEffect(() => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const formattedDate = tomorrow.toISOString().split('T')[0];
+        setScheduleDate(formattedDate);
+    }, []);
+
+    const loadNetworks = async () => {
+        setLoadingNetworks(true);
+        try {
+            const data = serviceType === 'data' 
+                ? await fetchDataNetworks()
+                : await fetchAirtimeNetworks();
+            setNetworks(data);
+            setSelectedNetwork(null);
+            setSelectedType(null);
+            setDataPlans([]);
+            setSelectedPlan(null);
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load networks');
+        } finally {
+            setLoadingNetworks(false);
+        }
+    };
+
+    const loadTypes = async () => {
+        setLoadingTypes(true);
+        try {
+            const typesData = serviceType === 'data'
+                ? await fetchDataTypes(selectedNetwork.name)
+                : await fetchAirtimeTypes();
+            
+            if (serviceType === 'data') {
+                setTypes(typesData);
+                if (typesData.length > 0) {
+                    setSelectedType(typesData[0]);
+                }
+            } else {
+                setTypes(typesData);
+                if (typesData.length > 0) {
+                    setSelectedType(typesData[0].type);
+                }
+            }
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load types');
+            setTypes([]);
+        } finally {
+            setLoadingTypes(false);
+        }
+    };
+
+    const loadDataPlans = async () => {
+        setLoadingPlans(true);
+        try {
+            const plans = await fetchDataPlans(selectedNetwork.name, selectedType);
+            setDataPlans(plans);
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load data plans');
+            setDataPlans([]);
+        } finally {
+            setLoadingPlans(false);
+        }
+    };
+
     const handleContinue = () => {
-        if (!selectedNetwork || !phoneNumber || !selectedPlan) return;
+        if (!selectedNetwork || !phoneNumber) {
+            showToast('warning', 'Please select network and enter phone number');
+            return;
+        }
+
+        if (serviceType === 'data' && !selectedPlan) {
+            showToast('warning', 'Please select a data plan');
+            return;
+        }
+
+        if (serviceType === 'airtime' && !amount) {
+            showToast('warning', 'Please enter amount');
+            return;
+        }
+
+        if (serviceType === 'airtime' && parseFloat(amount) < 50) {
+            showToast('warning', 'Minimum amount is ₦50');
+            return;
+        }
+
+        if (phoneNumber.length !== 11) {
+            showToast('warning', 'Please enter a valid phone number');
+            return;
+        }
+
+        if (!scheduleDate) {
+            showToast('warning', 'Please select a schedule date');
+            return;
+        }
+
+        const finalAmount = serviceType === 'data' ? selectedPlan.price : parseFloat(amount);
 
         router.push({
             pathname: '/(services)/transaction-summary',
             params: {
-                service: `Scheduled ${serviceType === 'data' ? 'Data' : 'Airtime'}`,
+                service: serviceType === 'data' ? 'Schedule Data' : 'Schedule Airtime',
                 beneficiary: phoneNumber,
-                amount: selectedPlan.price.toString(),
+                amount: finalAmount.toString(),
                 network: selectedNetwork.name,
-                planSize: selectedPlan.size,
-                frequency: frequencies.find(f => f.id === frequency)?.name,
+                planSize: serviceType === 'data' ? selectedPlan.datasize : `₦${amount}`,
+                validity: serviceType === 'data' ? `${selectedPlan.day} days` : undefined,
+                planId: serviceType === 'data' ? selectedPlan.id.toString() : undefined,
+                scheduleType: selectedType,
+                scheduleFrequency: frequency,
+                scheduleDate: scheduleDate,
+                isSchedule: 'true',
             }
         });
     };
@@ -96,12 +237,89 @@ export default function ScheduleTransactionScreen() {
                 </View>
 
                 {/* Network & Phone */}
-                <NetworkSelector
-                    selectedNetwork={selectedNetwork}
-                    onNetworkSelect={setSelectedNetwork}
-                    phoneNumber={phoneNumber}
-                    onPhoneNumberChange={setPhoneNumber}
-                />
+                {loadingNetworks ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                            Loading networks...
+                        </Text>
+                    </View>
+                ) : (
+                    <NetworkSelector
+                        selectedNetwork={selectedNetwork}
+                        onNetworkSelect={setSelectedNetwork}
+                        phoneNumber={phoneNumber}
+                        onPhoneNumberChange={setPhoneNumber}
+                        networks={networks.map(n => ({
+                            id: n.network.toLowerCase(),
+                            name: n.network.toUpperCase(),
+                        }))}
+                    />
+                )}
+
+                {/* Type Selector */}
+                {selectedNetwork && types.length > 0 && (
+                    <>
+                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                            Select Type
+                        </Text>
+                        {loadingTypes ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="small" color={colors.primary} />
+                            </View>
+                        ) : (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.typesContainer}
+                            >
+                                {types.map((type) => {
+                                    const typeValue = serviceType === 'data' ? type : type.type;
+                                    return (
+                                        <TouchableOpacity
+                                            key={typeValue}
+                                            style={[
+                                                styles.typeChip,
+                                                { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
+                                                selectedType === typeValue && { backgroundColor: colors.primary }
+                                            ]}
+                                            onPress={() => setSelectedType(typeValue)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={[
+                                                styles.typeText,
+                                                { fontFamily: fonts.inter.semiBold },
+                                                selectedType === typeValue ? { color: '#fff' } : { color: colors.text }
+                                            ]}>
+                                                {typeValue}
+                                            </Text>
+                                            {serviceType === 'airtime' && type.discount && (
+                                                <Text style={[
+                                                    styles.typeDiscount,
+                                                    { fontFamily: fonts.inter.regular },
+                                                    selectedType === typeValue ? { color: '#fff' } : { color: colors.icon }
+                                                ]}>
+                                                    {type.discount}
+                                                </Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        )}
+                    </>
+                )}
+
+                {/* Schedule Date */}
+                <View style={{ paddingHorizontal: 20 }}>
+                    <DatePicker
+                        label="Schedule Date"
+                        value={scheduleDate}
+                        onChange={setScheduleDate}
+                        minimumDate={new Date()}
+                    />
+                </View>
+                <View style={{ height: 20 }} />
 
                 {/* Frequency */}
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
@@ -128,34 +346,57 @@ export default function ScheduleTransactionScreen() {
                 {/* Plans or Amount */}
                 {serviceType === 'data' ? (
                     <>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Select Plan
-                        </Text>
-                        <View style={styles.plansGrid}>
-                            {dataPlans.map((plan) => (
-                                <TouchableOpacity
-                                    key={plan.id}
-                                    style={[
-                                        styles.planCard,
-                                        { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
-                                        selectedPlan?.id === plan.id && {
-                                            backgroundColor: colors.primary + '20',
-                                            borderColor: colors.primary,
-                                            borderWidth: 2
-                                        }
-                                    ]}
-                                    onPress={() => setSelectedPlan(plan)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                        {plan.size}
-                                    </Text>
-                                    <Text style={[styles.planPrice, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                        ₦{plan.price}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        {selectedNetwork && selectedType && (
+                            <>
+                                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                    Select Plan
+                                </Text>
+                                {loadingPlans ? (
+                                    <View style={styles.loadingContainer}>
+                                        <ActivityIndicator size="small" color={colors.primary} />
+                                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                            Loading plans...
+                                        </Text>
+                                    </View>
+                                ) : dataPlans.length > 0 ? (
+                                    <View style={styles.plansGrid}>
+                                        {dataPlans.map((plan) => (
+                                            <TouchableOpacity
+                                                key={plan.id}
+                                                style={[
+                                                    styles.planCard,
+                                                    { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
+                                                    selectedPlan?.id === plan.id && {
+                                                        backgroundColor: colors.primary + '20',
+                                                        borderColor: colors.primary,
+                                                        borderWidth: 2
+                                                    }
+                                                ]}
+                                                onPress={() => setSelectedPlan(plan)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                                    {plan.datasize}
+                                                </Text>
+                                                <Text style={[styles.planPrice, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                                    ₦{plan.price}
+                                                </Text>
+                                                <Text style={[styles.planDays, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                                    {plan.day} {plan.day === '1' ? 'day' : 'days'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <View style={styles.emptyContainer}>
+                                        <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
+                                        <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                            No plans available
+                                        </Text>
+                                    </View>
+                                )}
+                            </>
+                        )}
                     </>
                 ) : (
                     <>
@@ -167,8 +408,8 @@ export default function ScheduleTransactionScreen() {
                             <TextInput
                                 placeholder="0.00"
                                 placeholderTextColor={colors.icon}
-                                value={selectedPlan?.price.toString() || ''}
-                                onChangeText={(text) => setSelectedPlan({ id: 'custom', size: text, price: parseFloat(text) || 0 })}
+                                value={amount}
+                                onChangeText={setAmount}
                                 keyboardType="numeric"
                                 style={[styles.amountInputText, { color: colors.text, fontFamily: fonts.inter.bold }]}
                             />
@@ -193,10 +434,10 @@ export default function ScheduleTransactionScreen() {
                     style={[
                         styles.continueButton,
                         { backgroundColor: colors.primary },
-                        (!selectedNetwork || !phoneNumber || !selectedPlan) && { opacity: 0.5 }
+                        (!selectedNetwork || !phoneNumber || (serviceType === 'data' ? !selectedPlan : !amount)) && { opacity: 0.5 }
                     ]}
                     onPress={handleContinue}
-                    disabled={!selectedNetwork || !phoneNumber || !selectedPlan}
+                    disabled={!selectedNetwork || !phoneNumber || (serviceType === 'data' ? !selectedPlan : !amount)}
                     activeOpacity={0.8}
                 >
                     <Text style={[styles.continueText, { fontFamily: fonts.inter.semiBold }]}>
@@ -309,7 +550,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     planSize: { fontSize: 16, marginBottom: 4 },
-    planPrice: { fontSize: 14 },
+    planPrice: { fontSize: 14, marginBottom: 4 },
+    planDays: { fontSize: 12 },
     amountInput: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -376,4 +618,31 @@ const styles = StyleSheet.create({
     optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     optionText: { fontSize: 15, marginBottom: 2 },
     optionDesc: { fontSize: 12 },
+    loadingContainer: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    loadingText: { fontSize: 14 },
+    emptyContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    emptyText: { fontSize: 14 },
+    typesContainer: {
+        paddingHorizontal: 20,
+        gap: 10,
+        marginBottom: 16,
+    },
+    typeChip: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+        gap: 4,
+    },
+    typeText: { fontSize: 13 },
+    typeDiscount: { fontSize: 10 },
 });

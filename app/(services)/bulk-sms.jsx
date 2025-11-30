@@ -1,14 +1,20 @@
+import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function BulkSMSScreen() {
     const { colors, fonts, isDark } = useTheme();
+    const { purchaseBulkSMS } = useServices();
+    const { showToast } = useToast();
     const [phoneNumbers, setPhoneNumbers] = useState('');
     const [message, setMessage] = useState('');
     const [senderName, setSenderName] = useState('');
+    const [subject, setSubject] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const getPhoneCount = () => {
         const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
@@ -27,7 +33,10 @@ export default function BulkSMSScreen() {
 
     const handleContinue = () => {
         const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
-        if (numbers.length === 0 || !message) return;
+        if (numbers.length === 0 || !message || !subject) {
+            showToast('warning', 'Please fill in all required fields');
+            return;
+        }
 
         router.push({
             pathname: '/(services)/transaction-summary',
@@ -37,12 +46,19 @@ export default function BulkSMSScreen() {
                 amount: getTotalAmount().toString(),
                 planSize: `${getMessageCount()} SMS per recipient`,
                 senderName: senderName || 'Default',
+                subject: subject,
+                phoneNumbers: phoneNumbers,
+                message: message,
             }
         });
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <KeyboardAvoidingView 
+            style={[styles.container, { backgroundColor: colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={0}
+        >
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -53,10 +69,13 @@ export default function BulkSMSScreen() {
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
                 {/* Sender Name */}
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                    Sender Name (Optional)
+                    Sender Name
                 </Text>
                 <View style={[styles.input, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
                     <TextInput
@@ -65,6 +84,20 @@ export default function BulkSMSScreen() {
                         value={senderName}
                         onChangeText={setSenderName}
                         maxLength={11}
+                        style={[styles.inputText, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                    />
+                </View>
+
+                {/* Subject */}
+                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                    Subject *
+                </Text>
+                <View style={[styles.input, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                    <TextInput
+                        placeholder="e.g., Promotional Message"
+                        placeholderTextColor={colors.icon}
+                        value={subject}
+                        onChangeText={setSubject}
                         style={[styles.inputText, { color: colors.text, fontFamily: fonts.inter.regular }]}
                     />
                 </View>
@@ -81,7 +114,10 @@ export default function BulkSMSScreen() {
                         onChangeText={setPhoneNumbers}
                         multiline
                         numberOfLines={6}
-                        keyboardType="phone-pad"
+                        keyboardType="default"
+                        returnKeyType="default"
+                        blurOnSubmit={false}
+                        textAlignVertical="top"
                         style={[styles.textArea, { color: colors.text, fontFamily: fonts.inter.regular }]}
                     />
                     <View style={styles.countBadge}>
@@ -103,6 +139,9 @@ export default function BulkSMSScreen() {
                         onChangeText={setMessage}
                         multiline
                         numberOfLines={8}
+                        returnKeyType="default"
+                        blurOnSubmit={false}
+                        textAlignVertical="top"
                         style={[styles.textArea, { color: colors.text, fontFamily: fonts.inter.regular }]}
                     />
                     <View style={styles.messageInfo}>
@@ -170,18 +209,22 @@ export default function BulkSMSScreen() {
                     style={[
                         styles.continueButton,
                         { backgroundColor: colors.primary },
-                        getTotalAmount() === 0 && { opacity: 0.5 }
+                        (getTotalAmount() === 0 || loading) && { opacity: 0.5 }
                     ]}
                     onPress={handleContinue}
-                    disabled={getTotalAmount() === 0}
+                    disabled={getTotalAmount() === 0 || loading}
                     activeOpacity={0.8}
                 >
-                    <Text style={[styles.continueText, { fontFamily: fonts.inter.semiBold }]}>
-                        Continue
-                    </Text>
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={[styles.continueText, { fontFamily: fonts.inter.semiBold }]}>
+                            Continue
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </View>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
