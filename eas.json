@@ -9,6 +9,16 @@
       "distribution": "internal"
     },
     "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview-local": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
       "distribution": "internal"
     },
     "production": {
