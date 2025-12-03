@@ -22,12 +22,17 @@ export default function BannerCarousel() {
   const scrollViewRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  
+
+  // Filter only active banners
+  const activeBanners = banners.filter(banner => banner.status === 'active');
+
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (activeBanners.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % banners.length;
+        const nextIndex = (prevIndex + 1) % activeBanners.length;
         scrollViewRef.current?.scrollTo({
           x: nextIndex * (BANNER_WIDTH + BANNER_SPACING),
           animated: true,
@@ -37,7 +42,7 @@ export default function BannerCarousel() {
     }, AUTO_SCROLL_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [banners.length]);
+  }, [activeBanners.length]);
 
   const handleScroll = (event) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
@@ -53,7 +58,7 @@ export default function BannerCarousel() {
     );
   }
 
-  if (!banners || banners.length === 0) {
+  if (!activeBanners || activeBanners.length === 0) {
     return null;
   }
 
@@ -71,7 +76,7 @@ export default function BannerCarousel() {
         snapToAlignment="start"
         contentContainerStyle={styles.scrollContent}
       >
-        {banners.map((banner) => (
+        {activeBanners.map((banner) => (
           <View key={banner.id} style={styles.bannerWrapper}>
             <Image
               source={{ uri: banner.imageUrl }}
@@ -82,9 +87,9 @@ export default function BannerCarousel() {
         ))}
       </ScrollView>
 
-      {banners.length > 1 && (
+      {activeBanners.length > 1 && (
         <View style={styles.pagination}>
-          {banners.map((_, index) => (
+          {activeBanners.map((_, index) => (
             <View
               key={index}
               style={[

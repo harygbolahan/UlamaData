@@ -16,6 +16,10 @@ export default function PricingScreen() {
         { id: 'airtime', name: 'Airtime', icon: 'phone-portrait' },
         { id: 'cable', name: 'Cable TV', icon: 'tv' },
         { id: 'electricity', name: 'Electricity', icon: 'flash' },
+        { id: 'exam', name: 'Exam Pins', icon: 'school' },
+        { id: 'datapin', name: 'Data Pins', icon: 'card' },
+        { id: 'airtimepin', name: 'Airtime Pins', icon: 'receipt' },
+        { id: 'bulksms', name: 'Bulk SMS', icon: 'chatbubbles' },
     ];
 
     const onRefresh = async () => {
@@ -94,6 +98,57 @@ export default function PricingScreen() {
             discount: `${token.smartdiscount}% discount`
         }));
     }, [services.electricityTokens]);
+
+    // Exam pins pricing
+    const examPricing = useMemo(() => {
+        return services.examPins.map(exam => ({
+            name: exam.name,
+            price: parseFloat(exam.price || exam.smartdiscount),
+            type: exam.type
+        }));
+    }, [services.examPins]);
+
+    // Data pin pricing
+    const dataPinPricing = useMemo(() => {
+        const grouped = {};
+        const dataPins = services.dataPinPlans.length > 0 ? services.dataPinPlans : services.dataPlans;
+        
+        dataPins.forEach(plan => {
+            if (!grouped[plan.network]) {
+                grouped[plan.network] = [];
+            }
+            grouped[plan.network].push({
+                size: plan.datasize || plan.size,
+                price: parseFloat(plan.price || plan.smartdiscount),
+                validity: plan.validity || `${plan.day} ${plan.day === '1' ? 'day' : 'days'}`,
+                type: plan.type,
+                name: plan.name
+            });
+        });
+        
+        return Object.keys(grouped).map(network => ({
+            network,
+            plans: grouped[network]
+        }));
+    }, [services.dataPinPlans, services.dataPlans]);
+
+    // Airtime pin pricing
+    const airtimePinPricing = useMemo(() => {
+        return services.airtimePinPlans.map(pin => ({
+            network: pin.network,
+            size: pin.size || pin.pinSize,
+            price: parseFloat(pin.price || pin.smartdiscount)
+        }));
+    }, [services.airtimePinPlans]);
+
+    // Bulk SMS pricing
+    const bulkSMSPricing = useMemo(() => {
+        return {
+            pricePerSMS: 2.5, // Default price per SMS
+            minQuantity: 100,
+            description: 'Send bulk SMS to multiple recipients at once'
+        };
+    }, []);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -313,6 +368,165 @@ export default function PricingScreen() {
                                     </View>
                                 </View>
                             ))}
+                        </View>
+                    )}
+
+                    {/* Exam Pins Pricing */}
+                    {selectedCategory === 'exam' && (
+                        <View style={styles.providerSection}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                Exam Pins
+                            </Text>
+                            <Text style={[styles.sectionSubtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                Purchase exam pins for various examinations
+                            </Text>
+                            <View style={[styles.table, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                                <View style={styles.tableHeader}>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold, flex: 2 }]}>
+                                        Exam Type
+                                    </Text>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        Price
+                                    </Text>
+                                </View>
+                                {examPricing.map((exam, index) => (
+                                    <View key={index} style={[styles.tableRow, index === examPricing.length - 1 && { borderBottomWidth: 0 }]}>
+                                        <View style={{ flex: 2 }}>
+                                            <Text style={[styles.tableCell, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                                {exam.name}
+                                            </Text>
+                                            {exam.type && (
+                                                <Text style={[styles.planNote, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                                    {exam.type}
+                                                </Text>
+                                            )}
+                                        </View>
+                                        <Text style={[styles.tableCell, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                            ₦{exam.price.toLocaleString()}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Data Pins Pricing */}
+                    {selectedCategory === 'datapin' && dataPinPricing.map((provider) => (
+                        <View key={provider.network} style={styles.providerSection}>
+                            <Text style={[styles.providerName, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                {provider.network} Data Pins
+                            </Text>
+                            <View style={[styles.table, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                                <View style={styles.tableHeader}>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold, flex: 1.2 }]}>
+                                        Plan
+                                    </Text>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        Price
+                                    </Text>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        Validity
+                                    </Text>
+                                </View>
+                                {provider.plans.map((plan, index) => (
+                                    <View key={index} style={[styles.tableRow, index === provider.plans.length - 1 && { borderBottomWidth: 0 }]}>
+                                        <View style={{ flex: 1.2 }}>
+                                            <Text style={[styles.tableCell, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                                {plan.size}
+                                            </Text>
+                                            {plan.name && (
+                                                <Text style={[styles.planNote, { color: colors.icon, fontFamily: fonts.inter.regular }]} numberOfLines={1}>
+                                                    {plan.name}
+                                                </Text>
+                                            )}
+                                        </View>
+                                        <Text style={[styles.tableCell, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                            ₦{plan.price.toLocaleString()}
+                                        </Text>
+                                        <Text style={[styles.tableCell, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                            {plan.validity}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    ))}
+
+                    {/* Airtime Pins Pricing */}
+                    {selectedCategory === 'airtimepin' && (
+                        <View style={styles.providerSection}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                Airtime Pins
+                            </Text>
+                            <Text style={[styles.sectionSubtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                Purchase airtime pins for resale
+                            </Text>
+                            <View style={[styles.table, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                                <View style={styles.tableHeader}>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold, flex: 1.5 }]}>
+                                        Network
+                                    </Text>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        Size
+                                    </Text>
+                                    <Text style={[styles.tableHeaderText, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        Price
+                                    </Text>
+                                </View>
+                                {airtimePinPricing.map((pin, index) => (
+                                    <View key={index} style={[styles.tableRow, index === airtimePinPricing.length - 1 && { borderBottomWidth: 0 }]}>
+                                        <Text style={[styles.tableCell, { color: colors.text, fontFamily: fonts.inter.medium, flex: 1.5 }]}>
+                                            {pin.network}
+                                        </Text>
+                                        <Text style={[styles.tableCell, { color: colors.text, fontFamily: fonts.inter.regular }]}>
+                                            ₦{pin.size}
+                                        </Text>
+                                        <Text style={[styles.tableCell, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                            ₦{pin.price.toLocaleString()}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Bulk SMS Pricing */}
+                    {selectedCategory === 'bulksms' && (
+                        <View style={styles.providerSection}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                Bulk SMS
+                            </Text>
+                            <Text style={[styles.sectionSubtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                {bulkSMSPricing.description}
+                            </Text>
+                            <View style={[styles.electricityCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                                <View style={styles.electricityHeader}>
+                                    <View style={[styles.providerIcon, { backgroundColor: colors.primary + '20' }]}>
+                                        <Ionicons name="chatbubbles" size={20} color={colors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.cardNetwork, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                            SMS Rate
+                                        </Text>
+                                        <Text style={[styles.cardType, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                            Minimum: {bulkSMSPricing.minQuantity} SMS
+                                        </Text>
+                                    </View>
+                                    <View style={[styles.discountBadge, { backgroundColor: colors.primary + '20' }]}>
+                                        <Text style={[styles.cardDiscount, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                            ₦{bulkSMSPricing.pricePerSMS}/SMS
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={{ marginTop: 16 }}>
+                                <Text style={[styles.sectionSubtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                    • Send personalized messages to multiple recipients{'\n'}
+                                    • Perfect for marketing campaigns{'\n'}
+                                    • Instant delivery{'\n'}
+                                    • Custom sender ID available
+                                </Text>
+                            </View>
                         </View>
                     )}
 

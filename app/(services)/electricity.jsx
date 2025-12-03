@@ -1,3 +1,4 @@
+import NetworkSelector from '@/components/services/NetworkSelector';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
@@ -162,39 +163,46 @@ export default function ElectricityScreen() {
                     <Ionicons name="chevron-down" size={20} color={colors.icon} />
                 </TouchableOpacity>
 
-                {/* Meter Number Input */}
-                <View style={[styles.inputContainer, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                    <TextInput
-                        placeholder="Meter Number"
-                        placeholderTextColor={colors.icon}
-                        value={meterNumber}
-                        onChangeText={(text) => {
-                            setMeterNumber(text);
-                            setVerifiedInfo(null);
-                        }}
-                        keyboardType="numeric"
-                        style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
-                        editable={!!selectedProvider}
-                    />
+                {/* Meter Number Input with Beneficiary Support */}
+                <NetworkSelector
+                    selectedNetwork={null}
+                    onNetworkSelect={() => {}}
+                    phoneNumber={meterNumber}
+                    onPhoneNumberChange={(text) => {
+                        setMeterNumber(text);
+                        setVerifiedInfo(null);
+                    }}
+                    onSelectBeneficiary={(beneficiary) => {
+                        setMeterNumber(beneficiary.phoneNumber);
+                        const provider = providers.find(p => 
+                            p.name.toLowerCase() === beneficiary.network.toLowerCase()
+                        );
+                        if (provider) {
+                            setSelectedProvider(provider);
+                        }
+                        setVerifiedInfo(null);
+                    }}
+                    beneficiaryType="electricity"
+                    networks={[]}
+                />
 
-                    <TouchableOpacity
-                        style={[
-                            styles.verifyButton, 
-                            { 
-                                backgroundColor: colors.primary,
-                                opacity: (!selectedProvider || meterNumber.length < 10) ? 0.5 : 1
-                            }
-                        ]}
-                        onPress={handleVerify}
-                        disabled={isVerifying || !selectedProvider || meterNumber.length < 10}
-                    >
-                        {isVerifying ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                            <Text style={[styles.verifyText, { fontFamily: fonts.inter.semiBold }]}>Verify</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                    style={[
+                        styles.verifyButtonFull, 
+                        { 
+                            backgroundColor: colors.primary,
+                            opacity: (!selectedProvider || meterNumber.length < 10) ? 0.5 : 1
+                        }
+                    ]}
+                    onPress={handleVerify}
+                    disabled={isVerifying || !selectedProvider || meterNumber.length < 10}
+                >
+                    {isVerifying ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <Text style={[styles.verifyText, { fontFamily: fonts.inter.semiBold }]}>Verify Meter Number</Text>
+                    )}
+                </TouchableOpacity>
 
                 {/* Verified Info */}
                 {verifiedInfo && (
@@ -404,16 +412,6 @@ const styles = StyleSheet.create({
     providerSelectorText: {
         fontSize: 15,
     },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 12,
-        marginBottom: 16,
-        gap: 10,
-    },
     providerIcon: {
         width: 32,
         height: 32,
@@ -421,16 +419,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    providerEmoji: { fontSize: 16 },
-    input: {
-        flex: 1,
-        fontSize: 14,
-        paddingVertical: 4,
-    },
-    verifyButton: {
+    verifyButtonFull: {
+        marginHorizontal: 20,
+        marginTop: -12,
+        marginBottom: 16,
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     verifyText: {
         color: '#fff',

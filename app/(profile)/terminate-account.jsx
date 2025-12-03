@@ -13,7 +13,7 @@ const scale = isSmallScreen ? 0.7 : 1;
 
 export default function TerminateAccountScreen() {
     const { colors, fonts } = useTheme();
-    const { user, logout } = useAuth();
+    const { user, logout, deleteAccount } = useAuth();
     const { showToast } = useToast();
     const router = useRouter();
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -36,16 +36,16 @@ export default function TerminateAccountScreen() {
         }
 
         setIsProcessing(true);
-        // TODO: Implement actual API call to terminate account
-        // const result = await terminateAccount({ password, reason });
         
-        setTimeout(() => {
-            setIsProcessing(false);
+        const result = await deleteAccount(password);
+        
+        if (result.success) {
             setShowConfirmDialog(false);
-            showToast('success', 'Account terminated successfully');
-            logout(true);
+            await logout(true);
             router.replace('/(auth)/login');
-        }, 2000);
+        } else {
+            setIsProcessing(false);
+        }
     };
 
     return (

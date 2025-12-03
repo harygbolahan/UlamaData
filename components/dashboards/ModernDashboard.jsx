@@ -116,7 +116,7 @@ export default function ModernDashboard() {
     ];
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Robust Modern Header */}
                 <View style={[styles.header, { backgroundColor: colors.primary }]}>
@@ -255,7 +255,19 @@ export default function ModernDashboard() {
                             </View>
                         </View>
                     </View>
+                    
+                    {/* Transfer Button */}
+                    <TouchableOpacity
+                        style={[styles.transferButton, { backgroundColor: colors.button }]}
+                        onPress={() => router.push('/(services)/funds-transfer')}
+                    >
+                        <Ionicons name="swap-horizontal" size={18} color={colors.primaryText} />
+                        <Text style={[styles.transferButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                            Transfer Funds
+                        </Text>
+                    </TouchableOpacity>
                 </View>
+            </ScrollView>
 
 
                 {/* Enhanced Services Grid */}
@@ -391,8 +403,7 @@ export default function ModernDashboard() {
                 </View>
 
                 <View style={{ height: 16 }} />
-            </ScrollView>
-        </View>
+        </ScrollView>
     );
 }
 
@@ -537,6 +548,21 @@ const styles = StyleSheet.create({
         width: 1.5,
         height: 32,
     },
+    transferButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        borderRadius: 12,
+        gap: 6,
+        marginTop: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    transferButtonText: { fontSize: 13 },
     
     // Sections
     section: { marginBottom: 22 },

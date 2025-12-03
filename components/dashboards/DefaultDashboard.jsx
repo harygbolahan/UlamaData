@@ -161,6 +161,17 @@ export default function DefaultDashboard() {
                             <Text style={[styles.topUpText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>Top Up</Text>
                         </TouchableOpacity>
                     </View>
+                    
+                    {/* Transfer Button */}
+                    <TouchableOpacity
+                        style={[styles.transferButton, { backgroundColor: colors.primaryText }]}
+                        onPress={() => router.push('/(services)/funds-transfer')}
+                    >
+                        <Ionicons name="swap-horizontal" size={18} color={colors.primary} />
+                        <Text style={[styles.transferButtonText, { fontFamily: fonts.inter.bold, color: colors.primary }]}>
+                            Transfer Funds
+                        </Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Compact Services Grid */}
@@ -346,7 +357,22 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
-    topUpText: { fontSize: 13,  },
+    topUpText: { fontSize: 13 },
+    transferButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 12,
+        gap: 6,
+        marginTop: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    transferButtonText: { fontSize: 13 },
     
     // Sections
     section: { marginBottom: 20 },

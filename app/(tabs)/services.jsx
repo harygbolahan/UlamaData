@@ -18,7 +18,8 @@ export default function ServicesTab() {
         { id: '9', name: 'Bulk SMS', icon: 'chatbubbles', color: '#00BCD4', category: 'Business', route: '/(services)/bulk-sms' },
         { id: '10', name: 'Schedule', icon: 'time', color: '#9C27B0', category: 'Automation', route: '/(services)/schedule-transaction' },
         { id: '11', name: 'Airtime Swap', icon: 'swap-horizontal', color: '#3F51B5', category: 'Convert', route: '/(services)/airtime-swap' },
-        { id: '12', name: 'Pricing', icon: 'pricetag', color: '#607D8B', category: 'Info', route: '/(services)/pricing' },
+        { id: '12', name: 'Sales Analysis', icon: 'stats-chart', color: '#00897B', category: 'Analytics', route: '/(services)/sales-analysis' },
+        { id: '13', name: 'Pricing', icon: 'pricetag', color: '#607D8B', category: 'Info', route: '/(services)/pricing' },
     ];
 
     return (

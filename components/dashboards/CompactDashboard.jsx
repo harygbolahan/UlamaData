@@ -299,28 +299,6 @@ export default function CompactDashboard() {
             </View>
 
             <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  {
-                    backgroundColor: colors.isDark
-                      ? accentColor + "20"
-                      : "#FFF5F5",
-                    borderColor: accentColor,
-                  },
-                ]}
-                onPress={() => router.push("/(services)/buy-data")}
-              >
-                <Ionicons name="gift" size={18} color={accentColor} />
-                <Text
-                  style={[
-                    styles.actionButtonText,
-                    { color: accentColor, fontFamily: fonts.inter.semiBold },
-                  ]}
-                >
-                  Buy Bundles
-                </Text>
-              </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
@@ -344,7 +322,34 @@ export default function CompactDashboard() {
                   Top Up
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: colors.isDark
+                      ? accentColor + "20"
+                      : "#FFF5F5",
+                    borderColor: accentColor,
+                  },
+                ]}
+                onPress={() => router.push("/(services)/funds-transfer")}
+              >
+                <Ionicons name="swap-horizontal" size={18} color={accentColor} />
+                <Text
+                  style={[
+                    styles.actionButtonText,
+                    { color: accentColor, fontFamily: fonts.inter.semiBold },
+                  ]}
+                >
+                  Transfer
+                </Text>
+              </TouchableOpacity>
+
+              
             </View>
+
+            
           </View>
         </View>
 
@@ -542,7 +547,7 @@ const styles = StyleSheet.create({
   balanceSubLabel: { fontSize: 11 },
   balanceDivider: { width: 1, marginHorizontal: 8 },
 
-  actionButtons: { flexDirection: "row", gap: 12 },
+  actionButtons: { flexDirection: "row", gap: 12, marginBottom: 12 },
   actionButton: {
     flex: 1,
     flexDirection: "row",
@@ -554,6 +559,20 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   actionButtonText: { fontSize: 13 },
+  transferButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  transferButtonText: { fontSize: 14, color: "#fff" },
 
   section: { marginTop: 24, paddingHorizontal: 16 },
   sectionHeader: {

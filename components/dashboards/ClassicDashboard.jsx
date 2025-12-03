@@ -10,7 +10,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import BannerCarousel from '../ui/BannerCarousel';
 
 export default function ClassicDashboard() {
-    const { fonts } = useTheme();
+    const { fonts, toggleTheme, isDark } = useTheme();
     const colors = useApiColors();
     const { user } = useAuth();
     const { transactions, loading, fetchTransactions } = useTransactions();
@@ -118,31 +118,55 @@ export default function ClassicDashboard() {
                         <Text style={[styles.greeting, { fontFamily: fonts.inter.regular, color: colors.primaryText }]}>Welcome</Text>
                         <Text style={[styles.name, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>{user?.name || 'User'}</Text>
                     </View>
-                    <TouchableOpacity style={styles.notificationButton}>
-                        <Ionicons name="notifications-outline" size={20} color={colors.primaryText} />
-                        <View style={styles.notificationBadge} />
-                    </TouchableOpacity>
+                    <View style={styles.headerRight}>
+                        <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
+                            <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color={colors.primaryText} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.notificationButton}>
+                            <Ionicons name="notifications-outline" size={20} color={colors.primaryText} />
+                            <View style={styles.notificationBadge} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Compact Balance Section */}
                 <View style={[styles.balanceSection, { backgroundColor: colors.primary }]}>
                     <View style={styles.balanceContent}>
                         <View style={styles.balanceInfo}>
+                            <Text style={[styles.balanceLabel, { fontFamily: fonts.inter.medium, color: colors.primaryText }]}>Balance</Text>
                             <View style={styles.balanceRow}>
-                                <Text style={[styles.balanceLabel, { fontFamily: fonts.inter.medium, color: colors.primaryText }]}>Balance</Text>
+                                <Text style={[styles.balanceAmount, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                                    {balanceVisible ? `₦${parseFloat(user?.wallet || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₦****'}
+                                </Text>
                                 <TouchableOpacity onPress={toggleBalanceVisibility} style={styles.eyeButton}>
                                     <Ionicons name={balanceVisible ? 'eye-outline' : 'eye-off-outline'} size={16} color={colors.primaryText} />
                                 </TouchableOpacity>
                             </View>
-                            <Text style={[styles.balanceAmount, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                                {balanceVisible ? `₦${parseFloat(user?.wallet || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₦****'}
-                            </Text>
                             <Text style={[styles.cashback, { fontFamily: fonts.inter.regular, color: colors.primaryText }]}>
                                 Cashback: {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG')}` : '₦****'}
                             </Text>
                         </View>
-                        <TouchableOpacity style={[styles.fundButton, { backgroundColor: colors.primaryText }]} onPress={() => router.push('/fund-wallet')}>
-                            <Ionicons name="add" size={20} color={colors.primary} />
+                    </View>
+                    
+                    {/* Action Buttons */}
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: colors.primaryText }]}
+                            onPress={() => router.push('/fund-wallet')}
+                        >
+                            <Ionicons name="add-circle" size={18} color={colors.primary} />
+                            <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primary }]}>
+                                Top Up
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: colors.primaryText }]}
+                            onPress={() => router.push('/(services)/funds-transfer')}
+                        >
+                            <Ionicons name="swap-horizontal" size={18} color={colors.primary} />
+                            <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primary }]}>
+                                Transfer
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -253,6 +277,15 @@ const styles = StyleSheet.create({
     },
     greeting: { fontSize: 12, marginBottom: 3, opacity: 0.85 },
     name: { fontSize: 18, letterSpacing: -0.3 },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    iconButton: { 
+        width: 36, 
+        height: 36, 
+        borderRadius: 18, 
+        backgroundColor: '#ffffff20',
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
     notificationButton: { position: 'relative' },
     notificationBadge: {
         position: 'absolute',
@@ -277,40 +310,48 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     balanceInfo: { flex: 1 },
-    balanceRow: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: 6 
-    },
     balanceLabel: { 
         fontSize: 11, 
         opacity: 0.85,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+        marginBottom: 6,
     },
-    eyeButton: { padding: 4 },
+    balanceRow: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 8,
+        marginBottom: 4,
+    },
     balanceAmount: { 
         fontSize: 26, 
-        marginBottom: 4,
         letterSpacing: -0.5,
     },
+    eyeButton: { padding: 4 },
     cashback: { 
         fontSize: 11, 
         opacity: 0.85 
     },
-    fundButton: { 
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center', 
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 3,
+    actionButtons: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 12,
     },
+    actionButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    actionButtonText: { fontSize: 13 },
     
     // Sections
     section: { marginBottom: 18 },

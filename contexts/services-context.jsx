@@ -13,14 +13,16 @@ export function ServicesProvider({ children }) {
         cablePlans: [],
         electricityTokens: [],
         examPins: [],
-        airtimePinPlans: []
+        airtimePinPlans: [],
+        dataPinPlans: [],
+        bulkSMSPricing: []
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [lastFetch, setLastFetch] = useState(null);
 
     const CACHE_KEY = '@services_data';
-    const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
     useEffect(() => {
         loadCachedData();
@@ -29,6 +31,8 @@ export function ServicesProvider({ children }) {
     const loadCachedData = async () => {
         try {
             const cached = await AsyncStorage.getItem(CACHE_KEY);
+            console.log('Cached data:', cached);
+            
             if (cached) {
                 const { data, timestamp } = JSON.parse(cached);
                 setServices(data);
@@ -53,6 +57,8 @@ export function ServicesProvider({ children }) {
 
         try {
             const data = await api.get('/pricing');
+            console.log('Fetched pricing data:', data);
+            
             
             setServices({
                 networks: data.networks || [],
@@ -62,7 +68,9 @@ export function ServicesProvider({ children }) {
                 cablePlans: data.cablePlans || [],
                 electricityTokens: data.electricityTokens || [],
                 examPins: data.examPins || [],
-                airtimePinPlans: data.airtimePinPlans || []
+                airtimePinPlans: data.airtimePinPlans || [],
+                dataPinPlans: data.dataPinPlans || [],
+                bulkSMSPricing: data.bulkSMSPricing || []
             });
 
             const timestamp = Date.now();
@@ -78,7 +86,9 @@ export function ServicesProvider({ children }) {
                     cablePlans: data.cablePlans || [],
                     electricityTokens: data.electricityTokens || [],
                     examPins: data.examPins || [],
-                    airtimePinPlans: data.airtimePinPlans || []
+                    airtimePinPlans: data.airtimePinPlans || [],
+                    dataPinPlans: data.dataPinPlans || [],
+                    bulkSMSPricing: data.bulkSMSPricing || []
                 },
                 timestamp
             }));
@@ -723,6 +733,42 @@ export function ServicesProvider({ children }) {
         }
     };
 
+    // Download Transactions API method
+    const downloadTransactions = async (searchQuery, fromDate, toDate) => {
+        try {
+            // Build query parameters - only add if they have values
+            const params = {};
+            if (searchQuery && searchQuery.trim()) {
+                params.search = searchQuery.trim();
+            }
+            if (fromDate && fromDate.trim()) {
+                params.from = fromDate.trim();
+            }
+            if (toDate && toDate.trim()) {
+                params.to = toDate.trim();
+            }
+
+            console.log('Download API params:', params);
+
+            const response = await api.get('/download-transactions', { params });
+            
+            console.log('Download API response length:', response?.length);
+            
+            // The API returns an array of transactions directly
+            if (!Array.isArray(response)) {
+                throw {
+                    message: 'Invalid response format',
+                    status: 'error'
+                };
+            }
+            
+            return response;
+        } catch (err) {
+            console.error('Error downloading transactions:', err);
+            throw err;
+        }
+    };
+
     return (
         <ServicesContext.Provider value={{
             services,
@@ -766,7 +812,8 @@ export function ServicesProvider({ children }) {
             fetchSwapDetails,
             swapAirtimeManual,
             requestSwapOtp,
-            verifySwapOtp
+            verifySwapOtp,
+            downloadTransactions
         }}>
             {children}
         </ServicesContext.Provider>

@@ -4,13 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function BeneficiaryList({ onSelectBeneficiary, limit, onViewAll }) {
+export default function BeneficiaryList({ onSelectBeneficiary, limit, onViewAll, beneficiaryType = null }) {
     const { colors, fonts, isDark } = useTheme();
     const { beneficiaries, loading, error, removeBeneficiary, searchBeneficiaries, refreshBeneficiaries } = useBeneficiaries();
     const [searchQuery, setSearchQuery] = useState('');
     const [refreshing, setRefreshing] = useState(false);
 
-    const filteredBeneficiaries = searchBeneficiaries(searchQuery);
+    const filteredBeneficiaries = searchBeneficiaries(searchQuery, beneficiaryType);
     const displayedBeneficiaries = limit ? filteredBeneficiaries.slice(0, limit) : filteredBeneficiaries;
     const hasMore = limit && filteredBeneficiaries.length > limit;
 
@@ -108,7 +108,7 @@ export default function BeneficiaryList({ onSelectBeneficiary, limit, onViewAll 
                                             {item.name}
                                         </Text>
                                         <Text style={[styles.beneficiaryPhone, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                            {item.phoneNumber} • {item.network}
+                                            {item.phoneNumber} • {item.type}
                                         </Text>
                                     </View>
                                 </View>

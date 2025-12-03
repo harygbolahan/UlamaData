@@ -1,15 +1,25 @@
+import NetworkSelector from '@/components/services/NetworkSelector';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const CABLE_IMAGES = {
     dstv: require('@/assets/cableLogos/dstv.png'),
     gotv: require('@/assets/cableLogos/gotv.png'),
     startimes: require('@/assets/cableLogos/startimes.png'),
     showmax: require('@/assets/cableLogos/showmax.png'),
+    '6CmbpwAHJc': require('@/assets/cableLogos/showmax.png'), // Showmax API pid
+};
+
+const CABLE_BACKGROUNDS = {
+    dstv: 'rgba(0, 102, 204, 0.2)',
+    gotv: 'rgba(255, 0, 0, 0.2)',
+    startimes: 'rgba(255, 165, 0, 0.2)',
+    showmax: 'rgba(139, 0, 139, 0.2)',
+    '6CmbpwAHJc': 'rgba(139, 0, 139, 0.2)', // Showmax API pid
 };
 
 export default function CableTVScreen() {
@@ -41,10 +51,24 @@ export default function CableTVScreen() {
         }
     }, [selectedProvider]);
 
+    // Set GOtv as default provider once providers are loaded
+    useEffect(() => {
+        if (providers.length > 0 && !selectedProvider) {
+            const gotvProvider = providers.find(p => 
+                p.name.toLowerCase().includes('gotv') || 
+                p.pid === 'gotv'
+            );
+            if (gotvProvider) {
+                setSelectedProvider(gotvProvider);
+            }
+        }
+    }, [providers]);
+
     const loadProviders = async () => {
         try {
             setLoadingProviders(true);
             const data = await fetchCableProviders();
+            console.log('Cable Providers:', data); // Debug: Check provider structure
             setProviders(data);
         } catch (error) {
             Alert.alert('Error', error.message || 'Failed to load cable providers');
@@ -125,51 +149,64 @@ export default function CableTVScreen() {
                 ) : (
                     <>
                         {/* Provider & Smart Card Input */}
-                        <View style={[styles.inputContainer, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                            <TouchableOpacity
-                                style={styles.providerButton}
-                                onPress={() => setShowProviderModal(true)}
-                            >
-                                {selectedProvider ? (
-                                    <View style={styles.providerIcon}>
-                                        <Image
-                                            source={CABLE_IMAGES[selectedProvider.pid] || CABLE_IMAGES[selectedProvider.name.toLowerCase()]}
-                                            style={styles.providerImage}
-                                            resizeMode="contain"
-                                        />
-                                    </View>
-                                ) : (
-                                    <View style={[styles.providerIcon, { backgroundColor: colors.icon + '30' }]}>
-                                        <Ionicons name="tv-outline" size={16} color={colors.icon} />
-                                    </View>
-                                )}
-                                <Ionicons name="chevron-down" size={16} color={colors.icon} />
-                            </TouchableOpacity>
+                        <NetworkSelector
+                            selectedNetwork={selectedProvider ? {
+                                id: selectedProvider.pid || selectedProvider.name.toLowerCase(),
+                                name: selectedProvider.name
+                            } : null}
+                            onNetworkSelect={(network) => {
+                                const provider = providers.find(p => 
+                                    p.pid === network.id || p.name.toLowerCase() === network.id
+                                );
+                                if (provider) {
+                                    setSelectedProvider(provider);
+                                    setVerifiedInfo(null);
+                                }
+                            }}
+                            phoneNumber={smartCardNumber}
+                            onPhoneNumberChange={(text) => {
+                                setSmartCardNumber(text);
+                                setVerifiedInfo(null);
+                            }}
+                            onSelectBeneficiary={(beneficiary) => {
+                                setSmartCardNumber(beneficiary.phoneNumber);
+                                const provider = providers.find(p => 
+                                    p.name.toLowerCase() === beneficiary.network.toLowerCase()
+                                );
+                                if (provider) {
+                                    setSelectedProvider(provider);
+                                }
+                                setVerifiedInfo(null);
+                            }}
+                            beneficiaryType="cable"
+                            networks={providers.map(p => ({
+                                id: p.pid || p.name.toLowerCase(),
+                                name: p.name
+                            }))}
+                            customImages={CABLE_IMAGES}
+                            customBackgrounds={CABLE_BACKGROUNDS}
+                        />
 
-                    <TextInput
-                        placeholder="Smart Card Number"
-                        placeholderTextColor={colors.icon}
-                        value={smartCardNumber}
-                        onChangeText={(text) => {
-                            setSmartCardNumber(text);
-                            setVerifiedInfo(null);
-                        }}
-                        keyboardType="numeric"
-                        style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
-                    />
-
-                    <TouchableOpacity
-                        style={[styles.verifyButton, { backgroundColor: colors.primary }]}
-                        onPress={handleVerify}
-                        disabled={isVerifying || !selectedProvider || smartCardNumber.length < 10}
-                    >
-                        {isVerifying ? (
-                            <Text style={[styles.verifyText, { fontFamily: fonts.inter.semiBold }]}>...</Text>
-                        ) : (
-                            <Text style={[styles.verifyText, { fontFamily: fonts.inter.semiBold }]}>Verify</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity
+                            style={[
+                                styles.verifyButton, 
+                                { 
+                                    backgroundColor: colors.primary,
+                                    marginHorizontal: 20,
+                                    marginTop: -12,
+                                    marginBottom: 20,
+                                    opacity: (!selectedProvider || smartCardNumber.length < 10) ? 0.5 : 1
+                                }
+                            ]}
+                            onPress={handleVerify}
+                            disabled={isVerifying || !selectedProvider || smartCardNumber.length < 10}
+                        >
+                            {isVerifying ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={[styles.verifyText, { fontFamily: fonts.inter.semiBold }]}>Verify Smart Card</Text>
+                            )}
+                        </TouchableOpacity>
 
                         {/* Verified Info */}
                         {verifiedInfo && (
@@ -250,40 +287,51 @@ export default function CableTVScreen() {
                         <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                             Select Provider
                         </Text>
-                        {providers.map((provider) => (
-                            <TouchableOpacity
-                                key={provider.id}
-                                style={[styles.option, { borderBottomColor: isDark ? '#2a2a2a' : '#f0f0f0' }]}
-                                onPress={() => {
-                                    setSelectedProvider(provider);
-                                    setShowProviderModal(false);
-                                    setVerifiedInfo(null);
-                                    setSmartCardNumber('');
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <View style={styles.optionLeft}>
-                                    <View style={styles.icon}>
-                                        <Image
-                                            source={CABLE_IMAGES[provider.pid] || CABLE_IMAGES[provider.name.toLowerCase()]}
-                                            style={styles.iconImage}
-                                            resizeMode="contain"
-                                        />
-                                    </View>
-                                    <View>
-                                        <Text style={[styles.optionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                            {provider.name}
-                                        </Text>
-                                        {provider.discount && (
-                                            <Text style={[styles.discountText, { color: colors.success, fontFamily: fonts.inter.regular }]}>
-                                                {provider.discount}
+                        {providers.map((provider) => {
+                            // Try multiple ways to find the image: pid, lowercase name, or name
+                            const lowerName = provider.name.toLowerCase();
+                            const providerImage = CABLE_IMAGES[provider.pid] || CABLE_IMAGES[lowerName] || CABLE_IMAGES[provider.name];
+                            const providerBg = CABLE_BACKGROUNDS[provider.pid] || CABLE_BACKGROUNDS[lowerName] || CABLE_BACKGROUNDS[provider.name] || 'rgba(128, 128, 128, 0.2)';
+                            
+                            return (
+                                <TouchableOpacity
+                                    key={provider.id}
+                                    style={[styles.option, { borderBottomColor: isDark ? '#2a2a2a' : '#f0f0f0' }]}
+                                    onPress={() => {
+                                        setSelectedProvider(provider);
+                                        setShowProviderModal(false);
+                                        setVerifiedInfo(null);
+                                        setSmartCardNumber('');
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.optionLeft}>
+                                        <View style={[styles.icon, { backgroundColor: providerBg }]}>
+                                            {providerImage ? (
+                                                <Image
+                                                    source={providerImage}
+                                                    style={styles.iconImage}
+                                                    resizeMode="contain"
+                                                />
+                                            ) : (
+                                                <Ionicons name="tv-outline" size={20} color={colors.icon} />
+                                            )}
+                                        </View>
+                                        <View>
+                                            <Text style={[styles.optionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                                {provider.name}
                                             </Text>
-                                        )}
+                                            {provider.discount && (
+                                                <Text style={[styles.discountText, { color: colors.success, fontFamily: fonts.inter.regular }]}>
+                                                    {provider.discount}
+                                                </Text>
+                                            )}
+                                        </View>
                                     </View>
-                                </View>
-                                <Ionicons name="chevron-forward" size={20} color={colors.icon} />
-                            </TouchableOpacity>
-                        ))}
+                                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </View>
             </Modal>
@@ -302,42 +350,12 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     headerTitle: { fontSize: 18 },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: 20,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderRadius: 12,
-        marginBottom: 20,
-        gap: 10,
-    },
-    providerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    providerIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    providerImage: {
-        width: 32,
-        height: 32,
-    },
-    input: {
-        flex: 1,
-        fontSize: 14,
-        paddingVertical: 4,
-    },
     verifyButton: {
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     verifyText: {
         color: '#fff',

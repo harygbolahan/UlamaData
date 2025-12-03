@@ -40,6 +40,8 @@ export function BeneficiaryProvider({ children }) {
         try {
             // Try to load from cache first
             const cached = await AsyncStorage.getItem(CACHE_KEY);
+                            console.log('Cache Beneficiaries 1, ', cached);
+
             if (cached) {
                 const { data, timestamp } = JSON.parse(cached);
                 setBeneficiaries(data);
@@ -60,6 +62,10 @@ export function BeneficiaryProvider({ children }) {
         }
     };
 
+        console.log('Beneficiaries, ', beneficiaries);
+
+    
+
     const fetchBeneficiaries = async () => {
         try {
             const data = await api.get('/get-beneficiaries');
@@ -70,6 +76,7 @@ export function BeneficiaryProvider({ children }) {
                 phoneNumber: item.phone,
                 name: item.name,
                 network: detectNetwork(item.phone),
+                type: item.type || 'topup', // topup, cable, electricity
                 addedAt: new Date().toISOString()
             }));
 
@@ -81,6 +88,9 @@ export function BeneficiaryProvider({ children }) {
                 timestamp: Date.now()
             }));
 
+            console.log('Beneficiaries, ', transformedData);
+            
+
             setLoading(false);
         } catch (err) {
             console.error('Error fetching beneficiaries:', err);
@@ -89,11 +99,12 @@ export function BeneficiaryProvider({ children }) {
         }
     };
 
-    const addBeneficiary = async (phoneNumber, name = null) => {
+    const addBeneficiary = async (phoneNumber, name = null, type = 'topup') => {
         try {
             const response = await api.post('/add-beneficiary', {
                 name: name || phoneNumber,
-                phone: phoneNumber
+                phone: phoneNumber,
+                type: type // topup, cable, electricity
             });
 
             if (response.status === 'success') {
@@ -138,14 +149,26 @@ export function BeneficiaryProvider({ children }) {
         }
     };
 
-    const searchBeneficiaries = (query) => {
-        if (!query) return beneficiaries;
+    const searchBeneficiaries = (query, type = null) => {
+        let filtered = beneficiaries;
+        
+        // Filter by type if specified
+        if (type) {
+            filtered = filtered.filter(b => b.type === type);
+        }
+        
+        // Filter by search query
+        if (!query) return filtered;
         const lowerQuery = query.toLowerCase();
-        return beneficiaries.filter(b =>
+        return filtered.filter(b =>
             b.phoneNumber.includes(query) ||
             b.name.toLowerCase().includes(lowerQuery) ||
             b.network.toLowerCase().includes(lowerQuery)
         );
+    };
+
+    const getBeneficiariesByType = (type) => {
+        return beneficiaries.filter(b => b.type === type);
     };
 
     const refreshBeneficiaries = () => {
@@ -160,6 +183,7 @@ export function BeneficiaryProvider({ children }) {
             addBeneficiary,
             removeBeneficiary,
             searchBeneficiaries,
+            getBeneficiariesByType,
             refreshBeneficiaries,
         }}>
             {children}

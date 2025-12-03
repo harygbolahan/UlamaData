@@ -1,6 +1,5 @@
 import BeneficiaryList from '@/components/services/BeneficiaryList';
 import NetworkSelector from '@/components/services/NetworkSelector';
-import { useBeneficiaries } from '@/contexts/beneficiary-context';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
@@ -11,7 +10,6 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 
 export default function BuyDataScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { addBeneficiary } = useBeneficiaries();
     const { fetchDataNetworks, fetchDataTypes, fetchDataPlans } = useServices();
     const { showToast } = useToast();
     
@@ -27,7 +25,6 @@ export default function BuyDataScreen() {
     const [loadingNetworks, setLoadingNetworks] = useState(false);
     const [loadingTypes, setLoadingTypes] = useState(false);
     const [loadingPlans, setLoadingPlans] = useState(false);
-    const [savingBeneficiary, setSavingBeneficiary] = useState(false);
 
     // Fetch networks on mount
     useEffect(() => {
@@ -225,36 +222,7 @@ export default function BuyDataScreen() {
                             </>
                         )}
 
-                        {/* Save Beneficiary Button */}
-                        {phoneNumber.length === 11 && selectedNetwork && (
-                            <TouchableOpacity
-                                style={[styles.saveBeneficiaryButton, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
-                                onPress={async () => {
-                                    setSavingBeneficiary(true);
-                                    try {
-                                        await addBeneficiary(phoneNumber, selectedNetwork.name);
-                                        // Toast is already shown in the context
-                                    } catch (error) {
-                                        // Error toast is already shown in the context
-                                    } finally {
-                                        setSavingBeneficiary(false);
-                                    }
-                                }}
-                                activeOpacity={0.7}
-                                disabled={savingBeneficiary}
-                            >
-                                {savingBeneficiary ? (
-                                    <ActivityIndicator size="small" color={colors.primary} />
-                                ) : (
-                                    <>
-                                        <Ionicons name="bookmark-outline" size={16} color={colors.primary} />
-                                        <Text style={[styles.saveBeneficiaryText, { color: colors.primary, fontFamily: fonts.inter.medium }]}>
-                                            Save Beneficiary
-                                        </Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-                        )}
+
 
                         {/* Plan Type Selector */}
                 {selectedNetwork && (
@@ -446,20 +414,4 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     emptyText: { fontSize: 14 },
-    saveBeneficiaryButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        alignSelf: 'flex-end',
-        marginHorizontal: 20,
-        marginBottom: 20,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-        gap: 6,
-        minWidth: 160,
-    },
-    saveBeneficiaryText: {
-        fontSize: 13,
-    },
 });

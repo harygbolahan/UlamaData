@@ -12,6 +12,13 @@ const NETWORK_IMAGES = {
     glo: require('@/assets/networks/glo.png'),
 };
 
+const NETWORK_BACKGROUNDS = {
+    mtn: 'rgba(255, 204, 0, 0.9)',
+    airtel: 'rgba(255, 0, 0, 0.2)',
+    '9mobile': 'rgba(0, 166, 90, 0.2)',
+    glo: 'rgba(0, 168, 89, 0.2)',
+};
+
 export default function NetworkSelector({
     selectedNetwork,
     onNetworkSelect,
@@ -19,29 +26,61 @@ export default function NetworkSelector({
     onPhoneNumberChange,
     onViewAllBeneficiaries,
     onSelectBeneficiary,
+    beneficiaryType = 'topup', // topup, cable, electricity
     networks = [
         { id: 'mtn', name: 'MTN', color: '#FFCC00' },
         { id: 'airtel', name: 'AIRTEL', color: '#FF0000' },
         { id: '9mobile', name: '9MOBILE', color: '#00A65A' },
         { id: 'glo', name: 'GLO', color: '#00A859' },
-    ]
+    ],
+    customImages = null, // Custom images for cable/electricity providers
+    customBackgrounds = null // Custom backgrounds for cable/electricity providers
 }) {
     const { colors, fonts, isDark } = useTheme();
     const { searchBeneficiaries } = useBeneficiaries();
+    
+    // Use custom images/backgrounds if provided, otherwise use default network images
+    const imageSource = customImages || NETWORK_IMAGES;
+    const backgroundSource = customBackgrounds || NETWORK_BACKGROUNDS;
+    
+    // Helper function to get image/background with fallback
+    const getImage = (networkId, networkName) => {
+        if (!networkId && !networkName) return null;
+        const lowerCaseId = networkId?.toLowerCase();
+        const lowerCaseName = networkName?.toLowerCase();
+        return imageSource[networkId] || imageSource[lowerCaseId] || imageSource[networkName] || imageSource[lowerCaseName];
+    };
+    
+    const getBackground = (networkId, networkName) => {
+        if (!networkId && !networkName) return 'rgba(128, 128, 128, 0.2)';
+        const lowerCaseId = networkId?.toLowerCase();
+        const lowerCaseName = networkName?.toLowerCase();
+        return backgroundSource[networkId] || backgroundSource[lowerCaseId] || backgroundSource[networkName] || backgroundSource[lowerCaseName] || 'rgba(128, 128, 128, 0.2)';
+    };
     const [showNetworkModal, setShowNetworkModal] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
 
+    // Set MTN as default network on mount if no network is selected
+    useEffect(() => {
+        if (!selectedNetwork) {
+            const mtnNetwork = networks.find(n => n.id === 'mtn');
+            if (mtnNetwork && onNetworkSelect) {
+                onNetworkSelect(mtnNetwork);
+            }
+        }
+    }, []);
+
     useEffect(() => {
         if (phoneNumber.length > 0) {
-            const matches = searchBeneficiaries(phoneNumber);
+            const matches = searchBeneficiaries(phoneNumber, beneficiaryType);
             setSuggestions(matches);
             setShowSuggestions(matches.length > 0);
         } else {
             setSuggestions([]);
             setShowSuggestions(false);
         }
-    }, [phoneNumber]);
+    }, [phoneNumber, beneficiaryType]);
 
     const handlePhoneNumberChange = (text) => {
         onPhoneNumberChange(text);
@@ -116,49 +155,59 @@ export default function NetworkSelector({
         }
     };
 
+    const showNetworkButton = networks && networks.length > 0;
+
     return (
         <>
             <View style={[styles.container, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                {/* Network Selector */}
-                <TouchableOpacity
-                    style={styles.networkButton}
-                    onPress={() => setShowNetworkModal(true)}
-                >
-                    {selectedNetwork ? (
-                        <View style={styles.networkIcon}>
-                            <Image
-                                source={NETWORK_IMAGES[selectedNetwork.id]}
-                                style={styles.networkImage}
-                                resizeMode="contain"
-                            />
-                        </View>
-                    ) : (
-                        <View style={[styles.networkIcon, { backgroundColor: colors.icon + '30' }]}>
-                            <Ionicons name="business-outline" size={16} color={colors.icon} />
-                        </View>
-                    )}
-                    <Ionicons name="chevron-down" size={16} color={colors.icon} />
-                </TouchableOpacity>
+                {/* Network Selector - Only show if networks are provided */}
+                {showNetworkButton && (
+                    <TouchableOpacity
+                        style={styles.networkButton}
+                        onPress={() => setShowNetworkModal(true)}
+                    >
+                        {selectedNetwork ? (
+                            <View style={[styles.networkIcon, { backgroundColor: getBackground(selectedNetwork.id, selectedNetwork.name) }]}>
+                                {getImage(selectedNetwork.id, selectedNetwork.name) ? (
+                                    <Image
+                                        source={getImage(selectedNetwork.id, selectedNetwork.name)}
+                                        style={styles.networkImage}
+                                        resizeMode="contain"
+                                    />
+                                ) : (
+                                    <Ionicons name="business-outline" size={16} color={colors.icon} />
+                                )}
+                            </View>
+                        ) : (
+                            <View style={[styles.networkIcon, { backgroundColor: 'rgba(128, 128, 128, 0.2)' }]}>
+                                <Ionicons name="business-outline" size={16} color={colors.icon} />
+                            </View>
+                        )}
+                        <Ionicons name="chevron-down" size={16} color={colors.icon} />
+                    </TouchableOpacity>
+                )}
 
                 {/* Phone Number Input */}
                 <TextInput
-                    placeholder="Phone Number"
+                    placeholder={beneficiaryType === 'electricity' ? 'Meter Number' : beneficiaryType === 'cable' ? 'Smart Card Number' : 'Phone Number'}
                     placeholderTextColor={colors.icon}
                     value={phoneNumber}
                     onChangeText={handlePhoneNumberChange}
-                    keyboardType="phone-pad"
-                    maxLength={11}
+                    keyboardType={beneficiaryType === 'topup' ? 'phone-pad' : 'numeric'}
+                    maxLength={beneficiaryType === 'topup' ? 11 : undefined}
                     style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
                 />
 
-                {/* Contact Button */}
-                <TouchableOpacity 
-                    style={styles.contactButton}
-                    onPress={handleContactPicker}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons name="person-add-outline" size={24} color={colors.icon} />
-                </TouchableOpacity>
+                {/* Contact Button - Only show for topup (phone numbers) */}
+                {beneficiaryType === 'topup' && (
+                    <TouchableOpacity 
+                        style={styles.contactButton}
+                        onPress={handleContactPicker}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="person-add-outline" size={24} color={colors.icon} />
+                    </TouchableOpacity>
+                )}
             </View>
 
             {/* Beneficiary Suggestions */}
@@ -184,7 +233,7 @@ export default function NetworkSelector({
                                         {item.name}
                                     </Text>
                                     <Text style={[styles.suggestionPhone, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                        {item.phoneNumber} • {item.network}
+                                        {item.phoneNumber} • {item.type}
                                     </Text>
                                 </View>
                             </TouchableOpacity>
@@ -208,50 +257,56 @@ export default function NetworkSelector({
                 </View>
             )}
 
-            {/* Network Modal */}
-            <Modal
-                visible={showNetworkModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowNetworkModal(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-                        <View style={styles.modalHandle} />
-                        <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                            Select Network
-                        </Text>
-                        {networks.map((network) => (
-                            <TouchableOpacity
-                                key={network.id}
-                                style={[
-                                    styles.networkOption,
-                                    { borderBottomColor: isDark ? '#2a2a2a' : '#f0f0f0' }
-                                ]}
-                                onPress={() => {
-                                    onNetworkSelect(network);
-                                    setShowNetworkModal(false);
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <View style={styles.networkOptionLeft}>
-                                    <View style={styles.networkIconLarge}>
-                                        <Image
-                                            source={NETWORK_IMAGES[network.id]}
-                                            style={styles.networkImageLarge}
-                                            resizeMode="contain"
-                                        />
+            {/* Network Modal - Only show if networks are provided */}
+            {showNetworkButton && (
+                <Modal
+                    visible={showNetworkModal}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowNetworkModal(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+                            <View style={styles.modalHandle} />
+                            <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                {beneficiaryType === 'cable' ? 'Select Provider' : 'Select Network'}
+                            </Text>
+                            {networks.map((network) => (
+                                <TouchableOpacity
+                                    key={network.id}
+                                    style={[
+                                        styles.networkOption,
+                                        { borderBottomColor: isDark ? '#2a2a2a' : '#f0f0f0' }
+                                    ]}
+                                    onPress={() => {
+                                        onNetworkSelect(network);
+                                        setShowNetworkModal(false);
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.networkOptionLeft}>
+                                        <View style={[styles.networkIconLarge, { backgroundColor: getBackground(network.id, network.name) }]}>
+                                            {getImage(network.id, network.name) ? (
+                                                <Image
+                                                    source={getImage(network.id, network.name)}
+                                                    style={styles.networkImageLarge}
+                                                    resizeMode="contain"
+                                                />
+                                            ) : (
+                                                <Ionicons name="business-outline" size={20} color={colors.icon} />
+                                            )}
+                                        </View>
+                                        <Text style={[styles.networkOptionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                            {network.name}
+                                        </Text>
                                     </View>
-                                    <Text style={[styles.networkOptionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                        {network.name}
-                                    </Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={20} color={colors.icon} />
-                            </TouchableOpacity>
-                        ))}
+                                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
-                </View>
-            </Modal>
+                </Modal>
+            )}
         </>
     );
 }

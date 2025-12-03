@@ -226,6 +226,56 @@ export function PaymentProvider({ children }) {
         return fetchPaymentData();
     };
 
+    // Funds Transfer methods (not cached - real-time operations)
+    const getBanks = async () => {
+        try {
+            const response = await api.get('/get-banks');
+            return response;
+        } catch (err) {
+            console.error('Error fetching banks:', err);
+            throw err;
+        }
+    };
+
+    const getTransferCharge = async () => {
+        try {
+            const response = await api.get('/get-transfer-charge');
+            return response;
+        } catch (err) {
+            console.error('Error fetching transfer charge:', err);
+            throw err;
+        }
+    };
+
+    const validateAccount = async (bank, accountNumber) => {
+        try {
+            const response = await api.post('/validate-account', {
+                bank,
+                accountNumber
+            });
+            return response;
+        } catch (err) {
+            console.error('Error validating account:', err);
+            throw err;
+        }
+    };
+
+    const transferFunds = async (bank, amount, accountNumber, source, pin) => {
+        try {
+            const response = await api.post('/fund-transfer', {
+                bank,
+                amount,
+                accountNumber,
+                source,
+                pin
+            });
+            return response;
+        } catch (err) {
+            console.error('Error transferring funds:', err);
+            throw err;
+        }
+    };
+
     return (
         <PaymentContext.Provider value={{
             paymentSettings,
@@ -238,7 +288,11 @@ export function PaymentProvider({ children }) {
             initiateCardPayment,
             generateAccount,
             getAvailablePaymentMethods,
-            refreshPaymentData
+            refreshPaymentData,
+            getBanks,
+            getTransferCharge,
+            validateAccount,
+            transferFunds
         }}>
             {children}
         </PaymentContext.Provider>

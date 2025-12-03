@@ -5,7 +5,7 @@ import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function CardPaymentScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -28,14 +28,11 @@ export default function CardPaymentScreen() {
             const response = await initiateCardPayment(parseFloat(amount));
             
             if (response.link) {
-                // Open payment link in browser
-                const canOpen = await Linking.canOpenURL(response.link);
-                if (canOpen) {
-                    await Linking.openURL(response.link);
-                    showToast('info', 'Complete payment in your browser');
-                } else {
-                    showToast('error', 'Unable to open payment link');
-                }
+                // Navigate to in-app WebView
+                router.push({
+                    pathname: '/(fund-wallet)/payment-webview',
+                    params: { url: response.link }
+                });
             } else if (response.status === 'inactive') {
                 showToast('error', 'Card payment is currently unavailable');
             } else {
@@ -113,7 +110,7 @@ export default function CardPaymentScreen() {
                         Secure Card Payment
                     </Text>
                     <Text style={[styles.infoText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        You will be redirected to a secure payment page to complete your transaction
+                        Complete your payment securely within the app
                     </Text>
                 </View>
 
@@ -144,7 +141,7 @@ export default function CardPaymentScreen() {
                             <Text style={[styles.stepText, { fontFamily: fonts.inter.bold }]}>3</Text>
                         </View>
                         <Text style={[styles.instructionText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                            Complete payment and return to the app
+                            Complete payment within the app
                         </Text>
                     </View>
                 </View>

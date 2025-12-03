@@ -1,8 +1,10 @@
 import BiometricSetupModal from '@/components/services/BiometricSetupModal';
+import SaveBeneficiaryModal from '@/components/services/SaveBeneficiaryModal';
 import TransactionPinModal from '@/components/services/TransactionPinModal';
 import Button from '@/components/ui/Button';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useAuth } from '@/contexts/auth-context';
+import { useBeneficiaries } from '@/contexts/beneficiary-context';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
@@ -18,6 +20,7 @@ export default function TransactionSummaryScreen() {
     const { purchaseData, purchaseAirtime, purchaseCable, purchaseElectricity, purchaseExam, purchaseBulkSMS, purchaseDataPin, purchaseAirtimePin, purchaseBulkData, purchaseBulkAirtime, scheduleDataPurchase, scheduleAirtimePurchase } = useServices();
     const { showToast } = useToast();
     const { user, updateUser, refreshUser } = useAuth();
+    const { addBeneficiary } = useBeneficiaries();
     const [useCashback, setUseCashback] = useState(false);
     const [showPinModal, setShowPinModal] = useState(false);
     const [showBiometricSetup, setShowBiometricSetup] = useState(false);
@@ -25,6 +28,7 @@ export default function TransactionSummaryScreen() {
     const [loadingUser, setLoadingUser] = useState(true);
     const [biometricEnabled, setBiometricEnabled] = useState(false);
     const [biometricAvailable, setBiometricAvailable] = useState(false);
+    const [showSaveBeneficiaryModal, setShowSaveBeneficiaryModal] = useState(false);
 
     const {
         service = 'Data Subscription',
@@ -247,13 +251,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -289,13 +290,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -327,13 +325,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -366,13 +361,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -403,13 +395,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -448,13 +437,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -484,13 +470,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -521,13 +504,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -559,13 +539,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -596,13 +573,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -636,13 +610,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Schedule failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -675,13 +646,10 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
+            setShowPinModal(false);
             
             const errorMessage = error.message || 'Schedule failed. Please try again.';
             showToast('error', errorMessage);
-            
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
-            }
             
             return false;
         }
@@ -937,6 +905,20 @@ export default function TransactionSummaryScreen() {
                     </View> */}
                 </View>
 
+                {/* Save Beneficiary Button - Show for data, airtime, cable, and electricity services */}
+                {(service === 'Data Subscription' || service === 'airtime' || service === 'cable' || service === 'electricity') && beneficiary && beneficiary.length >= 10 && (network || provider) && (
+                    <TouchableOpacity
+                        style={[styles.saveBeneficiaryButton, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
+                        onPress={() => setShowSaveBeneficiaryModal(true)}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="bookmark-outline" size={16} color={colors.primary} />
+                        <Text style={[styles.saveBeneficiaryText, { color: colors.primary, fontFamily: fonts.inter.medium }]}>
+                            Save Beneficiary
+                        </Text>
+                    </TouchableOpacity>
+                )}
+
                 <View style={styles.authContainer}>
                     {biometricAvailable && (
                         <TouchableOpacity
@@ -1000,6 +982,27 @@ export default function TransactionSummaryScreen() {
                 visible={showBiometricSetup}
                 onClose={() => setShowBiometricSetup(false)}
                 onSuccess={handleBiometricSetupSuccess}
+            />
+
+            <SaveBeneficiaryModal
+                visible={showSaveBeneficiaryModal}
+                onClose={() => setShowSaveBeneficiaryModal(false)}
+                onSave={async (name) => {
+                    try {
+                        // Determine beneficiary type based on service
+                        let beneficiaryType = 'topup';
+                        if (service === 'cable') {
+                            beneficiaryType = 'cable';
+                        } else if (service === 'electricity') {
+                            beneficiaryType = 'electricity';
+                        }
+                        
+                        await addBeneficiary(beneficiary, name, beneficiaryType);
+                    } catch (error) {
+                        // Error toast is already shown in the context
+                    }
+                }}
+                phoneNumber={beneficiary}
             />
 
             {(loadingUser || processing) && <LoadingOverlay visible={true} />}
@@ -1146,5 +1149,19 @@ const styles = StyleSheet.create({
     pinButtonText: {
         fontSize: 16,
         color: '#fff',
+    },
+    saveBeneficiaryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 20,
+        marginBottom: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        gap: 8,
+    },
+    saveBeneficiaryText: {
+        fontSize: 14,
     },
 });

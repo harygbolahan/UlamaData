@@ -79,6 +79,8 @@ export function AuthProvider({ children }) {
       await Promise.all([
         AsyncStorage.removeItem('auth_token'),
         AsyncStorage.removeItem('user_data'),
+        AsyncStorage.removeItem('email'),
+        AsyncStorage.removeItem('name'),
       ]);
       
       // Optionally clear biometric credentials
@@ -104,6 +106,8 @@ export function AuthProvider({ children }) {
       await Promise.all([
         AsyncStorage.setItem('auth_token', authToken),
         AsyncStorage.setItem('user_data', JSON.stringify(userData)),
+        AsyncStorage.setItem('email', userData.email || ''),
+        AsyncStorage.setItem('name', userData.name || userData.username || ''),
       ]);
       
       setToken(authToken);
@@ -319,6 +323,24 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const deleteAccount = async (password) => {
+    try {
+      const response = await api.post('/user/delete', {
+        password,
+      });
+      
+      if (response.status === 'success') {
+        showToast('success', response.message || 'Account deactivated successfully');
+        return { success: true, data: response };
+      }
+      
+      return { success: false, message: response.message };
+    } catch (error) {
+      showToast('error', error.message || 'Failed to deactivate account');
+      return { success: false, message: error.message };
+    }
+  };
+
   const value = {
     user,
     token,
@@ -336,6 +358,7 @@ export function AuthProvider({ children }) {
     refreshUser,
     getSupportData,
     withdrawCashback,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

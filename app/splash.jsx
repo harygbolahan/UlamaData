@@ -47,23 +47,51 @@ export default function SplashScreen() {
             // Check if user has seen onboarding
             const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
             
+            console.log('Splash - Has seen onboarding:', hasSeenOnboarding);
+            
             if (hasSeenOnboarding !== 'true') {
                 // First time user - show onboarding
+                console.log('Splash - Navigating to onboarding');
                 router.replace('/(onboarding)');
                 return;
+            }
+
+            // Migration: Check if we have user_data but not user_email (for existing users)
+            let storedEmail = await AsyncStorage.getItem('user_email');
+            if (!storedEmail) {
+                const userData = await AsyncStorage.getItem('user_data');
+                if (userData) {
+                    try {
+                        const user = JSON.parse(userData);
+                        if (user.email) {
+                            // Migrate existing user data
+                            await AsyncStorage.setItem('user_email', user.email);
+                            await AsyncStorage.setItem('user_name', user.name || user.username || '');
+                            storedEmail = user.email;
+                            console.log('Splash - Migrated user email from existing data');
+                        }
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
+                    }
+                }
             }
 
             // Check if PIN login is enabled FIRST
             const pinLoginEnabled = await isPinLoginEnabled();
             
+            console.log('Splash - PIN enabled:', pinLoginEnabled);
+            
             if (pinLoginEnabled) {
                 // PIN is enabled - show PIN modal
+                console.log('Splash - Showing PIN modal');
                 setShowPinModal(true);
                 return;
             }
 
             // Check if biometric login is enabled
             const biometricEnabled = await isBiometricLoginEnabled();
+            
+            console.log('Splash - Biometric enabled:', biometricEnabled);
             
             if (biometricEnabled) {
                 // Biometric is enabled - require authentication regardless of stored token
@@ -78,26 +106,37 @@ export default function SplashScreen() {
                     }, true); // Skip toast
                     
                     if (loginResult.success) {
+                        console.log('Splash - Biometric login success, navigating to home');
                         router.replace('/(tabs)/home');
                         return;
                     }
                 }
                 
-                // If biometric fails or user cancels, logout and go to login
+                // If biometric fails or user cancels, check if user has logged in before
                 setBiometricChecking(false);
-                router.replace('/(auth)/login');
+                
+                if (storedEmail) {
+                    // Returning user - show welcome back screen
+                    console.log('Splash - Biometric failed, returning user, navigating to welcome-back');
+                    router.replace('/(auth)/welcome-back');
+                } else {
+                    // First-time user - show full login
+                    console.log('Splash - Biometric failed, first-time user, navigating to login');
+                    router.replace('/(auth)/login');
+                }
                 return;
             }
 
-            // No biometric or PIN - check if user is already authenticated
-            if (isAuthenticated) {
-                // User is already logged in - go to home
-                router.replace('/(tabs)/home');
-                return;
+            // No biometric or PIN enabled - check if user has logged in before
+            if (storedEmail) {
+                // Returning user - show welcome back screen
+                console.log('Splash - Returning user, navigating to welcome-back');
+                router.replace('/(auth)/welcome-back');
+            } else {
+                // First-time user - show full login
+                console.log('Splash - First-time user, navigating to login');
+                router.replace('/(auth)/login');
             }
-            
-            // Default: go to login screen
-            router.replace('/(auth)/login');
         } catch (error) {
             console.error('Navigation error:', error);
             router.replace('/(auth)/login');
@@ -202,7 +241,7 @@ export default function SplashScreen() {
         setShowPinModal(false);
         setPin('');
         setPinError('');
-        router.replace('/(auth)/login');
+        router.replace('/(auth)/welcome-back');
     };
 
     return (

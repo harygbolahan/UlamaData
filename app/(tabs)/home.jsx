@@ -3,7 +3,7 @@ import CompactDashboard from '@/components/dashboards/CompactDashboard';
 import DefaultDashboard from '@/components/dashboards/DefaultDashboard';
 import MinimalDashboard from '@/components/dashboards/MinimalDashboard';
 import ModernDashboard from '@/components/dashboards/ModernDashboard';
-import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import HomeSkeleton from '@/components/ui/HomeSkeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { DASHBOARD_TYPES, useDashboard } from '@/contexts/dashboard-context';
 import { useTheme } from '@/contexts/theme-context';
@@ -45,10 +45,14 @@ export default function HomeTab() {
         }
     };
 
+    // Show skeleton on initial load or when refreshing
+    if (isLoading || refreshing) {
+        return <HomeSkeleton />;
+    }
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             {renderDashboard()}
-            <LoadingOverlay visible={isLoading || refreshing} />
         </View>
     );
 }

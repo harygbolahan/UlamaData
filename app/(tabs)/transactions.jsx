@@ -1,75 +1,282 @@
+import DatePicker from '@/components/ui/DatePicker';
+import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useTransactions } from '@/contexts/transactions-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Print from 'expo-print';
 import { router, useFocusEffect } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function TransactionsTab() {
     const { colors, fonts, toggleTheme, isDark } = useTheme();
     const { transactions: apiTransactions, loading, error, pagination, fetchTransactions, loadCachedTransactions } = useTransactions();
-    const [selectedFilter, setSelectedFilter] = useState('All');
-    const [selectedDateFilter, setSelectedDateFilter] = useState('All Time');
+    const { downloadTransactions } = useServices();
+    const [selectedDate, setSelectedDate] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [tempSearchQuery, setTempSearchQuery] = useState('');
     const [refreshing, setRefreshing] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [downloadFromDate, setDownloadFromDate] = useState('');
+    const [downloadToDate, setDownloadToDate] = useState('');
+    const [downloadSearch, setDownloadSearch] = useState('');
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(20)).current;
-    const searchTimeout = useRef(null);
+    const isLoadingMoreRef = useRef(false);
 
-    const filters = ['All', 'Completed', 'Processing', 'Failed'];
-    
-    // Generate date filters dynamically
-    const generateDateFilters = () => {
-        const today = new Date();
-        const filters = ['All Time'];
-        
-        // Add last 7 days
-        for (let i = 0; i < 7; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - i);
-            const label = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            filters.push(label);
-        }
-        
-        return filters;
+    // Build search parameter for API
+    const buildSearchParam = () => {
+        // Return search query directly (can include status like "completed", "pending", "failed")
+        return searchQuery.trim();
     };
 
-    const dateFilters = generateDateFilters();
-
-    // Helper function to get date for filter
-    const getDateForFilter = (filter) => {
-        if (filter === 'All Time') return '';
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time to midnight
-        
-        if (filter === 'Today') {
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        
-        if (filter === 'Yesterday') {
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-        }
-        
-        // For other dates (e.g., "Nov 25"), find the matching date from the last 7 days
-        for (let i = 2; i < 7; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - i);
-            const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // Download transactions from API and generate PDF
+    const handleDownloadTransactions = async () => {
+        try {
+            setIsDownloading(true);
             
-            if (label === filter) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+            // Fetch transactions from API using services context
+            const downloadedTransactions = await downloadTransactions(
+                downloadSearch.trim(),
+                downloadFromDate,
+                downloadToDate
+            );
+
+            console.log('Downloaded transactions count:', downloadedTransactions?.length);
+
+            if (!Array.isArray(downloadedTransactions) || downloadedTransactions.length === 0) {
+                Alert.alert('No Data', 'No transactions found for the selected criteria.');
+                return;
             }
+
+            // Map transactions to display format
+            console.log('Mapping', downloadedTransactions.length, 'transactions for PDF');
+            const mappedTransactions = downloadedTransactions.map(transaction => {
+                const serviceName = transaction.servicename || 'Unknown';
+                const amount = `₦${parseFloat(transaction.amount || 0).toLocaleString()}`;
+                const date = new Date(transaction.date).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                let status = 'Pending';
+                if (transaction.tStatus === 'Completed' || transaction.status === '0') {
+                    status = 'Completed';
+                } else if (transaction.tStatus === 'Failed' || transaction.status === '2') {
+                    status = 'Failed';
+                } else if (transaction.tStatus === 'Pending' || transaction.status === '1') {
+                    status = 'Pending';
+                }
+
+                return {
+                    date,
+                    type: serviceName,
+                    description: transaction.servicedesc || 'N/A',
+                    ref: transaction.transref,
+                    amount,
+                    status
+                };
+            });
+
+            // Generate clean, minimal PDF
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>Transactions - DataBeta</title>
+                    <style>
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                            padding: 40px;
+                            color: #1a1a1a;
+                            background: #fff;
+                            line-height: 1.5;
+                        }
+                        .header {
+                            margin-bottom: 32px;
+                            padding-bottom: 16px;
+                            border-bottom: 2px solid #2196F3;
+                        }
+                        .header h1 {
+                            font-size: 28px;
+                            font-weight: 600;
+                            color: #1a1a1a;
+                            margin-bottom: 4px;
+                        }
+                        .header .subtitle {
+                            font-size: 13px;
+                            color: #666;
+                        }
+                        .info {
+                            display: flex;
+                            gap: 24px;
+                            margin-bottom: 24px;
+                            font-size: 13px;
+                            color: #666;
+                        }
+                        .info-item {
+                            display: flex;
+                            gap: 6px;
+                        }
+                        .info-label {
+                            font-weight: 500;
+                            color: #1a1a1a;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 16px;
+                        }
+                        thead {
+                            background: #f8f9fa;
+                        }
+                        th {
+                            padding: 12px;
+                            text-align: left;
+                            font-weight: 600;
+                            font-size: 12px;
+                            color: #666;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            border-bottom: 1px solid #e0e0e0;
+                        }
+                        td {
+                            padding: 12px;
+                            border-bottom: 1px solid #f0f0f0;
+                            font-size: 13px;
+                            color: #333;
+                        }
+                        tbody tr:last-child td {
+                            border-bottom: none;
+                        }
+                        .status {
+                            display: inline-block;
+                            padding: 4px 10px;
+                            border-radius: 12px;
+                            font-size: 11px;
+                            font-weight: 600;
+                        }
+                        .completed { 
+                            background: #e8f5e9;
+                            color: #2e7d32;
+                        }
+                        .pending { 
+                            background: #fff3e0;
+                            color: #e65100;
+                        }
+                        .failed { 
+                            background: #ffebee;
+                            color: #c62828;
+                        }
+                        .amount {
+                            font-weight: 600;
+                            color: #1a1a1a;
+                        }
+                        .footer {
+                            margin-top: 40px;
+                            padding-top: 16px;
+                            border-top: 1px solid #e0e0e0;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #999;
+                        }
+                        @media print {
+                            body { padding: 20px; }
+                            table { page-break-inside: auto; }
+                            tr { page-break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Transaction History</h1>
+                        <div class="subtitle">DataBeta • ${mappedTransactions.length} transactions</div>
+                    </div>
+
+                    <div class="info">
+                        ${downloadSearch ? `<div class="info-item"><span class="info-label">Search:</span> ${downloadSearch}</div>` : ''}
+                        ${downloadFromDate ? `<div class="info-item"><span class="info-label">From:</span> ${downloadFromDate}</div>` : ''}
+                        ${downloadToDate ? `<div class="info-item"><span class="info-label">To:</span> ${downloadToDate}</div>` : ''}
+                        <div class="info-item"><span class="info-label">Generated:</span> ${new Date().toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric'
+                        })}</div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Reference</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${mappedTransactions.map(t => `
+                                <tr>
+                                    <td>${t.date}</td>
+                                    <td>${t.type}</td>
+                                    <td>${t.description}</td>
+                                    <td>${t.ref}</td>
+                                    <td class="amount">${t.amount}</td>
+                                    <td><span class="status ${t.status.toLowerCase()}">${t.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div class="footer">
+                        DataBeta • Generated on ${new Date().toLocaleString()}
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const { uri } = await Print.printToFileAsync({ html: htmlContent });
+            
+            console.log('PDF generated with', mappedTransactions.length, 'transactions');
+            
+            const canShare = await Sharing.isAvailableAsync();
+            if (canShare) {
+                await Sharing.shareAsync(uri, {
+                    mimeType: 'application/pdf',
+                    dialogTitle: `Share Transaction History (${mappedTransactions.length} transactions)`,
+                    UTI: 'com.adobe.pdf'
+                });
+            } else {
+                Alert.alert('Success', `PDF generated successfully with ${mappedTransactions.length} transactions!`);
+            }
+
+            // Close modal after successful download
+            setShowDownloadModal(false);
+            setDownloadFromDate('');
+            setDownloadToDate('');
+            setDownloadSearch('');
+
+        } catch (error) {
+            console.error('Download error:', error);
+            Alert.alert('Error', 'Failed to download transactions. Please try again.');
+        } finally {
+            setIsDownloading(false);
         }
-        
-        return '';
     };
 
     // Map API transaction to UI format
@@ -90,11 +297,13 @@ export default function TransactionsTab() {
         const phone = phoneMatch ? phoneMatch[0] : 'N/A';
 
         // Map status
-        let status = 'Processing';
+        let status = 'Pending';
         if (transaction.tStatus === 'Completed' || transaction.status === '0') {
             status = 'Completed';
         } else if (transaction.tStatus === 'Failed' || transaction.status === '2') {
             status = 'Failed';
+        } else if (transaction.tStatus === 'Pending' || transaction.status === '1') {
+            status = 'Pending';
         }
 
         // Map service to icon and color
@@ -170,45 +379,77 @@ export default function TransactionsTab() {
         }, [])
     );
 
-    // Handle search and date filter with debounce
+    // Handle date filter changes
     useEffect(() => {
-        if (searchTimeout.current) {
-            clearTimeout(searchTimeout.current);
+        const searchParam = buildSearchParam();
+        fetchTransactions(1, searchParam, selectedDate);
+    }, [selectedDate]);
+
+    const handleSearch = async () => {
+        setIsSearching(true);
+        setSearchQuery(tempSearchQuery);
+        const searchParam = tempSearchQuery.trim();
+        try {
+            await fetchTransactions(1, searchParam, selectedDate);
+        } finally {
+            setIsSearching(false);
         }
+    };
 
-        searchTimeout.current = setTimeout(() => {
-            const dateParam = getDateForFilter(selectedDateFilter);
-            fetchTransactions(1, searchQuery.trim(), dateParam);
-        }, 500);
+    const handleDateChange = (formattedDate) => {
+        setSelectedDate(formattedDate);
+    };
 
-        return () => {
-            if (searchTimeout.current) {
-                clearTimeout(searchTimeout.current);
-            }
-        };
-    }, [searchQuery, selectedDateFilter]);
+    const clearDateFilter = () => {
+        setSelectedDate('');
+    };
 
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
-            const dateParam = getDateForFilter(selectedDateFilter);
-            await fetchTransactions(1, searchQuery, dateParam);
+            const searchParam = buildSearchParam();
+            await fetchTransactions(1, searchParam, selectedDate);
         } finally {
             setRefreshing(false);
         }
     };
 
-    const loadMoreTransactions = () => {
-        if (!loading && pagination.currentPage < pagination.lastPage) {
-            const dateParam = getDateForFilter(selectedDateFilter);
-            fetchTransactions(pagination.currentPage + 1, searchQuery, dateParam);
+    const loadMoreTransactions = useCallback(async () => {
+        // Prevent multiple simultaneous loads
+        if (isLoadingMoreRef.current || loading || isLoadingMore) {
+            return;
         }
-    };
 
-    const filteredTransactions = transactions.filter(t => {
-        const matchesStatus = selectedFilter === 'All' || t.status === selectedFilter;
-        return matchesStatus;
-    });
+        // Check if there are more pages to load
+        if (pagination.currentPage >= pagination.lastPage) {
+            return;
+        }
+
+        isLoadingMoreRef.current = true;
+        setIsLoadingMore(true);
+
+        try {
+            const searchParam = buildSearchParam();
+            await fetchTransactions(pagination.currentPage + 1, searchParam, selectedDate);
+        } finally {
+            isLoadingMoreRef.current = false;
+            setIsLoadingMore(false);
+        }
+    }, [loading, isLoadingMore, pagination.currentPage, pagination.lastPage, searchQuery, selectedDate]);
+
+    const handleScroll = useCallback((event) => {
+        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+        
+        // Calculate if user is near bottom (within 500px)
+        const paddingToBottom = 500;
+        const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+        
+        if (isCloseToBottom) {
+            loadMoreTransactions();
+        }
+    }, [loadMoreTransactions]);
+
+    const filteredTransactions = transactions;
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -230,12 +471,25 @@ export default function TransactionsTab() {
                     <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                         Transactions
                     </Text>
-                    <TouchableOpacity 
-                        style={styles.iconButton}
-                        onPress={toggleTheme}
-                    >
-                        <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.text} />
-                    </TouchableOpacity>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity 
+                            style={styles.iconButton}
+                            onPress={() => setShowDownloadModal(true)}
+                            disabled={isDownloading}
+                        >
+                            {isDownloading ? (
+                                <ActivityIndicator size="small" color={colors.primary} />
+                            ) : (
+                                <Ionicons name="download-outline" size={22} color={colors.text} />
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={styles.iconButton}
+                            onPress={toggleTheme}
+                        >
+                            <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.text} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </Animated.View>
 
@@ -249,120 +503,114 @@ export default function TransactionsTab() {
                         colors={[colors.primary]}
                     />
                 }
-                onScroll={({ nativeEvent }) => {
-                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-                    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
-                    if (isCloseToBottom) {
-                        loadMoreTransactions();
-                    }
-                }}
-                scrollEventThrottle={400}
+                onScroll={handleScroll}
+                scrollEventThrottle={200}
             >
-                {/* Search Bar */}
+                {/* Search Bar with Button */}
                 <Animated.View style={[{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                    <View style={[styles.searchContainer, {
-                        backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
-                    }]}>
-                        <Ionicons name="search-outline" size={20} color={colors.icon} />
-                        <TextInput
-                            placeholder="Search transactions..."
-                            placeholderTextColor={colors.icon}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            style={[styles.searchInput, { color: colors.text, fontFamily: fonts.inter.regular }]}
-                        />
-                        {searchQuery !== '' && (
-                            <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                <Ionicons name="close-circle" size={20} color={colors.icon} />
+                    <View style={styles.searchWrapper}>
+                        <View style={[styles.searchContainer, {
+                            backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
+                        }]}>
+                            <Ionicons name="search-outline" size={20} color={colors.icon} />
+                            <TextInput
+                                placeholder="Search by status, description, or reference...."
+                                placeholderTextColor={colors.icon}
+                                value={tempSearchQuery}
+                                onChangeText={setTempSearchQuery}
+                                onSubmitEditing={handleSearch}
+                                returnKeyType="search"
+                                style={[styles.searchInput, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                            />
+                            {tempSearchQuery !== '' && (
+                                <TouchableOpacity onPress={() => {
+                                    setTempSearchQuery('');
+                                    setSearchQuery('');
+                                    const searchParam = buildSearchParam();
+                                    fetchTransactions(1, searchParam, selectedDate);
+                                }}>
+                                    <Ionicons name="close-circle" size={20} color={colors.icon} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        <TouchableOpacity 
+                            style={[styles.searchButton, { backgroundColor: colors.primary }]}
+                            onPress={handleSearch}
+                            activeOpacity={0.7}
+                            disabled={isSearching}
+                        >
+                            {isSearching ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Ionicons name="search" size={20} color="#fff" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+
+                {/* Date Filter - Custom DatePicker */}
+                <Animated.View style={[{ opacity: fadeAnim }, styles.dateFilterSection]}>
+                    <View style={styles.dateFilterRow}>
+                        <View style={{ flex: 1 }}>
+                            <DatePicker
+                                value={selectedDate}
+                                onChange={handleDateChange}
+                                maximumDate={new Date()}
+                            />
+                        </View>
+                        
+                        {selectedDate !== '' && (
+                            <TouchableOpacity 
+                                style={[styles.clearDateButton, {
+                                    backgroundColor: colors.error + '15',
+                                }]}
+                                onPress={clearDateFilter}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="close" size={18} color={colors.error} />
                             </TouchableOpacity>
                         )}
                     </View>
                 </Animated.View>
 
-                {/* Status Filter Chips */}
-                <Animated.View style={[{ opacity: fadeAnim }]}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.filtersContainer}
-                    >
-                        {filters.map((filter) => (
-                            <TouchableOpacity
-                                key={filter}
-                                style={[
-                                    styles.filterChip,
-                                    {
-                                        backgroundColor: selectedFilter === filter 
-                                            ? colors.primary 
-                                            : isDark ? '#1a1a1a' : '#f5f5f5',
-                                    }
-                                ]}
-                                onPress={() => setSelectedFilter(filter)}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={[
-                                    styles.filterText,
-                                    { 
-                                        fontFamily: fonts.inter.medium,
-                                        color: selectedFilter === filter ? '#fff' : colors.text 
-                                    }
-                                ]}>
-                                    {filter}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </Animated.View>
-
-                {/* Date Filter Chips */}
-                {/* <Animated.View style={[{ opacity: fadeAnim }]}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.dateFiltersContainer}
-                    >
-                        {dateFilters.map((filter) => (
-                            <TouchableOpacity
-                                key={filter}
-                                style={[
-                                    styles.dateFilterChip,
-                                    {
-                                        backgroundColor: selectedDateFilter === filter 
-                                            ? colors.primary + '15'
-                                            : isDark ? '#1a1a1a' : '#f5f5f5',
-                                    }
-                                ]}
-                                onPress={() => setSelectedDateFilter(filter)}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons 
-                                    name="calendar-outline" 
-                                    size={14} 
-                                    color={selectedDateFilter === filter ? colors.primary : colors.icon} 
-                                />
-                                <Text style={[
-                                    styles.dateFilterText,
-                                    { 
-                                        fontFamily: fonts.inter.medium,
-                                        color: selectedDateFilter === filter ? colors.primary : colors.text 
-                                    }
-                                ]}>
-                                    {filter}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </Animated.View> */}
-
                 {/* Transactions List */}
                 <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
 
                     {loading && transactions.length === 0 ? (
-                        <View style={styles.emptyState}>
-                            <ActivityIndicator size="large" color={colors.primary} />
-                            <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular, marginTop: 16 }]}>
-                                Loading transactions...
-                            </Text>
+                        <View>
+                            {[1, 2, 3, 4, 5, 6].map((item) => (
+                                <View
+                                    key={item}
+                                    style={[styles.skeletonCard, {
+                                        backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
+                                    }]}
+                                >
+                                    <View style={styles.skeletonLeft}>
+                                        <View style={[styles.skeletonIcon, {
+                                            backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                                        }]} />
+                                        <View style={styles.skeletonInfo}>
+                                            <View style={[styles.skeletonLine, styles.skeletonTitle, {
+                                                backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                                            }]} />
+                                            <View style={[styles.skeletonLine, styles.skeletonDesc, {
+                                                backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                                            }]} />
+                                            <View style={[styles.skeletonLine, styles.skeletonDate, {
+                                                backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                                            }]} />
+                                        </View>
+                                    </View>
+                                    <View style={styles.skeletonRight}>
+                                        <View style={[styles.skeletonLine, styles.skeletonAmount, {
+                                            backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                                        }]} />
+                                        <View style={[styles.skeletonBadge, {
+                                            backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
+                                        }]} />
+                                    </View>
+                                </View>
+                            ))}
                         </View>
                     ) : error && transactions.length === 0 ? (
                         <View style={styles.emptyState}>
@@ -447,7 +695,7 @@ export default function TransactionsTab() {
                         ))
                     )}
 
-                    {loading && transactions.length > 0 && (
+                    {(loading || isLoadingMore) && transactions.length > 0 && (
                         <View style={styles.loadingMore}>
                             <ActivityIndicator size="small" color={colors.primary} />
                             <Text style={[styles.loadingMoreText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -467,6 +715,92 @@ export default function TransactionsTab() {
 
                 <View style={{ height: 30 }} />
             </ScrollView>
+
+            {/* Download Modal */}
+            <Modal
+                visible={showDownloadModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowDownloadModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                Download Transactions
+                            </Text>
+                            <TouchableOpacity onPress={() => setShowDownloadModal(false)}>
+                                <Ionicons name="close" size={24} color={colors.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.modalBody}>
+                            {/* Search Input */}
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                    Search (Optional)
+                                </Text>
+                                <View style={[styles.inputContainer, { 
+                                    backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
+                                    borderColor: isDark ? '#2a2a2a' : '#e0e0e0'
+                                }]}>
+                                    <Ionicons name="search-outline" size={20} color={colors.icon} />
+                                    <TextInput
+                                        placeholder="Search by status, description..."
+                                        placeholderTextColor={colors.icon}
+                                        value={downloadSearch}
+                                        onChangeText={setDownloadSearch}
+                                        style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* From Date */}
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                    From Date (Optional)
+                                </Text>
+                                <DatePicker
+                                    value={downloadFromDate}
+                                    onChange={setDownloadFromDate}
+                                    maximumDate={new Date()}
+                                />
+                            </View>
+
+                            {/* To Date */}
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                    To Date (Optional)
+                                </Text>
+                                <DatePicker
+                                    value={downloadToDate}
+                                    onChange={setDownloadToDate}
+                                    maximumDate={new Date()}
+                                    minimumDate={downloadFromDate ? new Date(downloadFromDate) : undefined}
+                                />
+                            </View>
+
+                            {/* Download Button */}
+                            <TouchableOpacity
+                                style={[styles.downloadButton, { backgroundColor: colors.primary }]}
+                                onPress={handleDownloadTransactions}
+                                disabled={isDownloading}
+                            >
+                                {isDownloading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="download" size={20} color="#fff" />
+                                        <Text style={[styles.downloadButtonText, { fontFamily: fonts.inter.semiBold }]}>
+                                            Download PDF
+                                        </Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -489,57 +823,112 @@ const styles = StyleSheet.create({
         fontSize: 32,
         letterSpacing: -0.5,
     },
+    headerActions: {
+        flexDirection: 'row',
+        gap: 8,
+    },
     iconButton: {
         width: 40,
         height: 40,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    searchContainer: {
+    searchWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         marginHorizontal: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderRadius: 16,
         marginBottom: 20,
-        gap: 12,
+        gap: 10,
+    },
+    searchContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 12,
+        gap: 10,
     },
     searchInput: {
         flex: 1,
-        fontSize: 15,
-    },
-    filtersContainer: {
-        paddingHorizontal: 20,
-        gap: 8,
-        marginBottom: 24,
-    },
-    filterChip: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
-    },
-    filterText: {
         fontSize: 14,
     },
-    dateFiltersContainer: {
-        paddingHorizontal: 20,
-        gap: 8,
-        marginBottom: 20,
-    },
-    dateFilterChip: {
-        flexDirection: 'row',
+    searchButton: {
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 16,
-        gap: 6,
     },
-    dateFilterText: {
-        fontSize: 13,
+    dateFilterSection: {
+        paddingHorizontal: 20,
+        marginBottom: 24,
+    },
+    dateFilterRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    clearDateButton: {
+        width: 48,
+        height: 52,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     section: {
         paddingBottom: 24,
+    },
+    skeletonCard: {
+        marginHorizontal: 20,
+        padding: 16,
+        borderRadius: 14,
+        marginBottom: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    skeletonLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    skeletonIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    skeletonInfo: {
+        flex: 1,
+        gap: 6,
+    },
+    skeletonLine: {
+        height: 12,
+        borderRadius: 6,
+    },
+    skeletonTitle: {
+        width: '60%',
+    },
+    skeletonDesc: {
+        width: '80%',
+        height: 10,
+    },
+    skeletonDate: {
+        width: '40%',
+        height: 10,
+    },
+    skeletonRight: {
+        alignItems: 'flex-end',
+        gap: 8,
+    },
+    skeletonAmount: {
+        width: 70,
+    },
+    skeletonBadge: {
+        width: 60,
+        height: 20,
+        borderRadius: 10,
     },
     transactionCard: {
         marginHorizontal: 20,
@@ -639,5 +1028,67 @@ const styles = StyleSheet.create({
     },
     endMessageText: {
         fontSize: 13,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        width: '100%',
+        maxWidth: 500,
+        borderRadius: 20,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    modalTitle: {
+        fontSize: 20,
+    },
+    modalBody: {
+        gap: 20,
+    },
+    inputGroup: {
+        gap: 8,
+    },
+    inputLabel: {
+        fontSize: 14,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        gap: 10,
+    },
+    input: {
+        flex: 1,
+        fontSize: 14,
+    },
+    downloadButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        borderRadius: 12,
+        marginTop: 8,
+        gap: 8,
+    },
+    downloadButtonText: {
+        color: '#fff',
+        fontSize: 16,
     },
 });

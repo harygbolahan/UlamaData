@@ -23,6 +23,7 @@ apiClient.interceptors.request.use(
     console.log('🚀 API Request:', {
       method: config.method?.toUpperCase(),
       url: config.baseURL + config.url,
+      params: config.params,
       headers: config.headers,
       data: config.data,
     });
@@ -116,8 +117,8 @@ export const login = async (credentials) => {
 };
 
 // Generic HTTP methods
-export const get = async (endpoint) => {
-  return apiClient.get(endpoint);
+export const get = async (endpoint, config = {}) => {
+  return apiClient.get(endpoint, config);
 };
 
 export const post = async (endpoint, data) => {

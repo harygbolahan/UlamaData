@@ -4,7 +4,7 @@ import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Network images
 const networkImages = {
@@ -12,6 +12,13 @@ const networkImages = {
     GLO: require('@/assets/networks/glo.png'),
     AIRTEL: require('@/assets/networks/airtel.png'),
     '9MOBILE': require('@/assets/networks/9mobile.png'),
+};
+
+const networkBackgrounds = {
+    MTN: 'rgba(255, 204, 0, 0.2)',
+    GLO: 'rgba(0, 168, 89, 0.2)',
+    AIRTEL: 'rgba(255, 0, 0, 0.2)',
+    '9MOBILE': 'rgba(0, 166, 90, 0.2)',
 };
 
 export default function BulkOrderScreen() {
@@ -34,6 +41,47 @@ export default function BulkOrderScreen() {
     const [loadingNetworks, setLoadingNetworks] = useState(false);
     const [loadingTypes, setLoadingTypes] = useState(false);
     const [loadingPlans, setLoadingPlans] = useState(false);
+
+    // Set MTN as default network once networks are loaded
+    useEffect(() => {
+        if (networks.length > 0 && !selectedNetwork) {
+            const mtnNetwork = networks.find(n => n.network.toUpperCase() === 'MTN');
+            if (mtnNetwork) {
+                setSelectedNetwork({ 
+                    id: mtnNetwork.network.toLowerCase(), 
+                    name: mtnNetwork.network.toUpperCase() 
+                });
+            }
+        }
+    }, [networks]);
+
+    // Auto-navigate when all fields are complete (data only - immediate)
+    useEffect(() => {
+        if (serviceType === 'data' && selectedPlan && selectedNetwork && phoneNumbers.trim() && getPhoneCount() > 0) {
+            // Validate phone numbers before auto-navigating
+            const numbers = phoneNumbers.split(',').map(n => n.trim()).filter(n => n.length > 0);
+            const invalidNumbers = numbers.filter(n => n.length !== 11);
+            if (invalidNumbers.length === 0) {
+                handleContinue();
+            }
+        }
+    }, [selectedPlan]);
+
+    // Auto-navigate for airtime with debounce delay
+    useEffect(() => {
+        if (serviceType === 'airtime' && amount && selectedNetwork && phoneNumbers.trim() && getPhoneCount() > 0 && parseFloat(amount) >= 50) {
+            // Wait 1.5 seconds after user stops typing before auto-navigating
+            const timer = setTimeout(() => {
+                const numbers = phoneNumbers.split(',').map(n => n.trim()).filter(n => n.length > 0);
+                const invalidNumbers = numbers.filter(n => n.length !== 11);
+                if (invalidNumbers.length === 0) {
+                    handleContinue();
+                }
+            }, 1500);
+
+            return () => clearTimeout(timer);
+        }
+    }, [amount]);
 
     // Fetch networks when service type changes
     useEffect(() => {
@@ -119,8 +167,13 @@ export default function BulkOrderScreen() {
     };
 
     const getPhoneCount = () => {
-        const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
+        const numbers = phoneNumbers.split(',').map(n => n.trim()).filter(n => n.length > 0);
         return numbers.length;
+    };
+
+    const hasValidPhoneNumbers = () => {
+        const numbers = phoneNumbers.split(',').map(n => n.trim()).filter(n => n.length > 0);
+        return numbers.length > 0 && numbers.every(n => n.length === 11);
     };
 
     const getTotalAmount = () => {
@@ -134,7 +187,7 @@ export default function BulkOrderScreen() {
     };
 
     const handleContinue = () => {
-        const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
+        const numbers = phoneNumbers.split(',').map(n => n.trim()).filter(n => n.length > 0);
         
         if (!selectedNetwork || numbers.length === 0) {
             showToast('warning', 'Please select network and enter phone numbers');
@@ -157,7 +210,7 @@ export default function BulkOrderScreen() {
         }
 
         // Validate phone numbers
-        const invalidNumbers = numbers.filter(n => n.trim().length !== 11);
+        const invalidNumbers = numbers.filter(n => n.length !== 11);
         if (invalidNumbers.length > 0) {
             showToast('warning', `${invalidNumbers.length} invalid phone number(s). All numbers must be 11 digits.`);
             return;
@@ -180,11 +233,7 @@ export default function BulkOrderScreen() {
     };
 
     return (
-        <KeyboardAvoidingView 
-            style={[styles.container, { backgroundColor: colors.background }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -257,11 +306,13 @@ export default function BulkOrderScreen() {
                     >
                         {selectedNetwork ? (
                             <View style={styles.networkSelected}>
-                                <Image 
-                                    source={networkImages[selectedNetwork.name]} 
-                                    style={styles.networkImage}
-                                    resizeMode="contain"
-                                />
+                                <View style={[styles.networkImageContainer, { backgroundColor: networkBackgrounds[selectedNetwork.name] }]}>
+                                    <Image 
+                                        source={networkImages[selectedNetwork.name]} 
+                                        style={styles.networkImage}
+                                        resizeMode="contain"
+                                    />
+                                </View>
                                 <Text style={[styles.networkName, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                                     {selectedNetwork.name}
                                 </Text>
@@ -277,16 +328,16 @@ export default function BulkOrderScreen() {
 
                 {/* Phone Numbers Input */}
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                    Phone Numbers (One per line)
+                    Phone Numbers (Comma separated)
                 </Text>
                 <View style={[styles.textAreaContainer, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
                     <TextInput
-                        placeholder="08012345678&#10;08098765432&#10;07011223344"
+                        placeholder="08012345678, 08098765432, 07011223344"
                         placeholderTextColor={colors.icon}
                         value={phoneNumbers}
                         onChangeText={setPhoneNumbers}
                         multiline
-                        numberOfLines={6}
+                        numberOfLines={2}
                         keyboardType="default"
                         returnKeyType="default"
                         blurOnSubmit={false}
@@ -380,10 +431,18 @@ export default function BulkOrderScreen() {
                                                         backgroundColor: colors.primary + '20',
                                                         borderColor: colors.primary,
                                                         borderWidth: 2
-                                                    }
+                                                    },
+                                                    !hasValidPhoneNumbers() && { opacity: 0.5 }
                                                 ]}
-                                                onPress={() => setSelectedPlan(plan)}
+                                                onPress={() => {
+                                                    if (hasValidPhoneNumbers()) {
+                                                        setSelectedPlan(plan);
+                                                    } else {
+                                                        showToast('warning', 'Please enter at least one valid 11-digit phone number');
+                                                    }
+                                                }}
                                                 activeOpacity={0.7}
+                                                disabled={!hasValidPhoneNumbers()}
                                             >
                                                 <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                                                     {plan.datasize}
@@ -413,17 +472,27 @@ export default function BulkOrderScreen() {
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Amount Per Number
                         </Text>
-                        <View style={[styles.amountInput, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                        <View style={[
+                            styles.amountInput, 
+                            { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
+                            !hasValidPhoneNumbers() && { opacity: 0.5 }
+                        ]}>
                             <Text style={[styles.currency, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>₦</Text>
                             <TextInput
-                                placeholder="0.00"
+                                placeholder={hasValidPhoneNumbers() ? "0.00" : "Enter phone numbers first"}
                                 placeholderTextColor={colors.icon}
                                 value={amount}
                                 onChangeText={setAmount}
                                 keyboardType="numeric"
+                                editable={hasValidPhoneNumbers()}
                                 style={[styles.amountInputText, { color: colors.text, fontFamily: fonts.inter.bold }]}
                             />
                         </View>
+                        {!hasValidPhoneNumbers() && (
+                            <Text style={[styles.hintText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                Please enter at least one valid 11-digit phone number to continue
+                            </Text>
+                        )}
                     </>
                 )}
 
@@ -457,26 +526,8 @@ export default function BulkOrderScreen() {
                     </View>
                 )}
 
-                <View style={{ height: 100 }} />
+                <View style={{ height: 30 }} />
             </ScrollView>
-
-            {/* Continue Button */}
-            <View style={[styles.footer, { backgroundColor: colors.background }]}>
-                <TouchableOpacity
-                    style={[
-                        styles.continueButton,
-                        { backgroundColor: colors.primary },
-                        getTotalAmount() === 0 && { opacity: 0.5 }
-                    ]}
-                    onPress={handleContinue}
-                    disabled={getTotalAmount() === 0}
-                    activeOpacity={0.8}
-                >
-                    <Text style={[styles.continueText, { fontFamily: fonts.inter.semiBold }]}>
-                        Continue
-                    </Text>
-                </TouchableOpacity>
-            </View>
 
             {/* Network Modal */}
             <Modal visible={showNetworkModal} transparent animationType="slide">
@@ -505,11 +556,13 @@ export default function BulkOrderScreen() {
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.optionLeft}>
-                                    <Image 
-                                        source={networkImages[network.network.toUpperCase()]} 
-                                        style={styles.networkImageSmall}
-                                        resizeMode="contain"
-                                    />
+                                    <View style={[styles.networkImageContainerSmall, { backgroundColor: networkBackgrounds[network.network.toUpperCase()] }]}>
+                                        <Image 
+                                            source={networkImages[network.network.toUpperCase()]} 
+                                            style={styles.networkImageSmall}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
                                     <Text style={[styles.optionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                                         {network.network.toUpperCase()}
                                     </Text>
@@ -520,7 +573,7 @@ export default function BulkOrderScreen() {
                     </View>
                 </View>
             </Modal>
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 
@@ -566,9 +619,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
+    networkImageContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
     networkImage: {
         width: 32,
         height: 32,
+    },
+    networkImageContainerSmall: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
     },
     networkImageSmall: {
         width: 28,
@@ -620,6 +689,12 @@ const styles = StyleSheet.create({
     },
     currency: { fontSize: 24 },
     amountInputText: { flex: 1, fontSize: 32 },
+    hintText: {
+        fontSize: 12,
+        paddingHorizontal: 20,
+        marginTop: -12,
+        marginBottom: 12,
+    },
     summaryCard: {
         marginHorizontal: 20,
         padding: 16,
@@ -640,24 +715,6 @@ const styles = StyleSheet.create({
     },
     totalLabel: { fontSize: 16 },
     totalValue: { fontSize: 18 },
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 20,
-        paddingBottom: 30,
-    },
-    continueButton: {
-        height: 56,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    continueText: {
-        fontSize: 16,
-        color: '#fff',
-    },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',

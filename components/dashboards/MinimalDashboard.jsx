@@ -241,6 +241,17 @@ export default function MinimalDashboard() {
                 </Text>
               </View>
             </View>
+            
+            {/* Transfer Button */}
+            <TouchableOpacity
+              style={[styles.transferButton, { backgroundColor: colors.button }]}
+              onPress={() => router.push('/(services)/funds-transfer')}
+            >
+              <Ionicons name="swap-horizontal" size={18} color={colors.primaryText} />
+              <Text style={[styles.transferButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                Transfer Funds
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -494,6 +505,20 @@ const styles = StyleSheet.create({
     width: 1,
     height: 24,
   },
+  transferButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
+    marginTop: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  transferButtonText: { fontSize: 13 },
   
   // Clean Services
   servicesSection: { 

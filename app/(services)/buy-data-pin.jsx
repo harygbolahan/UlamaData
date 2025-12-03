@@ -13,6 +13,13 @@ const NETWORK_IMAGES = {
     glo: require('@/assets/networks/glo.png'),
 };
 
+const NETWORK_BACKGROUNDS = {
+    mtn: 'rgba(255, 204, 0, 0.2)',
+    airtel: 'rgba(255, 0, 0, 0.2)',
+    '9mobile': 'rgba(0, 166, 90, 0.2)',
+    glo: 'rgba(0, 168, 89, 0.2)',
+};
+
 export default function BuyDataPinScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { fetchDataPinNetworks, fetchDataPinTypes, fetchDataPinPlans } = useServices();
@@ -34,6 +41,19 @@ export default function BuyDataPinScreen() {
     useEffect(() => {
         loadNetworks();
     }, []);
+
+    // Set MTN as default network once networks are loaded
+    useEffect(() => {
+        if (networks.length > 0 && !selectedNetwork) {
+            const mtnNetwork = networks.find(n => n.network.toUpperCase() === 'MTN');
+            if (mtnNetwork) {
+                setSelectedNetwork({ 
+                    id: mtnNetwork.network.toLowerCase(), 
+                    name: mtnNetwork.network.toUpperCase() 
+                });
+            }
+        }
+    }, [networks]);
 
     // Fetch data types when network is selected
     useEffect(() => {
@@ -184,7 +204,7 @@ export default function BuyDataPinScreen() {
                                         onPress={() => setSelectedNetwork({ id: networkId, name: networkName })}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={styles.networkLogoContainer}>
+                                        <View style={[styles.networkLogoContainer, { backgroundColor: NETWORK_BACKGROUNDS[networkId] }]}>
                                             <Image
                                                 source={NETWORK_IMAGES[networkId]}
                                                 style={styles.networkLogo}
@@ -380,24 +400,24 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     networkCard: {
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
         borderRadius: 12,
-        minWidth: 90,
+        minWidth: 70,
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
     },
     networkLogoContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
     },
     networkLogo: {
-        width: 48,
-        height: 48,
+        width: 32,
+        height: 32,
     },
     networkName: { 
         fontSize: 12 

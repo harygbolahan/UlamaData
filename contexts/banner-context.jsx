@@ -28,24 +28,28 @@ export function BannerProvider({ children }) {
             
             if (response) {
                 const bannerArray = [];
+                const status = response.status || 'inactive';
                 
                 // Convert response to array format
                 if (response.ads1) {
                     bannerArray.push({
                         id: '1',
                         imageUrl: `${BASE_URL}${response.ads1}`,
+                        status,
                     });
                 }
                 if (response.ads2) {
                     bannerArray.push({
                         id: '2',
                         imageUrl: `${BASE_URL}${response.ads2}`,
+                        status,
                     });
                 }
                 if (response.ads3) {
                     bannerArray.push({
                         id: '3',
                         imageUrl: `${BASE_URL}${response.ads3}`,
+                        status,
                     });
                 }
                 
