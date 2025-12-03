@@ -204,68 +204,55 @@ export default function ModernDashboard() {
                                         </TouchableOpacity>
                                     </View>
                                 </View>
-                                <TouchableOpacity 
-                                    style={[styles.addButton, { 
-                                        backgroundColor: colors.button,
-                                        shadowColor: colors.button,
-                                        shadowOffset: { width: 0, height: 4 },
-                                        shadowOpacity: 0.3,
-                                        shadowRadius: 8,
-                                        elevation: 5,
-                                    }]} 
-                                    onPress={() => router.push('/fund-wallet')}
-                                >
-                                    <Ionicons name="add" size={22} color={colors.primaryText} />
-                                </TouchableOpacity>
                             </View>
 
-                            {/* Enhanced Stats */}
-                            <View style={[styles.inlineStats, { 
-                                backgroundColor: isDark ? '#0f0f0f' : '#f8f9fa',
-                                borderRadius: 12,
-                                padding: 12,
-                            }]}>
-                                <View style={styles.statItem}>
-                                    <View style={[styles.statIconBg, { backgroundColor: '#4ade8015' }]}>
-                                        <Ionicons name="trending-up" size={16} color="#4ade80" />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[styles.statText, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                            {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG')}` : '₦****'}
-                                        </Text>
-                                        <Text style={[styles.statLabelSmall, { color: colors.icon, fontFamily: fonts.inter.medium }]}>
-                                            Cashback
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View style={[styles.statDivider, { backgroundColor: colors.icon + '15' }]} />
-                                <View style={styles.statItem}>
-                                    <View style={[styles.statIconBg, { backgroundColor: colors.primary + '15' }]}>
-                                        <Ionicons name="receipt-outline" size={16} color={colors.primary} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[styles.statText, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                            {user?.totalTransactions || '0'}
-                                        </Text>
-                                        <Text style={[styles.statLabelSmall, { color: colors.icon, fontFamily: fonts.inter.medium }]}>
-                                            Transactions
-                                        </Text>
-                                    </View>
-                                </View>
+                            {/* Action Buttons */}
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: colors.button }]}
+                                    onPress={() => router.push('/fund-wallet')}
+                                >
+                                    <Ionicons name="add-circle" size={20} color={colors.primaryText} />
+                                    <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                                        Fund Wallet
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: colors.button }]}
+                                    onPress={() => router.push('/(services)/funds-transfer')}
+                                >
+                                    <Ionicons name="swap-horizontal" size={20} color={colors.primaryText} />
+                                    <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                                        Transfer
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
                     </View>
                     
-                    {/* Transfer Button */}
-                    <TouchableOpacity
-                        style={[styles.transferButton, { backgroundColor: colors.button }]}
-                        onPress={() => router.push('/(services)/funds-transfer')}
-                    >
-                        <Ionicons name="swap-horizontal" size={18} color={colors.primaryText} />
-                        <Text style={[styles.transferButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                            Transfer Funds
-                        </Text>
-                    </TouchableOpacity>
+                    {/* Cashback Card */}
+                    <View style={[styles.cashbackCard, { 
+                        backgroundColor: '#4ade8015',
+                        borderRadius: 12,
+                        padding: 14,
+                        marginTop: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                    }]}>
+                        <View style={[styles.cashbackIconBg, { backgroundColor: '#4ade8025' }]}>
+                            <Ionicons name="gift" size={20} color="#4ade80" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.cashbackLabel, { color: colors.icon, fontFamily: fonts.inter.medium, fontSize: 11 }]}>
+                                Available Cashback
+                            </Text>
+                            <Text style={[styles.cashbackAmount, { color: colors.text, fontFamily: fonts.inter.bold, fontSize: 16 }]}>
+                                {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG')}` : '₦****'}
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                    </View>
                 </View>
             </ScrollView>
 
@@ -413,8 +400,10 @@ const styles = StyleSheet.create({
     // Robust Header
     header: { 
         paddingTop: 48,
-        paddingBottom: 18,
+        paddingBottom: 108,
         paddingHorizontal: 16,
+         borderBottomEndRadius: 26,
+    borderBottomStartRadius: 26,
     },
     headerContent: {
         flexDirection: 'row',
@@ -474,7 +463,7 @@ const styles = StyleSheet.create({
     // Robust Balance Card
     balanceContainer: {
         paddingHorizontal: 16,
-        marginTop: -10,
+        marginTop: -90,
         marginBottom: 22,
     },
     balanceCard: { 
@@ -486,12 +475,9 @@ const styles = StyleSheet.create({
         shadowRadius: 12, 
         elevation: 4,
     },
-    balanceMain: { gap: 14 },
+    balanceMain: { gap: 16 },
     balanceTop: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        gap: 12,
+        marginBottom: 4,
     },
     balanceLabel: { 
         fontSize: 10,
@@ -511,58 +497,43 @@ const styles = StyleSheet.create({
     eyeIcon: {
         padding: 6,
     },
-    addButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    inlineStats: {
+    actionButtons: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
+        gap: 10,
     },
-    statItem: {
+    actionButton: {
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    statIconBg: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    statText: {
-        fontSize: 14,
-    },
-    statLabelSmall: {
-        fontSize: 10,
-        opacity: 0.7,
-        marginTop: 1,
-    },
-    statDivider: {
-        width: 1.5,
-        height: 32,
-    },
-    transferButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 12,
         borderRadius: 12,
         gap: 6,
-        marginTop: 14,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    transferButtonText: { fontSize: 13 },
+    actionButtonText: { 
+        fontSize: 13,
+    },
+    cashbackCard: {
+        // Styles defined inline
+    },
+    cashbackIconBg: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cashbackLabel: {
+        // Styles defined inline
+    },
+    cashbackAmount: {
+        // Styles defined inline
+    },
     
     // Sections
     section: { marginBottom: 22 },
@@ -589,33 +560,36 @@ const styles = StyleSheet.create({
     },
     
     // Enhanced Services Grid
-    servicesGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
+ 
+
+    servicesGrid: { 
+        flexDirection: 'row', 
+        flexWrap: 'wrap', 
         paddingHorizontal: 12,
-        gap: 10,
+        gap: 8
     },
     serviceCard: { 
-        width: '23%',
+        width: '22%', 
         aspectRatio: 1,
-        padding: 10,
-        borderRadius: 14,
+        padding: 8, 
+        borderRadius: 12, 
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'center'
     },
     serviceIconWrapper: { 
-        width: 44, 
-        height: 44, 
-        borderRadius: 22, 
+        width: 40, 
+        height: 40, 
+        borderRadius: 20, 
         justifyContent: 'center', 
         alignItems: 'center', 
-        marginBottom: 8,
+        marginBottom: 6 
     },
     serviceName: { 
-        fontSize: 10,
+        fontSize: 10, 
         textAlign: 'center',
-        lineHeight: 13,
+        lineHeight: 12
     },
+    
     
     // Enhanced Transactions
     loadingContainer: {

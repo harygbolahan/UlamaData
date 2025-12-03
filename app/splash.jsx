@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/auth-context';
+import { useAutoLock } from '@/contexts/auto-lock-context';
 import { useTheme } from '@/contexts/theme-context';
 import { authenticateForLogin, isBiometricLoginEnabled, isPinLoginEnabled, verifyPinForLogin } from '@/services/biometric';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +11,7 @@ import { ActivityIndicator, Animated, Image, Modal, StyleSheet, Text, TouchableO
 export default function SplashScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { isAuthenticated, isLoading, login } = useAuth();
+    const { isLocked, unlock } = useAutoLock();
     const router = useRouter();
     const scaleAnim = useRef(new Animated.Value(0)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -107,6 +109,7 @@ export default function SplashScreen() {
                     
                     if (loginResult.success) {
                         console.log('Splash - Biometric login success, navigating to home');
+                        unlock(); // Unlock the app
                         router.replace('/(tabs)/home');
                         return;
                     }
@@ -217,6 +220,7 @@ export default function SplashScreen() {
                     if (loginResult.success) {
                         setShowPinModal(false);
                         setPin('');
+                        unlock(); // Unlock the app
                         router.replace('/(tabs)/home');
                         return;
                     }
@@ -227,6 +231,7 @@ export default function SplashScreen() {
             if (isAuthenticated) {
                 setShowPinModal(false);
                 setPin('');
+                unlock(); // Unlock the app
                 router.replace('/(tabs)/home');
                 return;
             }

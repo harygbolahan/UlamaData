@@ -81,11 +81,6 @@ export default function BiometricLoginScreen() {
 
     const handleTogglePin = async (value) => {
         if (value) {
-            // Check if biometric login is enabled first
-            if (!biometricEnabled) {
-                showToast('warning', 'Please enable biometric login first');
-                return;
-            }
             // Enable PIN login - ask for PIN
             setShowPinModal(true);
         } else {
@@ -255,9 +250,7 @@ export default function BiometricLoginScreen() {
                                     <Text style={[styles.settingDescription, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                                         {pinEnabled 
                                             ? 'PIN login is active'
-                                            : biometricEnabled 
-                                                ? 'Use 5-digit PIN to login'
-                                                : 'Enable biometric login first'
+                                            : 'Use 5-digit PIN to login'
                                         }
                                     </Text>
                                 </View>
@@ -266,7 +259,7 @@ export default function BiometricLoginScreen() {
                                     onValueChange={handleTogglePin}
                                     trackColor={{ false: '#767577', true: colors.primary }}
                                     thumbColor="#fff"
-                                    disabled={loading || !biometricEnabled}
+                                    disabled={loading}
                                 />
                             </View>
                         </View>

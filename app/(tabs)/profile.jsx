@@ -1,3 +1,4 @@
+import { AutoLockDebug } from '@/components/auto-lock-debug';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
@@ -62,6 +63,9 @@ export default function ProfileTab() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Auto-Lock Debug - Remove this in production */}
+                {/* <AutoLockDebug /> */}
+
                 {/* KYC Alert Card */}
                 {!isKycVerified && (
                     <TouchableOpacity 

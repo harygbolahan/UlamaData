@@ -273,7 +273,8 @@ const styles = StyleSheet.create({
         paddingBottom: 14, 
         flexDirection: 'row', 
         justifyContent: 'space-between', 
-        alignItems: 'center' 
+        alignItems: 'center',
+         
     },
     greeting: { fontSize: 12, marginBottom: 3, opacity: 0.85 },
     name: { fontSize: 18, letterSpacing: -0.3 },
@@ -301,7 +302,9 @@ const styles = StyleSheet.create({
     balanceSection: { 
         paddingHorizontal: 16, 
         paddingBottom: 14, 
-        marginBottom: 18 
+        marginBottom: 18,
+         borderBottomEndRadius: 26,
+    borderBottomStartRadius: 26, 
     },
     balanceContent: {
         flexDirection: 'row',
@@ -375,28 +378,30 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         flexWrap: 'wrap', 
         paddingHorizontal: 12,
-        gap: 8,
+        gap: 8
     },
     serviceCard: { 
-        width: '23%', 
+        width: '22%', 
         aspectRatio: 1,
-        padding: 10, 
-        borderRadius: 10, 
+        padding: 8, 
+        borderRadius: 12, 
         alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
+        justifyContent: 'center'
+    },
+    serviceIconContainer: { 
+        width: 40, 
+        height: 40, 
+        borderRadius: 20, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginBottom: 6 
     },
     serviceName: { 
         fontSize: 10, 
-        textAlign: 'center', 
-        marginTop: 6,
-        lineHeight: 12,
+        textAlign: 'center',
+        lineHeight: 12
     },
+    
     
     // Transactions
     loadingContainer: {

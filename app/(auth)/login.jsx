@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/auth-context';
+import { useAutoLock } from '@/contexts/auto-lock-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { authenticateForLogin, isBiometricLoginEnabled } from '@/services/biometric';
@@ -25,6 +26,7 @@ const isSmallScreen = width < 375;
 export default function LoginScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { login } = useAuth();
+    const { unlock } = useAutoLock();
     const { showToast } = useToast();
     const router = useRouter();
     const [email, setEmail] = useState('');
@@ -72,6 +74,7 @@ export default function LoginScreen() {
                 }, true); // Skip toast for biometric login
                 
                 if (loginResult.success) {
+                    unlock(); // Unlock the app
                     router.replace('/(tabs)/home');
                 } else {
                     showToast('error', loginResult.message || 'Login failed');
@@ -102,6 +105,7 @@ export default function LoginScreen() {
         setIsSubmitting(false);
         
         if (result.success) {
+            unlock(); // Unlock the app
             router.replace('/(tabs)/home');
         }
     };

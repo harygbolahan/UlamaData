@@ -210,48 +210,53 @@ export default function MinimalDashboard() {
                   </TouchableOpacity>
                 </View>
               </View>
-              <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: colors.button }]}
-                onPress={() => router.push("/fund-wallet")}
-              >
-                <Ionicons name="add" size={20} color={colors.primaryText} />
-              </TouchableOpacity>
             </View>
 
-            <View style={[styles.statsRow, {
-              backgroundColor: isDark ? '#0f0f0f' : '#f8f9fa',
-            }]}>
-              <View style={styles.statItem}>
-                <Ionicons name="trending-up" size={14} color={colors.primary} />
-                <Text style={[styles.statValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                  {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG')}` : "₦****"}
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.button }]}
+                onPress={() => router.push("/fund-wallet")}
+              >
+                <Ionicons name="add-circle" size={18} color={colors.primaryText} />
+                <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                  Fund Wallet
                 </Text>
-                <Text style={[styles.statLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                  Cashback
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.button }]}
+                onPress={() => router.push('/(services)/funds-transfer')}
+              >
+                <Ionicons name="swap-horizontal" size={18} color={colors.primaryText} />
+                <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                  Transfer
                 </Text>
-              </View>
-              <View style={[styles.divider, { backgroundColor: colors.icon + '15' }]} />
-              <View style={styles.statItem}>
-                <Ionicons name="receipt-outline" size={14} color={colors.primary} />
-                <Text style={[styles.statValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                  {user?.totalTransactions || '0'}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                  Transactions
-                </Text>
-              </View>
+              </TouchableOpacity>
             </View>
-            
-            {/* Transfer Button */}
-            <TouchableOpacity
-              style={[styles.transferButton, { backgroundColor: colors.button }]}
-              onPress={() => router.push('/(services)/funds-transfer')}
-            >
-              <Ionicons name="swap-horizontal" size={18} color={colors.primaryText} />
-              <Text style={[styles.transferButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                Transfer Funds
+          </View>
+
+          {/* Cashback Card */}
+          <View style={[styles.cashbackCard, { 
+            backgroundColor: '#4ade8015',
+            borderRadius: 12,
+            padding: 12,
+            marginTop: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+          }]}>
+            <View style={[styles.cashbackIconBg, { backgroundColor: '#4ade8025' }]}>
+              <Ionicons name="gift" size={18} color="#4ade80" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cashbackLabel, { color: colors.icon, fontFamily: fonts.inter.medium, fontSize: 10 }]}>
+                Available Cashback
               </Text>
-            </TouchableOpacity>
+              <Text style={[styles.cashbackAmount, { color: colors.text, fontFamily: fonts.inter.bold, fontSize: 15 }]}>
+                {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG')}` : "₦****"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.icon} />
           </View>
         </View>
 
@@ -394,8 +399,11 @@ const styles = StyleSheet.create({
   // Minimal Header
   header: {
     paddingTop: 48,
-    paddingBottom: 16,
+    paddingBottom: 106,
     paddingHorizontal: 16,
+    borderBottomEndRadius: 26,
+    borderBottomStartRadius: 26,
+    // marginBottom: -98
   },
   headerContent: {
     flexDirection: "row",
@@ -432,7 +440,7 @@ const styles = StyleSheet.create({
   // Elegant Balance Card
   balanceContainer: {
     paddingHorizontal: 16,
-    marginTop: -8,
+    marginTop: -98,
     marginBottom: 20,
   },
   balanceCard: {
@@ -445,11 +453,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   balanceHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-    gap: 12,
+    marginBottom: 14,
   },
   balanceLabel: { 
     fontSize: 11, 
@@ -470,55 +474,42 @@ const styles = StyleSheet.create({
   eyeButton: {
     padding: 4,
   },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    gap: 12,
-  },
-  statItem: {
+  actionButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  statValue: {
-    fontSize: 13,
-  },
-  statLabel: {
-    fontSize: 10,
-    opacity: 0.6,
-  },
-  divider: {
-    width: 1,
-    height: 24,
-  },
-  transferButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 12,
-    gap: 6,
-    marginTop: 12,
+    gap: 5,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  transferButtonText: { fontSize: 13 },
+  actionButtonText: { 
+    fontSize: 12,
+  },
+  cashbackCard: {
+    // Styles defined inline
+  },
+  cashbackIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cashbackLabel: {
+    // Styles defined inline
+  },
+  cashbackAmount: {
+    // Styles defined inline
+  },
   
   // Clean Services
   servicesSection: { 
@@ -537,7 +528,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   serviceItem: { 
-    width: "20%", 
+    width: "22%", 
     alignItems: "center",
     marginBottom: 12,
   },

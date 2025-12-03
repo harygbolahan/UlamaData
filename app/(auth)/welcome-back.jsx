@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/auth-context';
+import { useAutoLock } from '@/contexts/auto-lock-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +21,7 @@ import {
 export default function WelcomeBackScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { login, user } = useAuth();
+    const { unlock } = useAutoLock();
     const router = useRouter();
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -34,8 +36,8 @@ export default function WelcomeBackScreen() {
 
     const loadStoredEmail = async () => {
         try {
-            const email = await AsyncStorage.getItem('email');
-            const name = await AsyncStorage.getItem('name');
+            const email = await AsyncStorage.getItem('user_email');
+            const name = await AsyncStorage.getItem('user_name');
             
             console.log('Welcome Back - Stored email:', email);
             console.log('Welcome Back - Stored name:', name);
@@ -69,6 +71,7 @@ export default function WelcomeBackScreen() {
         });
 
         if (result.success) {
+            unlock(); // Unlock the app
             router.replace('/(tabs)/home');
         } else {
             setError(result.error || 'Invalid password');

@@ -12,7 +12,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import BannerCarousel from "../ui/BannerCarousel";
 
@@ -31,9 +31,9 @@ export default function CompactDashboard() {
 
   const loadTransactions = async () => {
     try {
-      await fetchTransactions(1, '', '');
+      await fetchTransactions(1, "", "");
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      console.error("Error loading transactions:", error);
     }
   };
 
@@ -94,52 +94,75 @@ export default function CompactDashboard() {
 
   const getServiceIcon = (service) => {
     const serviceMap = {
-      'data': 'wifi',
-      'airtime': 'phone-portrait',
-      'cable': 'tv',
-      'electricity': 'flash',
-      'exam': 'school',
-      'sms': 'chatbubbles',
-      'coupon': 'pricetag',
-      'wallet': 'wallet',
-      'transfer': 'swap-horizontal',
+      data: "wifi",
+      airtime: "phone-portrait",
+      cable: "tv",
+      electricity: "flash",
+      exam: "school",
+      sms: "chatbubbles",
+      coupon: "pricetag",
+      wallet: "wallet",
+      transfer: "swap-horizontal",
     };
-    const serviceLower = service?.toLowerCase() || '';
+    const serviceLower = service?.toLowerCase() || "";
     for (const [key, icon] of Object.entries(serviceMap)) {
       if (serviceLower.includes(key)) return icon;
     }
-    return 'receipt';
+    return "receipt";
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     if (date.toDateString() === today.toDateString()) {
-      return `Today, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+      return `Today, ${date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })}`;
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+      return `Yesterday, ${date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })}`;
     }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return (
+      date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+      ", " +
+      date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+    );
   };
 
   const truncateText = (text, maxLength = 50) => {
-    if (!text) return '';
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    if (!text) return "";
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
   };
 
-  const recentTransactions = transactions.slice(0, 5).map(tx => ({
+  const recentTransactions = transactions.slice(0, 5).map((tx) => ({
     id: tx.tId || tx.transactionRef,
-    title: tx.servicename || 'Transaction',
-    subtitle: truncateText(tx.servicedesc || tx.category || 'No description'),
-    amount: `-₦${parseFloat(tx.amount || 0).toLocaleString('en-NG')}`,
+    title: tx.servicename || "Transaction",
+    subtitle: truncateText(tx.servicedesc || tx.category || "No description"),
+    amount: `-₦${parseFloat(tx.amount || 0).toLocaleString("en-NG")}`,
     date: formatDate(tx.date || tx.created_at),
     icon: getServiceIcon(tx.servicename),
-    status: tx.tStatus?.toLowerCase() === 'completed' ? 'success' : tx.tStatus?.toLowerCase() === 'processing' ? 'pending' : 'failed',
-    transactionRef: tx.transref || tx.transactionRef
+    status:
+      tx.tStatus?.toLowerCase() === "completed"
+        ? "success"
+        : tx.tStatus?.toLowerCase() === "processing"
+        ? "pending"
+        : "failed",
+    transactionRef: tx.transref || tx.transactionRef,
   }));
 
   return (
@@ -149,16 +172,29 @@ export default function CompactDashboard() {
         <View style={[styles.header, { backgroundColor: accentColor }]}>
           <View style={styles.headerTop}>
             <View style={styles.logoContainer}>
-              <Text style={[styles.logo, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+              <Text
+                style={[
+                  styles.logo,
+                  { fontFamily: fonts.inter.bold, color: colors.primaryText },
+                ]}
+              >
                 DataBeta
               </Text>
             </View>
             <View style={styles.headerRight}>
               <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
-                <Ionicons name={isDark ? "sunny" : "moon"} size={20} color={colors.primaryText} />
+                <Ionicons
+                  name={isDark ? "sunny" : "moon"}
+                  size={20}
+                  color={colors.primaryText}
+                />
               </TouchableOpacity>
               <TouchableOpacity style={styles.notificationButton}>
-                <Ionicons name="notifications-outline" size={20} color={colors.primaryText} />
+                <Ionicons
+                  name="notifications-outline"
+                  size={20}
+                  color={colors.primaryText}
+                />
                 <View style={styles.notificationDot} />
               </TouchableOpacity>
             </View>
@@ -181,7 +217,8 @@ export default function CompactDashboard() {
                     { color: colors.text, fontFamily: fonts.inter.semiBold },
                   ]}
                 >
-                  {user?.name?.toUpperCase() || 'USER'} {user?.surname?.toUpperCase() || ''}
+                  {user?.name?.toUpperCase() || "USER"}{" "}
+                  {user?.surname?.toUpperCase() || ""}
                 </Text>
                 <Text
                   style={[
@@ -189,7 +226,7 @@ export default function CompactDashboard() {
                     { color: colors.icon, fontFamily: fonts.inter.regular },
                   ]}
                 >
-                  {user?.email || 'user@example.com'}
+                  {user?.email || "user@example.com"}
                 </Text>
               </View>
               <TouchableOpacity onPress={toggleBalanceVisibility}>
@@ -209,7 +246,12 @@ export default function CompactDashboard() {
                     { color: accentColor, fontFamily: fonts.inter.bold },
                   ]}
                 >
-                  {balanceVisible ? parseFloat(user?.wallet || 0).toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "****"}
+                  {balanceVisible
+                    ? parseFloat(user?.wallet || 0).toLocaleString("en-NG", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })
+                    : "****"}
                 </Text>
                 <Text
                   style={[
@@ -243,7 +285,12 @@ export default function CompactDashboard() {
                     { color: colors.text, fontFamily: fonts.inter.bold },
                   ]}
                 >
-                  {balanceVisible ? parseFloat(user?.cashback || 0).toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "****"}
+                  {balanceVisible
+                    ? parseFloat(user?.cashback || 0).toLocaleString("en-NG", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })
+                    : "****"}
                 </Text>
                 <Text
                   style={[
@@ -277,7 +324,7 @@ export default function CompactDashboard() {
                     { color: colors.text, fontFamily: fonts.inter.bold },
                   ]}
                 >
-                  {balanceVisible ? (user?.totalTransactions || "0") : "***"}
+                  {balanceVisible ? user?.totalTransactions || "0" : "***"}
                 </Text>
                 <Text
                   style={[
@@ -299,7 +346,6 @@ export default function CompactDashboard() {
             </View>
 
             <View style={styles.actionButtons}>
-
               <TouchableOpacity
                 style={[
                   styles.actionButton,
@@ -335,7 +381,11 @@ export default function CompactDashboard() {
                 ]}
                 onPress={() => router.push("/(services)/funds-transfer")}
               >
-                <Ionicons name="swap-horizontal" size={18} color={accentColor} />
+                <Ionicons
+                  name="swap-horizontal"
+                  size={18}
+                  color={accentColor}
+                />
                 <Text
                   style={[
                     styles.actionButtonText,
@@ -345,14 +395,9 @@ export default function CompactDashboard() {
                   Transfer
                 </Text>
               </TouchableOpacity>
-
-              
             </View>
-
-            
           </View>
         </View>
-
 
         {/* Quick Services */}
         <View style={styles.section}>
@@ -378,11 +423,7 @@ export default function CompactDashboard() {
                     { backgroundColor: colors.isDark ? "#1f1f1f" : "#fff" },
                   ]}
                 >
-                  <Ionicons
-                    name={service.icon}
-                    size={28}
-                    color={accentColor}
-                  />
+                  <Ionicons name={service.icon} size={28} color={accentColor} />
                 </View>
                 <Text
                   style={[
@@ -397,7 +438,6 @@ export default function CompactDashboard() {
           </View>
         </View>
 
-
         {/* Banners */}
         <View style={styles.section}>
           <BannerCarousel />
@@ -406,11 +446,23 @@ export default function CompactDashboard() {
         {/* Transactions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: colors.text, fontFamily: fonts.inter.bold },
+              ]}
+            >
               Recent
             </Text>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
-              <Text style={[styles.viewAll, { color: accentColor, fontFamily: fonts.inter.semiBold }]}>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/transactions")}
+            >
+              <Text
+                style={[
+                  styles.viewAll,
+                  { color: accentColor, fontFamily: fonts.inter.semiBold },
+                ]}
+              >
                 View All
               </Text>
             </TouchableOpacity>
@@ -422,8 +474,18 @@ export default function CompactDashboard() {
             </View>
           ) : recentTransactions.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="receipt-outline" size={32} color={colors.icon} style={{ opacity: 0.3 }} />
-              <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+              <Ionicons
+                name="receipt-outline"
+                size={32}
+                color={colors.icon}
+                style={{ opacity: 0.3 }}
+              />
+              <Text
+                style={[
+                  styles.emptyText,
+                  { color: colors.icon, fontFamily: fonts.inter.regular },
+                ]}
+              >
                 No transactions yet
               </Text>
             </View>
@@ -433,23 +495,33 @@ export default function CompactDashboard() {
                 key={transaction.id}
                 style={[
                   styles.transactionCard,
-                  { 
+                  {
                     backgroundColor: colors.isDark ? "#1f1f1f" : "#fff",
-                    marginBottom: index === recentTransactions.length - 1 ? 0 : 8
+                    marginBottom:
+                      index === recentTransactions.length - 1 ? 0 : 8,
                   },
                 ]}
                 onPress={() =>
                   router.push({
-                    pathname: '/transaction-details',
-                    params: { 
+                    pathname: "/transaction-details",
+                    params: {
                       transactionRef: transaction.transactionRef,
-                      transactionDate: transaction.date
-                    }
+                      transactionDate: transaction.date,
+                    },
                   })
                 }
               >
-                <View style={[styles.transactionIcon, { backgroundColor: accentColor + "15" }]}>
-                  <Ionicons name={transaction.icon} size={18} color={accentColor} />
+                <View
+                  style={[
+                    styles.transactionIcon,
+                    { backgroundColor: accentColor + "15" },
+                  ]}
+                >
+                  <Ionicons
+                    name={transaction.icon}
+                    size={18}
+                    color={accentColor}
+                  />
                 </View>
                 <View style={styles.transactionInfo}>
                   <Text
@@ -472,12 +544,27 @@ export default function CompactDashboard() {
                   </Text>
                 </View>
                 <View style={styles.transactionRight}>
-                  <Text style={[styles.transactionAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                  <Text
+                    style={[
+                      styles.transactionAmount,
+                      { color: colors.text, fontFamily: fonts.inter.bold },
+                    ]}
+                  >
                     {transaction.amount}
                   </Text>
-                  <View style={[styles.statusDot, { 
-                    backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : '#EF4444' 
-                  }]} />
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor:
+                          transaction.status === "success"
+                            ? colors.success
+                            : transaction.status === "pending"
+                            ? "#FFA500"
+                            : "#EF4444",
+                      },
+                    ]}
+                  />
                 </View>
               </TouchableOpacity>
             ))
@@ -492,7 +579,12 @@ export default function CompactDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingTop: 50, paddingBottom: 46 },
+  header: {
+   paddingTop: 50,
+    paddingBottom: 106,
+     borderBottomEndRadius: 26,
+    borderBottomStartRadius: 26,
+    },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -516,7 +608,7 @@ const styles = StyleSheet.create({
     borderColor: "#E60000",
   },
 
-  balanceCardContainer: { paddingHorizontal: 16, marginTop: -30 },
+  balanceCardContainer: { paddingHorizontal: 16, marginTop: -80 },
   balanceCard: {
     borderRadius: 12,
     padding: 16,
@@ -584,16 +676,16 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, marginBottom: 16 },
   viewAll: { fontSize: 13 },
 
-  quickActionsGrid: { 
-    flexDirection: "row", 
-    flexWrap: "wrap", 
+  quickActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
-  quickActionItem: { 
-    width: "22%", 
+  quickActionItem: {
+    width: "22%",
     alignItems: "center",
-    marginBottom: 4
+    marginBottom: 4,
   },
   quickActionIcon: {
     width: 56,

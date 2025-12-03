@@ -6,16 +6,18 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
+import { ActivityTracker } from '@/components/activity-tracker';
 import { AuthProvider } from '@/contexts/auth-context';
+import { AutoLockProvider } from '@/contexts/auto-lock-context';
 import { BannerProvider } from '@/contexts/banner-context';
 import { BeneficiaryProvider } from '@/contexts/beneficiary-context';
 import { DashboardProvider } from '@/contexts/dashboard-context';
+import { NotificationProvider } from '@/contexts/notification-context';
 import { PaymentProvider } from '@/contexts/payment-context';
 import { ServicesProvider } from '@/contexts/services-context';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { ToastProvider } from '@/contexts/toast-context';
 import { TransactionsProvider } from '@/contexts/transactions-context';
-import { NotificationProvider } from '@/contexts/notification-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -70,28 +72,32 @@ export default function RootLayout() {
         <ToastProvider>
           <NotificationProvider>
             <AuthProvider>
-              <BannerProvider>
-                <ServicesProvider>
-                  <PaymentProvider>
-                    <TransactionsProvider>
-                      <BeneficiaryProvider>
-                        <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                          <Stack screenOptions={{ headerShown: false }}>
-                            <Stack.Screen name="splash" />
-                            <Stack.Screen name="(onboarding)/index" />
-                            <Stack.Screen name="(auth)/login" />
-                            <Stack.Screen name="(auth)/signup" />
-                            <Stack.Screen name="(auth)/forgot-password" />
-                            <Stack.Screen name="index" />
-                            <Stack.Screen name="(tabs)" />
-                          </Stack>
-                          <StatusBar style="auto" />
-                        </NavigationThemeProvider>
-                      </BeneficiaryProvider>
-                    </TransactionsProvider>
-                  </PaymentProvider>
-                </ServicesProvider>
-              </BannerProvider>
+              <AutoLockProvider>
+                <ActivityTracker>
+                  <BannerProvider>
+                    <ServicesProvider>
+                      <PaymentProvider>
+                        <TransactionsProvider>
+                          <BeneficiaryProvider>
+                            <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                              <Stack screenOptions={{ headerShown: false }}>
+                                <Stack.Screen name="splash" />
+                                <Stack.Screen name="(onboarding)/index" />
+                                <Stack.Screen name="(auth)/login" />
+                                <Stack.Screen name="(auth)/signup" />
+                                <Stack.Screen name="(auth)/forgot-password" />
+                                <Stack.Screen name="index" />
+                                <Stack.Screen name="(tabs)" />
+                              </Stack>
+                              <StatusBar style="auto" />
+                            </NavigationThemeProvider>
+                          </BeneficiaryProvider>
+                        </TransactionsProvider>
+                      </PaymentProvider>
+                    </ServicesProvider>
+                  </BannerProvider>
+                </ActivityTracker>
+              </AutoLockProvider>
             </AuthProvider>
           </NotificationProvider>
         </ToastProvider>
