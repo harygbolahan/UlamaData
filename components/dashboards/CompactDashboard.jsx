@@ -683,13 +683,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   quickActionItem: {
-    width: "22%",
+    width: "20%",
     alignItems: "center",
     marginBottom: 4,
   },
   quickActionIcon: {
-    width: 56,
-    height: 56,
+    width: 46,
+    height: 46,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",

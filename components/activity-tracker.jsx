@@ -1,23 +1,33 @@
-    import { useAutoLock } from '@/contexts/auto-lock-context';
-import { Pressable } from 'react-native';
+import { useAutoLock } from '@/contexts/auto-lock-context';
+import { useRef } from 'react';
+import { View } from 'react-native';
 
 export function ActivityTracker({ children }) {
     const { resetInactivityTimer } = useAutoLock();
+    const lastActivityTime = useRef(Date.now());
 
     const handleInteraction = () => {
-        console.log('Activity detected - resetting timer');
-        resetInactivityTimer();
+        const now = Date.now();
+        // Throttle to avoid excessive calls (only reset if 1 second has passed)
+        if (now - lastActivityTime.current > 1000) {
+            lastActivityTime.current = now;
+            resetInactivityTimer();
+        }
     };
 
     return (
-        <Pressable 
-            style={{ flex: 1 }} 
-            onStartShouldSetResponder={() => true}
-            onResponderGrant={handleInteraction}
-            onResponderMove={handleInteraction}
-            onTouchStart={handleInteraction}
+        <View 
+            style={{ flex: 1 }}
+            onStartShouldSetResponderCapture={() => {
+                handleInteraction();
+                return false; // Don't capture, let children handle
+            }}
+            onMoveShouldSetResponderCapture={() => {
+                handleInteraction();
+                return false; // Don't capture, let children handle
+            }}
         >
             {children}
-        </Pressable>
+        </View>
     );
 }

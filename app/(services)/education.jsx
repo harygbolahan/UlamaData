@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     examCard: {
-        width: '47%',
+        width: '45%',
         padding: 16,
         borderRadius: 16,
         alignItems: 'center',

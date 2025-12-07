@@ -310,11 +310,11 @@ const styles = StyleSheet.create({
     quickAmountCard: {
         width: '30%',
         margin: '1.66%',
-        padding: 16,
+        padding: 14,
         borderRadius: 12,
         alignItems: 'center',
     },
-    quickAmountText: { fontSize: 16 },
+    quickAmountText: { fontSize: 10 },
     loadingContainer: {
         paddingVertical: 40,
         alignItems: 'center',

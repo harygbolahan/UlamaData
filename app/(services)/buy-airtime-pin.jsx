@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
     },
     pinSizeCard: {
-        width: '47%',
+        width: '45%',
         margin: '1.5%',
         padding: 16,
         borderRadius: 12,
