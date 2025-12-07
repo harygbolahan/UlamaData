@@ -52,7 +52,7 @@ export default function FAQsScreen() {
         {
             id: '9',
             question: 'How do I contact support?',
-            answer: 'You can reach us via Live Chat, Email (support@DataBeta.com), Phone (+234 801 234 5678), or WhatsApp.'
+            answer: 'You can reach us via Live Chat, Email (support@Ulamadata.ng), or WhatsApp.'
         },
         {
             id: '10',

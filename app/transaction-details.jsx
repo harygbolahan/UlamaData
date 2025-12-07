@@ -234,7 +234,7 @@ export default function TransactionDetails() {
                     `Reference: ${transaction.ref}\n` +
                     `Date: ${transaction.date} ${transaction.time}\n` +
                     `Status: ${transaction.status}\n\n` +
-                    `Powered by DataBeta`,
+                    `Powered by UlamaData`,
             });
         } catch (error) {
             console.error(error);
@@ -515,7 +515,7 @@ export default function TransactionDetails() {
                 <body>
                     <div class="receipt">
                         <div class="header">
-                            <div class="logo">DataBeta</div>
+                            <div class="logo">UlamaData</div>
                             <div class="subtitle">Transaction Receipt</div>
                         </div>
 
@@ -591,7 +591,7 @@ export default function TransactionDetails() {
                         </div>
 
                         <div class="footer">
-                            <div class="footer-brand">DataBeta</div>
+                            <div class="footer-brand">UlamaData</div>
                             <div class="footer-note">
                                 This is a computer-generated receipt.<br>
                                 For support, contact us through the app.

@@ -32,7 +32,7 @@ export default function NotificationsTestScreen() {
     setIsSending(true);
     try {
       await sendTestPushNotification(expoPushToken, {
-        title: 'DataBeta Transaction',
+        title: 'UlamaData Transaction',
         body: 'Your data purchase was successful!',
         data: { 
           type: 'transaction',

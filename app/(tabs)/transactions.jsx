@@ -92,7 +92,7 @@ export default function TransactionsTab() {
                 <html>
                 <head>
                     <meta charset="utf-8">
-                    <title>Transactions - DataBeta</title>
+                    <title>Transactions - UlamaData</title>
                     <style>
                         * {
                             margin: 0;
@@ -204,7 +204,7 @@ export default function TransactionsTab() {
                 <body>
                     <div class="header">
                         <h1>Transaction History</h1>
-                        <div class="subtitle">DataBeta • ${mappedTransactions.length} transactions</div>
+                        <div class="subtitle">UlamaData • ${mappedTransactions.length} transactions</div>
                     </div>
 
                     <div class="info">
@@ -244,7 +244,7 @@ export default function TransactionsTab() {
                     </table>
 
                     <div class="footer">
-                        DataBeta • Generated on ${new Date().toLocaleString()}
+                        UlamaData • Generated on ${new Date().toLocaleString()}
                     </div>
                 </body>
                 </html>

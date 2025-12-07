@@ -178,7 +178,7 @@ export default function CompactDashboard() {
                   { fontFamily: fonts.inter.bold, color: colors.primaryText },
                 ]}
               >
-                DataBeta
+                UlamaData
               </Text>
             </View>
             <View style={styles.headerRight}>

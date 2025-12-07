@@ -7,17 +7,17 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -137,11 +137,11 @@ export default function SignUpScreen() {
           onChangeText={onChangeText}
           keyboardType={options.keyboardType || "default"}
           autoCapitalize={options.autoCapitalize || "words"}
-          secureTextEntry={options.secureTextEntry && !options.showPassword}
+          secureTextEntry={options.secureTextEntry ? !options.showPassword : false}
           maxLength={options.maxLength}
           autoCorrect={false}
         />
-        {options.secureTextEntry && (
+        {options.togglePassword && (
           <Pressable onPress={options.togglePassword} style={styles.eyeIcon}>
             <Ionicons
               name={options.showPassword ? "eye-outline" : "eye-off-outline"}
@@ -157,14 +157,15 @@ export default function SignUpScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         bounces={false}
+        enableOnAndroid={true}
       >
           <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
             {/* Header */}
@@ -290,7 +291,6 @@ export default function SignUpScreen() {
                     keyboardType: "number-pad",
                     maxLength: 5,
                     placeholder: "5-digit PIN",
-                    secureTextEntry: true,
                     required: true,
                   })}
                   {renderInput("Referral Code", referBy, setReferBy, {

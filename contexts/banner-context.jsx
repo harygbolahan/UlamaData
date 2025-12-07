@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const BannerContext = createContext(null);
 
 const BANNER_STORAGE_KEY = 'banner_ads_data';
-const BASE_URL = 'https://databeta.com.ng';
+const BASE_URL = 'https://ulamadata.ng';
 
 export function BannerProvider({ children }) {
     const [banners, setBanners] = useState([]);

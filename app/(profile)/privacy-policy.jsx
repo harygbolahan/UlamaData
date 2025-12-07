@@ -50,7 +50,7 @@ export default function PrivacyPolicyScreen() {
         },
         {
             title: 'Contact Us',
-            content: 'If you have any questions about this privacy policy, please contact us at support@databeta.com or through our in-app support system.'
+            content: 'If you have any questions about this privacy policy, please contact us at support@ulamadata.ng or through our in-app support system.'
         },
     ];
 
@@ -78,7 +78,7 @@ export default function PrivacyPolicyScreen() {
                 {/* Introduction */}
                 <View style={styles.section}>
                     <Text style={[styles.introText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                        DataBeta ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and services.
+                        UlamaData ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and services.
                     </Text>
                 </View>
 
@@ -116,7 +116,7 @@ export default function PrivacyPolicyScreen() {
                         Questions About Privacy?
                     </Text>
                     <Text style={[styles.contactText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        Contact our privacy team at support@databeta.com
+                        Contact our privacy team at support@ulamadata.ng
                     </Text>
                     <View style={styles.contactArrow}>
                         <Ionicons name="arrow-forward" size={20 * scale} color={colors.primary} />

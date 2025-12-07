@@ -14,11 +14,11 @@ export default function TermsConditionsScreen() {
     const sections = [
         {
             title: 'Acceptance of Terms',
-            content: 'By accessing and using DataBeta, you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.'
+            content: 'By accessing and using UlamaData, you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.'
         },
         {
             title: 'Service Description',
-            content: 'DataBeta provides mobile data, airtime, cable TV subscriptions, electricity bill payments, and other digital services. We reserve the right to modify, suspend, or discontinue any service at any time without notice.'
+            content: 'UlamaData provides mobile data, airtime, cable TV subscriptions, electricity bill payments, and other digital services. We reserve the right to modify, suspend, or discontinue any service at any time without notice.'
         },
         {
             title: 'User Account',
@@ -56,7 +56,7 @@ export default function TermsConditionsScreen() {
 
                 <View style={styles.section}>
                     <Text style={[styles.introText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                        Please read these Terms and Conditions carefully before using DataBeta. These terms govern your use of our services and constitute a legally binding agreement between you and DataBeta.
+                        Please read these Terms and Conditions carefully before using UlamaData. These terms govern your use of our services and constitute a legally binding agreement between you and UlamaData.
                     </Text>
                 </View>
 
@@ -117,7 +117,7 @@ export default function TermsConditionsScreen() {
                         </Text>
                     </View>
                     <Text style={[styles.sectionContent, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        DataBeta shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of our services. Our total liability shall not exceed the amount paid by you for the specific service.
+                        UlamaData shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of our services. Our total liability shall not exceed the amount paid by you for the specific service.
                     </Text>
                 </View>
 
@@ -145,7 +145,7 @@ export default function TermsConditionsScreen() {
                         </Text>
                     </View>
                     <Text style={[styles.sectionContent, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        For questions about these Terms and Conditions, please contact us at support@databeta.com or through our in-app support system.
+                        For questions about these Terms and Conditions, please contact us at support@ulamadata.ng or through our in-app support system.
                     </Text>
                 </View>
 
@@ -160,10 +160,10 @@ export default function TermsConditionsScreen() {
                         <Ionicons name="document-text" size={24 * scale} color={colors.primary} />
                     </View>
                     <Text style={[styles.contactTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                        By using DataBeta, you agree to these terms
+                        By using UlamaData, you agree to these terms
                     </Text>
                     <Text style={[styles.contactText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        If you have any questions, contact support@databeta.com
+                        If you have any questions, contact support@ulamadata.ng
                     </Text>
                     <View style={styles.contactArrow}>
                         <Ionicons name="arrow-forward" size={20 * scale} color={colors.primary} />

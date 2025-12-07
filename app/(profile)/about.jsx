@@ -32,7 +32,7 @@ export default function AboutScreen() {
                 </View>
 
                 <Text style={[styles.appName, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                    DataBeta
+                    UlamaData
                 </Text>
                 <Text style={[styles.version, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                     Version 1.0.0
@@ -40,7 +40,7 @@ export default function AboutScreen() {
 
                 <View style={[styles.infoCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
                     <Text style={[styles.description, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                        DataBeta is your trusted platform for fast and secure VTU services. Buy data, airtime, pay bills, and more with ease.
+                        UlamaData is your trusted platform for fast and secure VTU services. Buy data, airtime, pay bills, and more with ease.
                     </Text>
                 </View>
 
@@ -77,7 +77,7 @@ export default function AboutScreen() {
                 </View>
 
                 <Text style={[styles.copyright, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                    © 2025 DataBeta. All rights reserved.
+                    © 2025 UlamaData. All rights reserved.
                 </Text>
             </ScrollView>
         </View>

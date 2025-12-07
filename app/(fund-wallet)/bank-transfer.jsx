@@ -12,7 +12,7 @@ export default function BankTransferScreen() {
     const bankDetails = {
         bankName: 'Wema Bank',
         accountNumber: '1234567890',
-        accountName: 'DataBeta Technologies',
+        accountName: 'UlamaData Technologies',
         reference: `DB${Date.now().toString().slice(-8)}`,
     };
 

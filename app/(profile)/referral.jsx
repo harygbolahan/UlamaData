@@ -36,7 +36,7 @@ export default function ReferralScreen() {
     const shareReferralCode = async () => {
         try {
             const code = referralData?.refer_code || user?.referral_code;
-            const message = `Join DataBeta using my referral code: ${code}\n\nDownload the app and start enjoying amazing benefits!`;
+            const message = `Join UlamaData using my referral code: ${code}\n\nDownload the app and start enjoying amazing benefits!`;
             
             await Share.share({
                 message: message,

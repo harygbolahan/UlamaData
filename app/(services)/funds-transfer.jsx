@@ -101,7 +101,7 @@ export default function FundsTransferScreen() {
 
     const calculateTotal = () => {
         const amountNum = parseFloat(amount) || 0;
-        // Use charge2 for Databeta (001), charge for other banks
+        // Use charge2 for UlamaData (001), charge for other banks
         const charge = selectedBank === '001' ? transferCharge.charge2 : transferCharge.charge;
         return amountNum + charge;
     };
@@ -161,7 +161,7 @@ export default function FundsTransferScreen() {
     };
 
     const accentColor = colors.primary;
-    // Use charge2 for Databeta (001), charge for other banks
+    // Use charge2 for UlamaData (001), charge for other banks
     const charge = selectedBank === '001' ? transferCharge.charge2 : transferCharge.charge;
     const availableBalance = getAvailableBalance();
     const total = calculateTotal();

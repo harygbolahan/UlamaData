@@ -1,4 +1,3 @@
-import { AutoLockDebug } from '@/components/auto-lock-debug';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
@@ -6,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
@@ -37,11 +36,11 @@ export default function ProfileTab() {
         { id: '1', title: 'Personal Information', icon: 'person-outline', route: '/(profile)/personal' },
         { id: '2', title: 'Upgrade Account', icon: 'arrow-up-circle-outline', route: '/(profile)/upgrade' },
         // { id: '3', title: 'Referral Program', icon: 'gift-outline', route: '/(profile)/referral' },
-        { id: '4', title: 'Dashboard Style', icon: 'grid-outline', route: '/(profile)/dashboard-selector' },
+        // { id: '4', title: 'Dashboard Style', icon: 'grid-outline', route: '/(profile)/dashboard-selector' },
         { id: '5', title: 'Security & Privacy', icon: 'shield-checkmark-outline', route: '/(profile)/security' },
         // { id: '6', title: 'Payment Methods', icon: 'card-outline', route: '/(profile)/payment' },
         // { id: '7', title: 'Transaction History', icon: 'time-outline', route: '/(profile)/history' },
-        { id: '8', title: 'Notifications', icon: 'notifications-outline', route: '/(profile)/notifications' },
+        // { id: '8', title: 'Notifications', icon: 'notifications-outline', route: '/(profile)/notifications' },
         { id: '9', title: 'Help & Support', icon: 'help-circle-outline', route: '/(profile)/support' },
         { id: '10', title: 'Privacy Policy', icon: 'shield-outline', route: '/(profile)/privacy-policy' },
         { id: '11', title: 'Terms & Conditions', icon: 'document-text-outline', route: '/(profile)/terms-conditions' },
@@ -95,12 +94,9 @@ export default function ProfileTab() {
                     backgroundColor: colors.isDark ? '#1f1f1f' : '#f5f5f5'
                 }]}>
                     <View style={styles.profileHeader}>
-                        <View style={[styles.avatarLarge, { backgroundColor: colors.primary }]}>
-                            <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop' }}
-                                style={styles.avatarImage}
-                            />
-                            <TouchableOpacity style={styles.editAvatar}>
+                        <View style={[styles.avatarLarge, { backgroundColor: colors.primary + '20' }]}>
+                            <Ionicons name="person" size={40 * scale} color={colors.primary} />
+                            <TouchableOpacity style={[styles.editAvatar, { backgroundColor: colors.primary }]}>
                                 <Ionicons name="camera" size={14 * scale} color="#fff" />
                             </TouchableOpacity>
                         </View>
@@ -339,13 +335,10 @@ const styles = StyleSheet.create({
         width: 80 * scale,
         height: 80 * scale,
         borderRadius: 40 * scale,
-        overflow: 'hidden',
         marginBottom: 12 * scale,
         position: 'relative',
-    },
-    avatarImage: {
-        width: '100%',
-        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     editAvatar: {
         position: 'absolute',

@@ -61,6 +61,35 @@ export default function NetworkSelector({
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
 
+    // Network detection based on Nigerian phone number prefixes
+    const detectNetwork = (number) => {
+        if (!number || number.length < 4) return null;
+        
+        const prefix = number.substring(0, 4);
+        
+        // MTN prefixes: 0803, 0806, 0810, 0813, 0814, 0816, 0903, 0906, 0913, 0916
+        if (['0803', '0806', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916'].includes(prefix)) {
+            return networks.find(n => n.id === 'mtn' || n.name.toLowerCase() === 'mtn');
+        }
+        
+        // Airtel prefixes: 0802, 0808, 0812, 0901, 0902, 0904, 0907, 0912
+        if (['0802', '0808', '0812', '0901', '0902', '0904', '0907', '0912'].includes(prefix)) {
+            return networks.find(n => n.id === 'airtel' || n.name.toLowerCase() === 'airtel');
+        }
+        
+        // Glo prefixes: 0805, 0807, 0811, 0815, 0905, 0915
+        if (['0805', '0807', '0811', '0815', '0905', '0915'].includes(prefix)) {
+            return networks.find(n => n.id === 'glo' || n.name.toLowerCase() === 'glo');
+        }
+        
+        // 9mobile prefixes: 0809, 0817, 0818, 0909, 0908
+        if (['0809', '0817', '0818', '0909', '0908'].includes(prefix)) {
+            return networks.find(n => n.id === '9mobile' || n.name.toLowerCase() === '9mobile');
+        }
+        
+        return null;
+    };
+
     // Set MTN as default network on mount if no network is selected
     useEffect(() => {
         if (!selectedNetwork) {
@@ -70,6 +99,16 @@ export default function NetworkSelector({
             }
         }
     }, []);
+
+    // Auto-detect network when phone number changes (only for topup/phone numbers)
+    useEffect(() => {
+        if (beneficiaryType === 'topup' && phoneNumber.length >= 4) {
+            const detectedNetwork = detectNetwork(phoneNumber);
+            if (detectedNetwork && detectedNetwork.id !== selectedNetwork?.id) {
+                onNetworkSelect(detectedNetwork);
+            }
+        }
+    }, [phoneNumber, beneficiaryType]);
 
     useEffect(() => {
         if (phoneNumber.length > 0) {

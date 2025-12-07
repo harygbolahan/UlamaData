@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const BASE_URL = 'https://databeta.com.ng/app';
+const BASE_URL = 'https://ulamadata.ng/app';
 
 // Create axios instance
 const apiClient = axios.create({

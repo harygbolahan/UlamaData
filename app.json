@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "DataBeta",
-    "slug": "databeta",
+    "name": "UlamaData",
+    "slug": "ulamadata",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
-    "scheme": "databeta",
+    "icon": "./assets/images/android-icon-foreground.png",
+    "scheme": "ulamadata",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -15,12 +15,12 @@
       }
     },
     "android": {
-      "package": "com.yourname.databeta",
+      "package": "com.paceint.ulamadata",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundImage": "./assets/images/logo.png",
-        "monochromeImage": "./assets/images/logo.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,

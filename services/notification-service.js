@@ -86,7 +86,7 @@ export async function sendTestPushNotification(expoPushToken, notificationData =
     to: expoPushToken,
     sound: 'default',
     title: notificationData.title || 'Test Notification',
-    body: notificationData.body || 'This is a test notification from DataBeta',
+    body: notificationData.body || 'This is a test notification from UlamaData',
     data: notificationData.data || { type: 'test' },
   };
 

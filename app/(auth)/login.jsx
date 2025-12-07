@@ -114,13 +114,13 @@ export default function LoginScreen() {
         <KeyboardAvoidingView
             style={[styles.container, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                bounces={false}
+                bounces={true}
             >
                     <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                         {/* Header */}
@@ -132,7 +132,7 @@ export default function LoginScreen() {
                                 Welcome Back
                             </Text>
                             <Text style={[styles.subtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                Login to continue to DataBeta
+                                Login to continue to UlamaData
                             </Text>
                         </View>
 
@@ -275,10 +275,10 @@ const styles = {
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: 24,
+        justifyContent: 'center',
     },
     content: {
-        flex: 1,
-        justifyContent: 'center',
+        width: '100%',
         paddingVertical: 40,
     },
     header: {

@@ -44,7 +44,7 @@ export default function EarnTab() {
         if (referralData?.referralCode) {
             try {
                 await Share.share({
-                    message: `Join me on DataBeta! Use my referral code: ${referralData.referralCode}`,
+                    message: `Join me on UlamaData! Use my referral code: ${referralData.referralCode}`,
                 });
             } catch (error) {
                 console.error('Error sharing:', error);

@@ -18,7 +18,7 @@ export default function SupportScreen() {
     const defaultSupportOptions = [
         { id: '1', title: 'FAQs', icon: 'help-circle', action: () => router.push('/(support)/faqs') },
         { id: '2', title: 'Live Chat', icon: 'chatbubbles', action: () => router.push('/(support)/live-chat') },
-        // { id: '3', title: 'Email Support', icon: 'mail', action: () => Linking.openURL('mailto:support@DataBeta.com') },
+        // { id: '3', title: 'Email Support', icon: 'mail', action: () => Linking.openURL('mailto:support@UlamaData.ng') },
         // { id: '4', title: 'Call Us', icon: 'call', action: () => Linking.openURL('tel:+2348012345678') },
     ];
 

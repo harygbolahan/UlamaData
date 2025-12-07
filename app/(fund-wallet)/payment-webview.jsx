@@ -22,8 +22,8 @@ export default function PaymentWebViewScreen() {
         
         const url = navState.url.toLowerCase();
         
-        // Check if redirected back to databeta.com.ng (payment completed)
-        if (url.includes('databeta.com.ng') && !url.includes('monnify') && !url.includes('checkout')) {
+        // Check if redirected back to ulamdadata.ng (payment completed)
+        if (url.includes('ulamadata.ng') && !url.includes('monnify') && !url.includes('checkout')) {
             hasNavigatedRef.current = true;
             showToast('success', 'Payment completed successfully!');
             setTimeout(() => {

@@ -262,10 +262,10 @@ export default function SplashScreen() {
             </Animated.View>
             <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
                 <Text style={[styles.title, { fontFamily: fonts.inter.bold }]}>
-                    DataBeta
+                    UlamaData
                 </Text>
                 <Text style={[styles.subtitle, { fontFamily: fonts.inter.regular }]}>
-                    Fast & Secure VTU Services
+                    Good & Fast Services
                 </Text>
                 {biometricChecking && (
                     <View style={styles.loadingContainer}>
