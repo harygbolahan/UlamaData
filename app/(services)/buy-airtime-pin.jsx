@@ -1,10 +1,11 @@
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const NETWORK_IMAGES = {
     mtn: require('@/assets/networks/mtn.png'),
@@ -142,15 +143,7 @@ export default function BuyAirtimePinScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Network Selector */}
-                {loadingNetworks ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Loading networks...
-                        </Text>
-                    </View>
-                ) : (
-                    <View style={styles.section}>
+                <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Select Network
                         </Text>
@@ -198,7 +191,6 @@ export default function BuyAirtimePinScreen() {
                             })}
                         </ScrollView>
                     </View>
-                )}
 
                 {/* Quantity Input */}
                 {selectedNetwork && (
@@ -246,11 +238,7 @@ export default function BuyAirtimePinScreen() {
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Select Pin Size
                         </Text>
-                        {loadingPinSizes ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                            </View>
-                        ) : pinSizes.length > 0 ? (
+                        {pinSizes.length > 0 && !loadingPinSizes ? (
                             <View style={styles.pinSizesGrid}>
                                 {pinSizes.map((pinData) => {
                                     const qty = parseInt(quantity) || 1;
@@ -290,7 +278,7 @@ export default function BuyAirtimePinScreen() {
                                     );
                                 })}
                             </View>
-                        ) : (
+                        ) : !loadingPinSizes && (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
                                 <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -303,6 +291,8 @@ export default function BuyAirtimePinScreen() {
 
                 <View style={{ height: 30 }} />
             </ScrollView>
+
+            <LoadingOverlay visible={loadingNetworks || loadingPinSizes} />
 
             {/* Proceed Button */}
             {selectedNetwork && selectedPinSize && (
@@ -421,13 +411,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         marginTop: 4,
     },
-    loadingContainer: {
-        paddingVertical: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    loadingText: { fontSize: 14 },
     emptyContainer: {
         paddingVertical: 60,
         alignItems: 'center',

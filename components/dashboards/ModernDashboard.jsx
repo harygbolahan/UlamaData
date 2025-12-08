@@ -107,13 +107,15 @@ export default function ModernDashboard() {
     const services = [
         { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
         { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
-        { id: '3', name: 'Cable', icon: 'tv', route: '/(services)/cable-tv', color: '#00d4ff' },
-        { id: '4', name: 'Power', icon: 'flash', route: '/(services)/electricity', color: '#38f9d7' },
-        { id: '5', name: 'Bulk', icon: 'layers', route: '/(services)/bulk-order', color: '#ffa726' },
-        { id: '6', name: 'SMS', icon: 'chatbubbles', route: '/(services)/bulk-sms', color: '#ab47bc' },
-        { id: '7', name: 'Schedule', icon: 'time', route: '/(services)/schedule-transaction', color: '#9c27b0' },
+        { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
+        { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
+        { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
+        { id: '6', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
+        { id: '7', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
         { id: '8', name: 'More', icon: 'apps', route: '/(tabs)/services', color: '#607d8b' },
     ];
+
+    
 
     return (
         <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -270,21 +272,14 @@ export default function ModernDashboard() {
                                     backgroundColor: isDark ? '#1a1a1a' : '#fff',
                                     borderWidth: isDark ? 1 : 0,
                                     borderColor: isDark ? '#2a2a2a' : 'transparent',
-                                    shadowColor: service.color,
-                                    shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: 0.08,
-                                    shadowRadius: 4,
+                                    
                                     elevation: 2,
                                 }]} 
                                 onPress={() => service.route && router.push(service.route)}
                             >
                                 <View style={[styles.serviceIconWrapper, { 
                                     backgroundColor: service.color + '15',
-                                    shadowColor: service.color,
-                                    shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: 0.2,
-                                    shadowRadius: 4,
-                                    elevation: 2,
+                                  
                                 }]}>
                                     <Ionicons name={service.icon} size={22} color={service.color} />
                                 </View>

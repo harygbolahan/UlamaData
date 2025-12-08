@@ -1,4 +1,5 @@
 import TransactionPinModal from '@/components/services/TransactionPinModal';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useAuth } from '@/contexts/auth-context';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
@@ -220,17 +221,6 @@ export default function AirtimeSwapScreen() {
             return false;
         }
     };
-
-    if (loadingNetworks) {
-        return (
-            <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                    Loading swap data...
-                </Text>
-            </View>
-        );
-    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -548,53 +538,55 @@ export default function AirtimeSwapScreen() {
                     <View style={[styles.confirmationDrawer, { backgroundColor: colors.background }]}>
                         <View style={[styles.modalHandle, { backgroundColor: isDark ? '#3a3a3a' : '#d0d0d0' }]} />
                         
-                        <View style={[styles.confirmationHeader, { backgroundColor: colors.primary + '15' }]}>
-                            <Ionicons name="information-circle" size={48} color={colors.primary} />
-                        </View>
-
-                        <Text style={[styles.confirmationTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                            Transfer Instructions
-                        </Text>
-
-                        <View style={[styles.confirmationCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                            <View style={styles.confirmationRow}>
-                                <Text style={[styles.confirmationLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Network
-                                </Text>
-                                <Text style={[styles.confirmationValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                    {selectedNetwork?.network}
-                                </Text>
+                        <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+                            <View style={[styles.confirmationHeader, { backgroundColor: colors.primary + '15' }]}>
+                                <Ionicons name="information-circle" size={48} color={colors.primary} />
                             </View>
-                            <View style={styles.confirmationRow}>
-                                <Text style={[styles.confirmationLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Airtime Amount
-                                </Text>
-                                <Text style={[styles.confirmationValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                    ₦{parseFloat(amount).toLocaleString()}
-                                </Text>
-                            </View>
-                            <View style={styles.confirmationRow}>
-                                <Text style={[styles.confirmationLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    You'll Receive
-                                </Text>
-                                <Text style={[styles.confirmationValue, { color: colors.success, fontFamily: fonts.inter.bold }]}>
-                                    ₦{getConvertedAmount().toLocaleString()}
-                                </Text>
-                            </View>
-                        </View>
 
-                        {swapDetails?.note && (
-                            <View style={[styles.instructionBox, { backgroundColor: colors.warning + '15', borderColor: colors.warning }]}>
-                                <Ionicons name="alert-circle" size={20} color={colors.warning} />
-                                <Text style={[styles.instructionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                    {swapDetails.note}
-                                </Text>
-                            </View>
-                        )}
+                            <Text style={[styles.confirmationTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                Transfer Instructions
+                            </Text>
 
-                        <Text style={[styles.confirmationNote, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Please transfer the airtime to the number above. You will be credited immediately after we receive and verify the transfer.
-                        </Text>
+                            <View style={[styles.confirmationCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                                <View style={styles.confirmationRow}>
+                                    <Text style={[styles.confirmationLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                        Network
+                                    </Text>
+                                    <Text style={[styles.confirmationValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        {selectedNetwork?.network}
+                                    </Text>
+                                </View>
+                                <View style={styles.confirmationRow}>
+                                    <Text style={[styles.confirmationLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                        Airtime Amount
+                                    </Text>
+                                    <Text style={[styles.confirmationValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        ₦{parseFloat(amount).toLocaleString()}
+                                    </Text>
+                                </View>
+                                <View style={styles.confirmationRow}>
+                                    <Text style={[styles.confirmationLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                        You'll Receive
+                                    </Text>
+                                    <Text style={[styles.confirmationValue, { color: colors.success, fontFamily: fonts.inter.bold }]}>
+                                        ₦{getConvertedAmount().toLocaleString()}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {swapDetails?.note && (
+                                <View style={[styles.instructionBox, { backgroundColor: colors.warning + '15', borderColor: colors.warning }]}>
+                                    <Ionicons name="alert-circle" size={20} color={colors.warning} />
+                                    <Text style={[styles.instructionText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                        {swapDetails.note}
+                                    </Text>
+                                </View>
+                            )}
+
+                            <Text style={[styles.confirmationNote, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                Please transfer the airtime to the number above. You will be credited immediately after we receive and verify the transfer.
+                            </Text>
+                        </ScrollView>
 
                         <View style={styles.confirmationActions}>
                             <TouchableOpacity
@@ -635,6 +627,8 @@ export default function AirtimeSwapScreen() {
                     showToast('error', 'Incorrect PIN. Please try again.');
                 }}
             />
+
+            <LoadingOverlay visible={loadingNetworks || loading || processing} />
         </View>
     );
 }
@@ -882,14 +876,17 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
     confirmButton: {
-        flex: 1.5,
+        flex: 1,
         height: 50,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: 10
     },
     confirmButtonText: {
         fontSize: 15,
         color: '#fff',
+        alignContent: 'center',
+
     },
 });

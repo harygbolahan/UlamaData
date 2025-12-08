@@ -1,10 +1,11 @@
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const NETWORK_IMAGES = {
     mtn: require('@/assets/networks/mtn.png'),
@@ -167,15 +168,7 @@ export default function BuyDataPinScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Network Selector */}
-                {loadingNetworks ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Loading networks...
-                        </Text>
-                    </View>
-                ) : (
-                    <View style={styles.section}>
+                <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Select Network
                         </Text>
@@ -223,7 +216,6 @@ export default function BuyDataPinScreen() {
                             })}
                         </ScrollView>
                     </View>
-                )}
 
                 {/* Quantity Input */}
                 {selectedNetwork && (
@@ -271,12 +263,7 @@ export default function BuyDataPinScreen() {
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Select Plan Type
                         </Text>
-                        {loadingTypes ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                            </View>
-                        ) : (
-                            <ScrollView
+                        <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.planTypes}
@@ -302,21 +289,13 @@ export default function BuyDataPinScreen() {
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                        )}
                     </>
                 )}
 
                 {/* Data Plans Grid */}
                 {selectedNetwork && activePlanType && (
                     <>
-                        {loadingPlans ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color={colors.primary} />
-                                <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Loading plans...
-                                </Text>
-                            </View>
-                        ) : dataPlans.length > 0 ? (
+                        {dataPlans.length > 0 && !loadingPlans ? (
                             <View style={styles.plansGrid}>
                                 {dataPlans.map((plan) => {
                                     const qty = parseInt(quantity) || 1;
@@ -359,7 +338,7 @@ export default function BuyDataPinScreen() {
                                     );
                                 })}
                             </View>
-                        ) : (
+                        ) : !loadingPlans && (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
                                 <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -372,6 +351,8 @@ export default function BuyDataPinScreen() {
 
                 <View style={{ height: 30 }} />
             </ScrollView>
+
+            <LoadingOverlay visible={loadingNetworks || loadingTypes || loadingPlans} />
         </View>
     );
 }
@@ -483,13 +464,6 @@ const styles = StyleSheet.create({
     planPrice: { fontSize: 16 },
     unitPrice: { fontSize: 10, marginTop: 2 },
     planDays: { fontSize: 12 },
-    loadingContainer: {
-        paddingVertical: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    loadingText: { fontSize: 14 },
     emptyContainer: {
         paddingVertical: 60,
         alignItems: 'center',

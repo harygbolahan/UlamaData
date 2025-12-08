@@ -1,12 +1,13 @@
 import NetworkSelector from '@/components/services/NetworkSelector';
 import DatePicker from '@/components/ui/DatePicker';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ScheduleTransactionScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -46,6 +47,19 @@ export default function ScheduleTransactionScreen() {
     useEffect(() => {
         loadNetworks();
     }, [serviceType]);
+
+    // Auto-select MTN as default network once networks are loaded
+    useEffect(() => {
+        if (networks.length > 0 && !selectedNetwork) {
+            const mtnNetwork = networks.find(n => n.network.toUpperCase() === 'MTN');
+            if (mtnNetwork) {
+                setSelectedNetwork({ 
+                    id: mtnNetwork.network.toLowerCase(), 
+                    name: mtnNetwork.network.toUpperCase() 
+                });
+            }
+        }
+    }, [networks]);
 
     // Fetch types when network is selected
     useEffect(() => {
@@ -237,25 +251,16 @@ export default function ScheduleTransactionScreen() {
                 </View>
 
                 {/* Network & Phone */}
-                {loadingNetworks ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Loading networks...
-                        </Text>
-                    </View>
-                ) : (
-                    <NetworkSelector
-                        selectedNetwork={selectedNetwork}
-                        onNetworkSelect={setSelectedNetwork}
-                        phoneNumber={phoneNumber}
-                        onPhoneNumberChange={setPhoneNumber}
-                        networks={networks.map(n => ({
-                            id: n.network.toLowerCase(),
-                            name: n.network.toUpperCase(),
-                        }))}
-                    />
-                )}
+                <NetworkSelector
+                    selectedNetwork={selectedNetwork}
+                    onNetworkSelect={setSelectedNetwork}
+                    phoneNumber={phoneNumber}
+                    onPhoneNumberChange={setPhoneNumber}
+                    networks={networks.map(n => ({
+                        id: n.network.toLowerCase(),
+                        name: n.network.toUpperCase(),
+                    }))}
+                />
 
                 {/* Type Selector */}
                 {selectedNetwork && types.length > 0 && (
@@ -263,12 +268,7 @@ export default function ScheduleTransactionScreen() {
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Select Type
                         </Text>
-                        {loadingTypes ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                            </View>
-                        ) : (
-                            <ScrollView
+                        <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.typesContainer}
@@ -306,7 +306,6 @@ export default function ScheduleTransactionScreen() {
                                     );
                                 })}
                             </ScrollView>
-                        )}
                     </>
                 )}
 
@@ -351,14 +350,7 @@ export default function ScheduleTransactionScreen() {
                                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                                     Select Plan
                                 </Text>
-                                {loadingPlans ? (
-                                    <View style={styles.loadingContainer}>
-                                        <ActivityIndicator size="small" color={colors.primary} />
-                                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                            Loading plans...
-                                        </Text>
-                                    </View>
-                                ) : dataPlans.length > 0 ? (
+                                {dataPlans.length > 0 && !loadingPlans ? (
                                     <View style={styles.plansGrid}>
                                         {dataPlans.map((plan) => (
                                             <TouchableOpacity
@@ -387,7 +379,7 @@ export default function ScheduleTransactionScreen() {
                                             </TouchableOpacity>
                                         ))}
                                     </View>
-                                ) : (
+                                ) : !loadingPlans && (
                                     <View style={styles.emptyContainer}>
                                         <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
                                         <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -488,6 +480,8 @@ export default function ScheduleTransactionScreen() {
                     </View>
                 </View>
             </Modal>
+
+            <LoadingOverlay visible={loadingNetworks || loadingTypes || loadingPlans} />
         </View>
     );
 }
@@ -618,13 +612,6 @@ const styles = StyleSheet.create({
     optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     optionText: { fontSize: 15, marginBottom: 2 },
     optionDesc: { fontSize: 12 },
-    loadingContainer: {
-        paddingVertical: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    loadingText: { fontSize: 14 },
     emptyContainer: {
         paddingVertical: 40,
         alignItems: 'center',

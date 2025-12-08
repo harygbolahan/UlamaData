@@ -16,11 +16,16 @@ export default function FundWallet() {
         loadPaymentMethods();
     }, []);
 
+    // Update payment methods when context data changes
+    useEffect(() => {
+        const allMethods = getAllPaymentMethods();
+        setPaymentMethods(allMethods);
+    }, [getAvailablePaymentMethods]);
+
     const loadPaymentMethods = async () => {
         try {
             await refreshPaymentData();
-            const allMethods = getAllPaymentMethods();
-            setPaymentMethods(allMethods);
+            // Methods will be updated by the useEffect above
         } catch (error) {
             showToast('error', 'Failed to load payment methods');
         }

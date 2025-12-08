@@ -33,6 +33,9 @@ export default function EarnTab() {
         setIsLoading(false);
     };
 
+    console.log('Referral Data:', referralData)
+    
+
     const handleCopyCode = async () => {
         if (referralData?.referralCode) {
             await Clipboard.setStringAsync(referralData.referralCode);

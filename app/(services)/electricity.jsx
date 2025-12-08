@@ -1,4 +1,5 @@
 import NetworkSelector from '@/components/services/NetworkSelector';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
@@ -98,28 +99,6 @@ export default function ElectricityScreen() {
             }, 300);
         }
     };
-
-    if (loadingProviders) {
-        return (
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-                        <Ionicons name="chevron-back" size={24} color={colors.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                        Electricity
-                    </Text>
-                    <View style={{ width: 24 }} />
-                </View>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        Loading providers...
-                    </Text>
-                </View>
-            </View>
-        );
-    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -316,6 +295,8 @@ export default function ElectricityScreen() {
                 <View style={{ height: 30 }} />
             </ScrollView>
 
+            <LoadingOverlay visible={loadingProviders || isVerifying} />
+
             <Modal visible={showProviderModal} transparent animationType="slide">
                 <TouchableOpacity 
                     style={styles.modalOverlay} 
@@ -384,15 +365,6 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     headerTitle: { fontSize: 18 },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 12,
-    },
-    loadingText: {
-        fontSize: 14,
-    },
     providerSelector: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -490,7 +462,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
     },
-    quickAmountText: { fontSize: 14 },
+    quickAmountText: { fontSize: 10 },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',

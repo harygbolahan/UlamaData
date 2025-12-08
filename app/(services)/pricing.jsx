@@ -1,9 +1,10 @@
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PricingScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -164,14 +165,7 @@ export default function PricingScreen() {
                 </TouchableOpacity>
             </View>
 
-            {loading && !refreshing ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        Loading pricing...
-                    </Text>
-                </View>
-            ) : error ? (
+            {error && !loading ? (
                 <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle" size={48} color={colors.error} />
                     <Text style={[styles.errorText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
@@ -533,6 +527,8 @@ export default function PricingScreen() {
                     <View style={{ height: 20 }} />
                 </ScrollView>
             )}
+
+            <LoadingOverlay visible={loading && !refreshing} />
         </View>
     );
 }
@@ -541,8 +537,6 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 50, marginBottom: 20 },
     headerTitle: { fontSize: 18 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-    loadingText: { fontSize: 14 },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, gap: 16 },
     errorText: { fontSize: 16, textAlign: 'center' },
     retryButton: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },

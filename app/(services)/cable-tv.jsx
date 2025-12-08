@@ -1,4 +1,5 @@
 import NetworkSelector from '@/components/services/NetworkSelector';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -139,16 +140,7 @@ export default function CableTVScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                {loadingProviders ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={colors.primary} />
-                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Loading providers...
-                        </Text>
-                    </View>
-                ) : (
-                    <>
-                        {/* Provider & Smart Card Input */}
+                {/* Provider & Smart Card Input */}
                         <NetworkSelector
                             selectedNetwork={selectedProvider ? {
                                 id: selectedProvider.pid || selectedProvider.name.toLowerCase(),
@@ -229,14 +221,7 @@ export default function CableTVScreen() {
                             Select Plan
                         </Text>
 
-                        {loadingPlans ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color={colors.primary} />
-                                <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Loading plans...
-                                </Text>
-                            </View>
-                        ) : plans.length === 0 ? (
+                        {plans.length === 0 && !loadingPlans ? (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
                                 <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -275,10 +260,10 @@ export default function CableTVScreen() {
                             </View>
                         )}
 
-                        <View style={{ height: 30 }} />
-                    </>
-                )}
+                <View style={{ height: 30 }} />
             </ScrollView>
+
+            <LoadingOverlay visible={loadingProviders || loadingPlans} />
 
             <Modal visible={showProviderModal} transparent animationType="slide">
                 <View style={styles.modalOverlay}>
@@ -409,15 +394,6 @@ const styles = StyleSheet.create({
     },
     planPrice: { fontSize: 16 },
     planDuration: { fontSize: 12 },
-    loadingContainer: {
-        paddingVertical: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    loadingText: {
-        fontSize: 14,
-    },
     emptyContainer: {
         paddingVertical: 60,
         alignItems: 'center',

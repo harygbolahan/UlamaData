@@ -1,12 +1,13 @@
 import BeneficiaryList from '@/components/services/BeneficiaryList';
 import NetworkSelector from '@/components/services/NetworkSelector';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function BuyDataScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -25,6 +26,10 @@ export default function BuyDataScreen() {
     const [loadingNetworks, setLoadingNetworks] = useState(false);
     const [loadingTypes, setLoadingTypes] = useState(false);
     const [loadingPlans, setLoadingPlans] = useState(false);
+    
+    const [scrollProgress, setScrollProgress] = useState(0);
+    const [scrollBarWidth, setScrollBarWidth] = useState(0);
+    const scrollViewRef = useRef(null);
 
     // Fetch networks on mount
     useEffect(() => {
@@ -56,6 +61,15 @@ export default function BuyDataScreen() {
         try {
             const data = await fetchDataNetworks();
             setNetworks(data);
+            
+            // Auto-select MTN as default network
+            const mtnNetwork = data.find(n => n.network.toLowerCase() === 'mtn');
+            if (mtnNetwork && !selectedNetwork) {
+                setSelectedNetwork({
+                    id: mtnNetwork.network.toLowerCase(),
+                    name: mtnNetwork.network.toUpperCase()
+                });
+            }
         } catch (error) {
             showToast('error', error.message || 'Failed to load networks');
         } finally {
@@ -198,47 +212,47 @@ export default function BuyDataScreen() {
                 {activeTab === 'data' ? (
                     <>
                         {/* Network & Phone Number Selector */}
-                        {loadingNetworks ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                                <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Loading networks...
-                                </Text>
-                            </View>
-                        ) : (
-                            <>
-                                <NetworkSelector
-                                    selectedNetwork={selectedNetwork}
-                                    onNetworkSelect={setSelectedNetwork}
-                                    phoneNumber={phoneNumber}
-                                    onPhoneNumberChange={setPhoneNumber}
-                                    onViewAllBeneficiaries={() => setActiveTab('beneficiaries')}
-                                    onSelectBeneficiary={handleBeneficiarySelect}
-                                    networks={networks.map(n => ({
-                                        id: n.network.toLowerCase(),
-                                        name: n.network.toUpperCase(),
-                                    }))}
-                                />
-                            </>
-                        )}
+                        <NetworkSelector
+                            selectedNetwork={selectedNetwork}
+                            onNetworkSelect={setSelectedNetwork}
+                            phoneNumber={phoneNumber}
+                            onPhoneNumberChange={setPhoneNumber}
+                            onViewAllBeneficiaries={() => setActiveTab('beneficiaries')}
+                            onSelectBeneficiary={handleBeneficiarySelect}
+                            networks={networks.map(n => ({
+                                id: n.network.toLowerCase(),
+                                name: n.network.toUpperCase(),
+                            }))}
+                        />
 
 
 
                         {/* Plan Type Selector */}
                 {selectedNetwork && (
                     <>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Select Plan Type
-                        </Text>
-                        {loadingTypes ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                            </View>
-                        ) : (
+                        <View style={styles.planTypeHeader}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                Select Plan Type
+                            </Text>
+                            {!loadingTypes && dataTypes.length > 3 && (
+                                <View style={styles.scrollIndicator}>
+                                    <Ionicons name="chevron-forward" size={16} color={colors.icon} />
+                                </View>
+                            )}
+                        </View>
+                        <>
                             <ScrollView
+                                ref={scrollViewRef}
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.planTypes}
+                                onScroll={(event) => {
+                                    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+                                    const maxScroll = contentSize.width - layoutMeasurement.width;
+                                    const progress = maxScroll > 0 ? contentOffset.x / maxScroll : 0;
+                                    setScrollProgress(progress);
+                                }}
+                                scrollEventThrottle={16}
                             >
                                 {dataTypes.map((type) => (
                                     <TouchableOpacity
@@ -253,7 +267,7 @@ export default function BuyDataScreen() {
                                     >
                                         <Text style={[
                                             styles.planTypeText,
-                                            { fontFamily: fonts.inter.semiBold },
+                                            { fontFamily: fonts.inter.medium },
                                             activePlanType === type ? { color: '#fff' } : { color: colors.text }
                                         ]}>
                                             {type}
@@ -261,21 +275,36 @@ export default function BuyDataScreen() {
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                        )}
+                            {dataTypes.length > 3 && (
+                                <View 
+                                    style={[styles.scrollBarContainer, { backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0' }]}
+                                    onLayout={(event) => {
+                                        const { width } = event.nativeEvent.layout;
+                                        setScrollBarWidth(width);
+                                    }}
+                                >
+                                    <View 
+                                        style={[
+                                            styles.scrollBarThumb, 
+                                            { 
+                                                backgroundColor: colors.primary,
+                                                width: Math.max(40, scrollBarWidth / dataTypes.length * 3),
+                                                transform: [{ 
+                                                    translateX: scrollProgress * (scrollBarWidth - Math.max(40, scrollBarWidth / dataTypes.length * 3))
+                                                }]
+                                            }
+                                        ]} 
+                                    />
+                                </View>
+                            )}
+                        </>
                     </>
                 )}
 
                 {/* Data Plans Grid */}
                 {selectedNetwork && activePlanType && (
                     <>
-                        {loadingPlans ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color={colors.primary} />
-                                <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Loading plans...
-                                </Text>
-                            </View>
-                        ) : dataPlans.length > 0 ? (
+                        {dataPlans.length > 0 ? (
                             <View style={styles.plansGrid}>
                                 {dataPlans.map((plan) => (
                                     <TouchableOpacity
@@ -306,7 +335,7 @@ export default function BuyDataScreen() {
                                     </TouchableOpacity>
                                 ))}
                             </View>
-                        ) : (
+                        ) : !loadingPlans && (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
                                 <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -325,6 +354,8 @@ export default function BuyDataScreen() {
                     />
                 )}
             </ScrollView>
+
+            <LoadingOverlay visible={loadingNetworks || loadingPlans} />
         </View>
     );
 }
@@ -353,29 +384,54 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     tabText: { fontSize: 14 },
-    sectionTitle: { fontSize: 16, paddingHorizontal: 20, marginBottom: 12 },
+    planTypeHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingRight: 20,
+        marginBottom: 12,
+    },
+    sectionTitle: { fontSize: 16, paddingHorizontal: 20 },
+    scrollIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
     planTypes: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 10,
         gap: 10,
+        marginBottom: 8,
+    },
+    scrollBarContainer: {
+        height: 3,
+        marginHorizontal: 20,
+        borderRadius: 1.5,
         marginBottom: 16,
+        overflow: 'hidden',
+    },
+    scrollBarThumb: {
+        height: '100%',
+        borderRadius: 1.5,
     },
     planTypeChip: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
+        paddingHorizontal: 5,
+        paddingVertical: 5,
+        borderRadius: 10,
     },
-    planTypeText: { fontSize: 13 },
+    planTypeText: { fontSize: 10 },
     plansGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 8,
-        gap: 8,
+        paddingHorizontal: 10,
+        gap: 10,
     },
     planCard: {
         width: '31%',
-        padding: 10,
+        padding: 12,
         borderRadius: 12,
         minHeight: 140,
+        flexDirection: 'column',
+        justifyContent: 'space-between',
     },
     planLabel: {
         paddingHorizontal: 6,
@@ -398,13 +454,6 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     cashbackText: { fontSize: 10, color: '#4CAF50' },
-    loadingContainer: {
-        paddingVertical: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    loadingText: { fontSize: 14 },
     emptyContainer: {
         paddingVertical: 60,
         alignItems: 'center',

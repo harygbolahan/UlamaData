@@ -1,12 +1,13 @@
 import BeneficiaryList from '@/components/services/BeneficiaryList';
 import NetworkSelector from '@/components/services/NetworkSelector';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function BuyAirtimeScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -32,6 +33,19 @@ export default function BuyAirtimeScreen() {
         loadNetworks();
         loadAirtimeTypes();
     }, []);
+
+    // Auto-select MTN as default network once networks are loaded
+    useEffect(() => {
+        if (networks.length > 0 && !selectedNetwork) {
+            const mtnNetwork = networks.find(n => n.network.toUpperCase() === 'MTN');
+            if (mtnNetwork) {
+                setSelectedNetwork({ 
+                    id: mtnNetwork.network.toLowerCase(), 
+                    name: mtnNetwork.network.toUpperCase() 
+                });
+            }
+        }
+    }, [networks]);
 
     const loadNetworks = async () => {
         setLoadingNetworks(true);
@@ -140,16 +154,7 @@ export default function BuyAirtimeScreen() {
                 {activeTab === 'airtime' ? (
                     <>
                         {/* Network & Phone Number Selector */}
-                        {loadingNetworks ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                                <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Loading networks...
-                                </Text>
-                            </View>
-                        ) : (
-                            <>
-                                <NetworkSelector
+                        <NetworkSelector
                                     selectedNetwork={selectedNetwork}
                                     onNetworkSelect={setSelectedNetwork}
                                     phoneNumber={phoneNumber}
@@ -161,10 +166,6 @@ export default function BuyAirtimeScreen() {
                                         name: n.network.toUpperCase(),
                                     }))}
                                 />
-                            </>
-                        )}
-
-
 
                         {/* Airtime Type Selector */}
                         {airtimeTypes.length > 0 && (
@@ -172,12 +173,7 @@ export default function BuyAirtimeScreen() {
                                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                                     Airtime Type
                                 </Text>
-                                {loadingTypes ? (
-                                    <View style={styles.loadingContainer}>
-                                        <ActivityIndicator size="small" color={colors.primary} />
-                                    </View>
-                                ) : (
-                                    <ScrollView
+                                <ScrollView
                                         horizontal
                                         showsHorizontalScrollIndicator={false}
                                         contentContainerStyle={styles.airtimeTypes}
@@ -211,8 +207,7 @@ export default function BuyAirtimeScreen() {
                                                 )}
                                             </TouchableOpacity>
                                         ))}
-                                    </ScrollView>
-                                )}
+                                </ScrollView>
                             </>
                         )}
 
@@ -274,6 +269,8 @@ export default function BuyAirtimeScreen() {
                     />
                 )}
             </ScrollView>
+
+            <LoadingOverlay visible={loadingNetworks || loadingTypes} />
         </View>
     );
 }
@@ -315,13 +312,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     quickAmountText: { fontSize: 10 },
-    loadingContainer: {
-        paddingVertical: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    loadingText: { fontSize: 14 },
     airtimeTypes: {
         paddingHorizontal: 20,
         gap: 10,

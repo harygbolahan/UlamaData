@@ -49,40 +49,15 @@ export default function MinimalDashboard() {
   };
 
   const services = [
-    { id: "1", name: "Data", icon: "wifi", route: "/(services)/buy-data" },
-    {
-      id: "2",
-      name: "Airtime",
-      icon: "phone-portrait",
-      route: "/(services)/buy-airtime",
-    },
-    { id: "3", name: "Cable TV", icon: "tv", route: "/(services)/cable-tv" },
-    {
-      id: "4",
-      name: "Electricity",
-      icon: "flash",
-      route: "/(services)/electricity",
-    },
-    {
-      id: "5",
-      name: "Bulk Order",
-      icon: "layers",
-      route: "/(services)/bulk-order",
-    },
-    {
-      id: "6",
-      name: "Bulk SMS",
-      icon: "chatbubbles",
-      route: "/(services)/bulk-sms",
-    },
-    {
-      id: "7",
-      name: "Schedule",
-      icon: "time",
-      route: "/(services)/schedule-transaction",
-    },
-    { id: "8", name: "More", icon: "apps", route: "/(tabs)/services" },
-  ];
+        { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
+        { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
+        { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
+        { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
+        { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
+        { id: '6', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
+        { id: '7', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
+        { id: '8', name: 'More', icon: 'apps', route: '/(tabs)/services', color: '#607d8b' },
+    ];
 
   const banners = [
     {

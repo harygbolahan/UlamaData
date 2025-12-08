@@ -1,10 +1,11 @@
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Network images
 const networkImages = {
@@ -292,15 +293,7 @@ export default function BulkOrderScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                     Select Network
                 </Text>
-                {loadingNetworks ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Loading networks...
-                        </Text>
-                    </View>
-                ) : (
-                    <TouchableOpacity
+                <TouchableOpacity
                         style={[styles.networkCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
                         onPress={() => setShowNetworkModal(true)}
                     >
@@ -324,7 +317,6 @@ export default function BulkOrderScreen() {
                         )}
                         <Ionicons name="chevron-forward" size={20} color={colors.icon} />
                     </TouchableOpacity>
-                )}
 
                 {/* Phone Numbers Input */}
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
@@ -357,12 +349,7 @@ export default function BulkOrderScreen() {
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Select Type
                         </Text>
-                        {loadingTypes ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                            </View>
-                        ) : (
-                            <ScrollView
+                        <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.typesContainer}
@@ -400,7 +387,6 @@ export default function BulkOrderScreen() {
                                     );
                                 })}
                             </ScrollView>
-                        )}
                     </>
                 )}
 
@@ -412,14 +398,7 @@ export default function BulkOrderScreen() {
                                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                                     Select Plan
                                 </Text>
-                                {loadingPlans ? (
-                                    <View style={styles.loadingContainer}>
-                                        <ActivityIndicator size="small" color={colors.primary} />
-                                        <Text style={[styles.loadingText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                            Loading plans...
-                                        </Text>
-                                    </View>
-                                ) : dataPlans.length > 0 ? (
+                                {dataPlans.length > 0 && !loadingPlans ? (
                                     <View style={styles.plansGrid}>
                                         {dataPlans.map((plan) => (
                                             <TouchableOpacity
@@ -456,7 +435,7 @@ export default function BulkOrderScreen() {
                                             </TouchableOpacity>
                                         ))}
                                     </View>
-                                ) : (
+                                ) : !loadingPlans && (
                                     <View style={styles.emptyContainer}>
                                         <Ionicons name="file-tray-outline" size={48} color={colors.icon} />
                                         <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -573,6 +552,8 @@ export default function BulkOrderScreen() {
                     </View>
                 </View>
             </Modal>
+
+            <LoadingOverlay visible={loadingNetworks || loadingTypes || loadingPlans} />
         </View>
     );
 }
@@ -745,13 +726,6 @@ const styles = StyleSheet.create({
     },
     optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     optionText: { fontSize: 15 },
-    loadingContainer: {
-        paddingVertical: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    loadingText: { fontSize: 14 },
     emptyContainer: {
         paddingVertical: 40,
         alignItems: 'center',

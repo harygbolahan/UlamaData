@@ -35,7 +35,7 @@ export function AutoLockProvider({ children }) {
             const storedEmail = await AsyncStorage.getItem('user_email');
             console.log('Auto-lock: storedEmail:', storedEmail);
             if (!storedEmail) {
-                console.log('Auto-lock: No stored email, not locking');
+                console.log('Auto-lock: No stored email, not locking'); 
                 return false;
             }
 
