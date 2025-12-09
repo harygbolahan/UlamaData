@@ -4,7 +4,7 @@
     "slug": "ulamadata",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/android-icon-foreground.jpg",
+    "icon": "./assets/images/android-icon-foreground.png",
     "scheme": "ulamadata",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -18,9 +18,9 @@
       "package": "com.paceint.ulamadata",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.jpg",
-        "backgroundImage": "./assets/images/android-icon-foreground.jpg",
-        "monochromeImage": "./assets/images/android-icon-foreground.jpg"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -46,7 +46,9 @@
           }
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
