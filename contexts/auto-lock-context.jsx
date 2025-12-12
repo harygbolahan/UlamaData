@@ -18,9 +18,9 @@ export function AutoLockProvider({ children }) {
     const countdownInterval = useRef(null);
     const backgroundTime = useRef(null);
     const appState = useRef(AppState.currentState);
-    const INACTIVITY_TIMEOUT = 30000; // 30 seconds
-    const WARNING_TIME = 10000; // Show warning 10 seconds before lock
-    const BACKGROUND_TIMEOUT = 30000; // 30 seconds
+    const INACTIVITY_TIMEOUT = 300000; // 30 seconds
+    const WARNING_TIME = 100000; // Show warning 10 seconds before lock
+    const BACKGROUND_TIMEOUT = 300000; // 30 seconds
 
     // Check if user should be locked based on auth settings
     const shouldLock = async () => {

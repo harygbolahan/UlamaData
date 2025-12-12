@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import { ActivityTracker } from '@/components/activity-tracker';
@@ -67,41 +68,46 @@ export default function RootLayout() {
   }
 
   return (
-    <DashboardProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <NotificationProvider>
-            <AuthProvider>
-              <AutoLockProvider>
-                <ActivityTracker>
-                  <BannerProvider>
-                    <ServicesProvider>
-                      <PaymentProvider>
-                        <TransactionsProvider>
-                          <BeneficiaryProvider>
-                            <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                              <Stack screenOptions={{ headerShown: false }}>
-                                <Stack.Screen name="splash" />
-                                <Stack.Screen name="(onboarding)/index" />
-                                <Stack.Screen name="(auth)/login" />
-                                <Stack.Screen name="(auth)/signup" />
-                                <Stack.Screen name="(auth)/forgot-password" />
-                                <Stack.Screen name="index" />
-                                <Stack.Screen name="(tabs)" />
-                              </Stack>
-                              <StatusBar style="auto" />
-                            </NavigationThemeProvider>
-                          </BeneficiaryProvider>
-                        </TransactionsProvider>
-                      </PaymentProvider>
-                    </ServicesProvider>
-                  </BannerProvider>
-                </ActivityTracker>
-              </AutoLockProvider>
-            </AuthProvider>
-          </NotificationProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </DashboardProvider>
+    <SafeAreaProvider>
+      <DashboardProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <NotificationProvider>
+              <AuthProvider>
+                <AutoLockProvider>
+                  <ActivityTracker>
+                    <BannerProvider>
+                      <ServicesProvider>
+                        <PaymentProvider>
+                          <TransactionsProvider>
+                            <BeneficiaryProvider>
+                              <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                                <Stack screenOptions={{ 
+                                  headerShown: false,
+                                  contentStyle: { flex: 1 }
+                                }}>
+                                  <Stack.Screen name="splash" />
+                                  <Stack.Screen name="(onboarding)/index" />
+                                  <Stack.Screen name="(auth)/login" />
+                                  <Stack.Screen name="(auth)/signup" />
+                                  <Stack.Screen name="(auth)/forgot-password" />
+                                  <Stack.Screen name="index" />
+                                  <Stack.Screen name="(tabs)" />
+                                </Stack>
+                                <StatusBar style="auto" />
+                              </NavigationThemeProvider>
+                            </BeneficiaryProvider>
+                          </TransactionsProvider>
+                        </PaymentProvider>
+                      </ServicesProvider>
+                    </BannerProvider>
+                  </ActivityTracker>
+                </AutoLockProvider>
+              </AuthProvider>
+            </NotificationProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </DashboardProvider>
+    </SafeAreaProvider>
   );
 }
