@@ -23,6 +23,7 @@ export default function TransactionDetails() {
     const [showDownloadModal, setShowDownloadModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isCapturing, setIsCapturing] = useState(false);
     const receiptRef = useRef(null);
 
     useEffect(() => {
@@ -223,28 +224,17 @@ export default function TransactionDetails() {
         setShowShareModal(true);
     };
 
-    const shareAsText = async () => {
-        try {
-            setShowShareModal(false);
-            await Share.share({
-                message: `📱 Transaction Receipt\n\n` +
-                    `Type: ${transaction.type}\n` +
-                    `Provider: ${transaction.provider}\n` +
-                    `Amount: ${transaction.amount}\n` +
-                    `Reference: ${transaction.ref}\n` +
-                    `Date: ${transaction.date} ${transaction.time}\n` +
-                    `Status: ${transaction.status}\n\n` +
-                    `Powered by UlamaData`,
-            });
-        } catch (error) {
-            console.error(error);
-        }
-    };
 
     const shareAsImage = async () => {
         try {
             setIsDownloading(true);
             setShowShareModal(false);
+            
+            // Set capturing state to hide amount and balance
+            setIsCapturing(true);
+            
+            // Wait for UI to update
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             // Capture the receipt view as image
             const uri = await captureRef(receiptRef, {
@@ -264,6 +254,7 @@ export default function TransactionDetails() {
             console.error('Error sharing as image:', error);
             showToast('error', 'Failed to share receipt as image');
         } finally {
+            setIsCapturing(false);
             setIsDownloading(false);
         }
     };
@@ -304,6 +295,12 @@ export default function TransactionDetails() {
         try {
             setIsDownloading(true);
             setShowDownloadModal(false);
+            
+            // Set capturing state to hide amount and balance
+            setIsCapturing(true);
+            
+            // Wait for UI to update
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             // Capture the receipt view as image
             const uri = await captureRef(receiptRef, {
@@ -325,6 +322,7 @@ export default function TransactionDetails() {
             console.error('Error downloading as image:', error);
             showToast('error', 'Failed to download receipt as image');
         } finally {
+            setIsCapturing(false);
             setIsDownloading(false);
         }
     };
@@ -386,12 +384,6 @@ export default function TransactionDetails() {
                             text-transform: uppercase;
                             letter-spacing: 0.5px;
                             margin-bottom: 16px;
-                        }
-                        .amount {
-                            font-size: 40px;
-                            font-weight: 700;
-                            margin-bottom: 8px;
-                            letter-spacing: -1px;
                         }
                         .date {
                             font-size: 13px;
@@ -467,32 +459,6 @@ export default function TransactionDetails() {
                             color: ${colors.primary};
                             letter-spacing: 1.5px;
                         }
-                        .balance-section {
-                            background: #fafafa;
-                            border-radius: 12px;
-                            padding: 20px 24px;
-                            margin-bottom: 32px;
-                        }
-                        .balance-row {
-                            display: flex;
-                            justify-content: space-between;
-                            padding: 10px 0;
-                        }
-                        .balance-row:first-child {
-                            padding-top: 0;
-                        }
-                        .balance-row:last-child {
-                            padding-bottom: 0;
-                        }
-                        .balance-label {
-                            font-size: 13px;
-                            color: #666;
-                            font-weight: 500;
-                        }
-                        .balance-value {
-                            font-size: 14px;
-                            font-weight: 700;
-                        }
                         .footer {
                             text-align: center;
                             margin-top: 48px;
@@ -521,7 +487,6 @@ export default function TransactionDetails() {
 
                         <div class="status-section">
                             <div class="status-badge">${transaction.status}</div>
-                            <div class="amount">${transaction.amount}</div>
                             <div class="date">${transaction.date} • ${transaction.time}</div>
                         </div>
 
@@ -576,19 +541,6 @@ export default function TransactionDetails() {
                             <div class="token-value" style="color: #EF4444;">${transaction.electricityToken}</div>
                         </div>
                         ` : ''}
-
-                        <div class="divider"></div>
-
-                        <div class="balance-section">
-                            <div class="balance-row">
-                                <div class="balance-label">Balance Before</div>
-                                <div class="balance-value">${transaction.walletBalanceBefore}</div>
-                            </div>
-                            <div class="balance-row">
-                                <div class="balance-label">Balance After</div>
-                                <div class="balance-value">${transaction.walletBalanceAfter}</div>
-                            </div>
-                        </div>
 
                         <div class="footer">
                             <div class="footer-brand">UlamaData</div>
@@ -731,9 +683,11 @@ export default function TransactionDetails() {
                         <Text style={[styles.statusLabel, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             {transaction.status === 'Completed' ? 'Transaction Successful' : transaction.status === 'Processing' ? 'Transaction Processing' : 'Transaction Failed'}
                         </Text>
-                        <Text style={[styles.statusAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                            {transaction.amount}
-                        </Text>
+                        {!isCapturing && (
+                            <Text style={[styles.statusAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                {transaction.amount}
+                            </Text>
+                        )}
                         <Text style={[styles.statusDate, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                             {transaction.date} • {transaction.time}
                         </Text>
@@ -887,16 +841,18 @@ export default function TransactionDetails() {
                 )}
 
                 {/* Wallet Balance */}
-                <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                        Wallet Balance
-                    </Text>
+                {!isCapturing && (
+                    <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                            Wallet Balance
+                        </Text>
 
-                    <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
-                        <DetailRow label="Before" value={transaction.walletBalanceBefore} colors={colors} fonts={fonts} />
-                        <DetailRow label="After" value={transaction.walletBalanceAfter} colors={colors} fonts={fonts} />
-                    </View>
-                </Animated.View>
+                        <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+                            <DetailRow label="Before" value={transaction.walletBalanceBefore} colors={colors} fonts={fonts} />
+                            <DetailRow label="After" value={transaction.walletBalanceAfter} colors={colors} fonts={fonts} />
+                        </View>
+                    </Animated.View>
+                )}
 
                 {/* Actions */}
                 <Animated.View style={[styles.actionsContainer, { opacity: fadeAnim }]}>

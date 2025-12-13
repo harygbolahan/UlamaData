@@ -1,6 +1,4 @@
-import BiometricSetupModal from '@/components/services/BiometricSetupModal';
 import SaveBeneficiaryModal from '@/components/services/SaveBeneficiaryModal';
-import TransactionPinModal from '@/components/services/TransactionPinModal';
 import Button from '@/components/ui/Button';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useAuth } from '@/contexts/auth-context';
@@ -8,11 +6,10 @@ import { useBeneficiaries } from '@/contexts/beneficiary-context';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
-import { authenticateWithBiometric, isBiometricAvailable, isBiometricEnabled } from '@/services/biometric';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TransactionSummaryScreen() {
     const params = useLocalSearchParams();
@@ -21,14 +18,10 @@ export default function TransactionSummaryScreen() {
     const { showToast } = useToast();
     const { user, updateUser, refreshUser } = useAuth();
     const { addBeneficiary } = useBeneficiaries();
-    const [useCashback, setUseCashback] = useState(false);
-    const [showPinModal, setShowPinModal] = useState(false);
-    const [showBiometricSetup, setShowBiometricSetup] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [loadingUser, setLoadingUser] = useState(true);
-    const [biometricEnabled, setBiometricEnabled] = useState(false);
-    const [biometricAvailable, setBiometricAvailable] = useState(false);
     const [showSaveBeneficiaryModal, setShowSaveBeneficiaryModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const {
         service = 'Data Subscription',
@@ -74,21 +67,7 @@ export default function TransactionSummaryScreen() {
         fetchUserData();
     }, []);
 
-    useEffect(() => {
-        const checkBiometric = async () => {
-            try {
-                const available = await isBiometricAvailable();
-                const enabled = await isBiometricEnabled();
-                setBiometricAvailable(available);
-                setBiometricEnabled(enabled);
-            } catch (error) {
-                console.error('Error checking biometric:', error);
-                setBiometricAvailable(false);
-                setBiometricEnabled(false);
-            }
-        };
-        checkBiometric();
-    }, []);
+
 
     const additionalDetails = [];
 
@@ -107,121 +86,57 @@ export default function TransactionSummaryScreen() {
 
     const userBalance = user?.balance ? parseFloat(user.balance) : 0;
     const transactionAmount = parseFloat(amount);
-    const cashbackAmount = user?.cashback ? parseFloat(user.cashback) : 0;
     const balance = userBalance - transactionAmount;
     const hasInsufficientBalance = userBalance < transactionAmount;
 
-    const handleBiometric = async () => {
-        // Check if biometric is enabled (PIN stored)
-        if (!biometricEnabled) {
-            // First time - show setup modal
-            setShowBiometricSetup(true);
-            return;
-        }
-
-        // Biometric is enabled - authenticate and get stored PIN
-        setProcessing(true);
-        const result = await authenticateWithBiometric();
-        
-        if (result.success && result.pin) {
-            // Auto-submit with stored PIN
-            await handlePinConfirm(result.pin);
-        } else if (result.useFallback) {
-            // User chose to use PIN instead
-            setProcessing(false);
-            setShowPinModal(true);
-        } else if (result.cancelled) {
-            // User cancelled
-            setProcessing(false);
-            showToast('info', 'Authentication cancelled');
-        } else {
-            // Authentication failed
-            setProcessing(false);
-            showToast('error', result.error || 'Biometric authentication failed');
-            setShowPinModal(true);
-        }
+    const handleProceed = () => {
+        setShowConfirmModal(true);
     };
 
-    const handleBiometricSetupSuccess = async () => {
-        setBiometricEnabled(true);
-        showToast('success', 'Biometric authentication enabled successfully!');
+    const handleConfirmTransaction = async () => {
+        setShowConfirmModal(false);
+        setProcessing(true);
+        await handlePinConfirm('12345');
     };
 
     const handlePinConfirm = async (pin) => {
         if (isSchedule === 'true' && service === 'Schedule Data' && planId && scheduleType && scheduleDate) {
             const success = await processScheduleDataPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (isSchedule === 'true' && service === 'Schedule Airtime' && scheduleType && scheduleDate) {
             const success = await processScheduleAirtimePurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (isBulk === 'true' && service === 'Bulk Data' && planId && bulkType && bulkPhones) {
             const success = await processBulkDataPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (isBulk === 'true' && service === 'Bulk Airtime' && bulkType && bulkPhones) {
             const success = await processBulkAirtimePurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'Data Subscription' && planId && planType) {
             const success = await processDataPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'Data Pin' && planId && planType && quantity) {
             const success = await processDataPinPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'Airtime Pin' && pinSize && quantity) {
             const success = await processAirtimePinPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'airtime' && network && airtimeType) {
             const success = await processAirtimePurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'cable' && provider && planId) {
             const success = await processCablePurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'electricity' && providerId && meterType) {
             const success = await processElectricityPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'exam' && planId && quantity) {
             const success = await processExamPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else if (service === 'Bulk SMS' && senderName && subject && phoneNumbers && message) {
             const success = await processBulkSMSPurchase(pin);
-            if (success) {
-                setShowPinModal(false);
-            }
             return success;
         } else {
-            setShowPinModal(false);
             handleSuccess();
             return true;
         }
@@ -290,7 +205,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -325,7 +239,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -361,7 +274,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -395,7 +307,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -437,7 +348,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -470,7 +380,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -504,7 +413,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -539,7 +447,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -573,7 +480,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Purchase failed. Please try again.';
             showToast('error', errorMessage);
@@ -610,7 +516,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Schedule failed. Please try again.';
             showToast('error', errorMessage);
@@ -646,7 +551,6 @@ export default function TransactionSummaryScreen() {
             return true;
         } catch (error) {
             setProcessing(false);
-            setShowPinModal(false);
             
             const errorMessage = error.message || 'Schedule failed. Please try again.';
             showToast('error', errorMessage);
@@ -919,70 +823,64 @@ export default function TransactionSummaryScreen() {
                     </TouchableOpacity>
                 )}
 
-                <View style={styles.authContainer}>
-                    {biometricAvailable && (
-                        <TouchableOpacity
-                            style={styles.biometricButton}
-                            onPress={handleBiometric}
-                            activeOpacity={0.7}
-                            disabled={processing}
-                        >
-                            <View style={[styles.biometricIcon, { backgroundColor: colors.primary + '15' }]}>
-                                <Ionicons name="finger-print" size={64} color={colors.primary} />
-                            </View>
-                            <Text style={[styles.biometricText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                {biometricEnabled ? 'Authenticate with Biometric' : 'Set Up Biometric'}
-                            </Text>
-                            <Text style={[styles.biometricSubtext, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                {biometricEnabled 
-                                    ? 'Quick and secure authentication' 
-                                    : 'Enable for faster transactions'
-                                }
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-
-                    {biometricAvailable && (
-                        <View style={styles.dividerContainer}>
-                            <View style={[styles.dividerLine, { backgroundColor: colors.icon + '30' }]} />
-                            <Text style={[styles.dividerText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                or
-                            </Text>
-                            <View style={[styles.dividerLine, { backgroundColor: colors.icon + '30' }]} />
-                        </View>
-                    )}
-
+                <View style={styles.buttonContainer}>
                     <TouchableOpacity
-                        style={[styles.pinButton, { backgroundColor: colors.primary }]}
-                        onPress={() => setShowPinModal(true)}
+                        style={[styles.proceedButton, { backgroundColor: colors.primary }]}
+                        onPress={handleProceed}
                         activeOpacity={0.8}
                         disabled={processing}
                     >
-                        <Ionicons name="keypad-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                        <Text style={[styles.pinButtonText, { fontFamily: fonts.inter.semiBold }]}>
-                            Continue with PIN
+                        <Text style={[styles.proceedButtonText, { fontFamily: fonts.inter.semiBold }]}>
+                            Proceed
                         </Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
 
-            <TransactionPinModal
-                visible={showPinModal}
-                onClose={() => {
-                    setShowPinModal(false);
-                    setProcessing(false);
-                }}
-                onConfirm={handlePinConfirm}
-                onError={() => {
-                    showToast('error', 'Incorrect PIN. Please try again.');
-                }}
-            />
+            <Modal
+                visible={showConfirmModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowConfirmModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.confirmModal, { backgroundColor: colors.background }]}>
+                        <View style={[styles.confirmIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                            <Ionicons name="checkmark-circle" size={48} color={colors.primary} />
+                        </View>
+                        
+                        <Text style={[styles.confirmTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                            Confirm Transaction
+                        </Text>
+                        
+                        <Text style={[styles.confirmMessage, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                            You are about to purchase {service === 'airtime' ? 'Airtime' : service} for ₦{transactionAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </Text>
 
-            <BiometricSetupModal
-                visible={showBiometricSetup}
-                onClose={() => setShowBiometricSetup(false)}
-                onSuccess={handleBiometricSetupSuccess}
-            />
+                        <View style={styles.confirmButtons}>
+                            <TouchableOpacity
+                                style={[styles.confirmButton, styles.cancelButton, { backgroundColor: isDark ? '#2a2a2a' : '#f0f0f0' }]}
+                                onPress={() => setShowConfirmModal(false)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.cancelButtonText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                    Cancel
+                                </Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity
+                                style={[styles.confirmButton, styles.confirmButtonPrimary, { backgroundColor: colors.primary }]}
+                                onPress={handleConfirmTransaction}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.confirmButtonText, { fontFamily: fonts.inter.semiBold }]}>
+                                    Confirm
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             <SaveBeneficiaryModal
                 visible={showSaveBeneficiaryModal}
@@ -1163,5 +1061,76 @@ const styles = StyleSheet.create({
     },
     saveBeneficiaryText: {
         fontSize: 14,
+    },
+    buttonContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+    },
+    proceedButton: {
+        height: 56,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    proceedButtonText: {
+        fontSize: 16,
+        color: '#fff',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    confirmModal: {
+        width: '100%',
+        maxWidth: 400,
+        borderRadius: 20,
+        padding: 24,
+        alignItems: 'center',
+    },
+    confirmIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    confirmTitle: {
+        fontSize: 20,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    confirmMessage: {
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 24,
+        lineHeight: 20,
+    },
+    confirmButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    confirmButton: {
+        flex: 1,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cancelButton: {
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+    },
+    confirmButtonPrimary: {},
+    cancelButtonText: {
+        fontSize: 15,
+    },
+    confirmButtonText: {
+        fontSize: 15,
+        color: '#fff',
     },
 });
