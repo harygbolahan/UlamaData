@@ -16,6 +16,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 375;
@@ -52,6 +53,7 @@ export default function ForgotPasswordScreen() {
     };
 
     return (
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView
             style={[styles.container, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -171,6 +173,7 @@ export default function ForgotPasswordScreen() {
                     </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 

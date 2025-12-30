@@ -42,11 +42,11 @@ export default function RootLayout() {
     async function prepare() {
       if (fontsLoaded) {
         await SplashScreen.hideAsync();
-        
+
         // Check if onboarding has been completed
         if (segments.length === 0) {
           const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-          
+
           if (hasSeenOnboarding === 'true') {
             // User has seen onboarding, go to splash
             router.replace('/splash');
@@ -55,11 +55,11 @@ export default function RootLayout() {
             router.replace('/(onboarding)');
           }
         }
-        
+
         setIsReady(true);
       }
     }
-    
+
     prepare();
   }, [fontsLoaded]);
 
@@ -72,8 +72,8 @@ export default function RootLayout() {
       <DashboardProvider>
         <ThemeProvider>
           <ToastProvider>
-            <NotificationProvider>
-              <AuthProvider>
+            <AuthProvider>
+              <NotificationProvider>
                 <AutoLockProvider>
                   <ActivityTracker>
                     <BannerProvider>
@@ -82,7 +82,7 @@ export default function RootLayout() {
                           <TransactionsProvider>
                             <BeneficiaryProvider>
                               <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                                <Stack screenOptions={{ 
+                                <Stack screenOptions={{
                                   headerShown: false,
                                   contentStyle: { flex: 1 }
                                 }}>
@@ -103,8 +103,8 @@ export default function RootLayout() {
                     </BannerProvider>
                   </ActivityTracker>
                 </AutoLockProvider>
-              </AuthProvider>
-            </NotificationProvider>
+              </NotificationProvider>
+            </AuthProvider>
           </ToastProvider>
         </ThemeProvider>
       </DashboardProvider>

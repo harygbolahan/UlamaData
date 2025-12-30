@@ -17,6 +17,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WelcomeBackScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -84,6 +85,7 @@ export default function WelcomeBackScreen() {
     };
 
     return (
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView
             style={[styles.container, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -199,6 +201,7 @@ export default function WelcomeBackScreen() {
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 

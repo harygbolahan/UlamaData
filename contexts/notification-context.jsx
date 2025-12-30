@@ -1,3 +1,4 @@
+import { useAuth } from './auth-context';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 const NotificationContext = createContext();
@@ -11,15 +12,40 @@ export const useNotification = () => {
 };
 
 export const NotificationProvider = ({ children }) => {
+  const { user } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState(null);
   const [notification, setNotification] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [error, setError] = useState('Push notifications require a development build. Run: eas build --profile development');
+  const [error, setError] = useState('Push notifications require a development build.');
   const [isSupported, setIsSupported] = useState(false);
+  const [isSynced, setIsSynced] = useState(false);
 
   const notificationListener = useRef();
   const responseListener = useRef();
   const NotificationsRef = useRef(null); // Store reference for cleanup
+
+  // Sync token with backend when both user and token are available
+  useEffect(() => {
+    const syncToken = async () => {
+      if (user?.id && expoPushToken && !isSynced) {
+        try {
+          const api = require('../services/api').default;
+          await api.savePushToken(user.id, expoPushToken);
+          setIsSynced(true);
+          console.log('✅ Push token synced with backend for user:', user.id);
+        } catch (err) {
+          console.error('❌ Failed to sync push token:', err);
+        }
+      }
+    };
+
+    syncToken();
+  }, [user?.id, expoPushToken, isSynced]);
+
+  // Reset sync status if user changes
+  useEffect(() => {
+    setIsSynced(false);
+  }, [user?.id]);
 
   useEffect(() => {
     // Try to load notification modules
@@ -31,7 +57,7 @@ export const NotificationProvider = ({ children }) => {
       Notifications = require('expo-notifications');
       Device = require('expo-device');
       NotificationsRef.current = Notifications; // Store for cleanup
-      
+
       const notificationService = require('../services/notification-service');
       registerForPushNotificationsAsync = notificationService.registerForPushNotificationsAsync;
 
@@ -46,14 +72,22 @@ export const NotificationProvider = ({ children }) => {
 
       // Register for push notifications
       const register = async () => {
+        if (isRegistering) return;
         setIsRegistering(true);
+        setError(null);
+
         try {
           const token = await registerForPushNotificationsAsync();
           if (token) {
             setExpoPushToken(token);
-            console.log('✅ Push token registered:', token);
+            console.log('🚀 Push token obtained:', token);
           } else {
-            setError('Failed to get push token');
+            // Check if it's because of simulator
+            if (!Device.isDevice) {
+              setError('Push notifications require a physical device');
+            } else {
+              setError('Failed to get push token. Ensure FCM is configured.');
+            }
           }
         } catch (err) {
           console.error('Error registering for notifications:', err);
@@ -62,6 +96,9 @@ export const NotificationProvider = ({ children }) => {
           setIsRegistering(false);
         }
       };
+
+      // Expose register function to the context value
+      registerRef.current = register;
 
       register();
 
@@ -74,7 +111,7 @@ export const NotificationProvider = ({ children }) => {
       responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
         console.log('Notification response:', response);
         const data = response.notification.request.content.data;
-        
+
         // Handle different notification types
         if (data.type === 'transaction') {
           console.log('Navigate to transaction:', data.transactionId);
@@ -85,9 +122,8 @@ export const NotificationProvider = ({ children }) => {
 
     } catch (err) {
       console.warn('⚠️ Push notifications not available:', err.message);
-      console.warn('📱 Create a development build to enable notifications: eas build --profile development');
       setIsSupported(false);
-      setError('Push notifications require a development build. Run: eas build --profile development');
+      setError('Push notifications require a development build.');
     }
 
     // Cleanup function - runs when component unmounts
@@ -102,15 +138,20 @@ export const NotificationProvider = ({ children }) => {
             Notifications.removeNotificationSubscription(responseListener.current);
           }
         } catch (err) {
-          // Silently fail if cleanup errors occur
           console.warn('Cleanup error:', err.message);
         }
       }
     };
   }, []);
 
+  const registerRef = useRef(null);
+
   const registerForNotifications = async () => {
-    console.warn('Notifications not available in Expo Go. Create a development build.');
+    if (registerRef.current) {
+      await registerRef.current();
+    } else {
+      console.warn('Register function not yet initialized');
+    }
   };
 
   const value = {
@@ -119,6 +160,7 @@ export const NotificationProvider = ({ children }) => {
     isRegistering,
     error,
     isSupported,
+    isSynced,
     registerForNotifications,
   };
 

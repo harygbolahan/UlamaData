@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FundWallet() {
     const { colors, fonts, isDark } = useTheme();
@@ -104,7 +105,7 @@ export default function FundWallet() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
@@ -173,7 +174,7 @@ export default function FundWallet() {
                 
 
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 50,
+        paddingTop: 20,
         paddingBottom: 20,
     },
     headerTitle: { 

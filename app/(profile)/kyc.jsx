@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
@@ -103,6 +104,7 @@ export default function KYCScreen() {
     };
 
     return (
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView 
             style={[styles.container, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -437,6 +439,7 @@ export default function KYCScreen() {
                 </Pressable>
             </Modal>
         </KeyboardAvoidingView>
+    </SafeAreaView>
     );
 }
 
@@ -447,7 +450,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20 * scale,
-        paddingTop: 50 * scale,
+        paddingTop: 20 * scale,
         marginBottom: 20 * scale,
     },
     headerTitle: { fontSize: 18 * scale },

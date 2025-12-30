@@ -36,7 +36,7 @@ export default function ProfileTab() {
     const menuItems = [
         { id: '1', title: 'Personal Information', icon: 'person-outline', route: '/(profile)/personal' },
         { id: '2', title: 'Upgrade Account', icon: 'arrow-up-circle-outline', route: '/(profile)/upgrade' },
-        // { id: '3', title: 'Referral Program', icon: 'gift-outline', route: '/(profile)/referral' },
+        { id: '3', title: 'Referral Program', icon: 'gift-outline', route: '/(profile)/referral' },
         // { id: '4', title: 'Dashboard Style', icon: 'grid-outline', route: '/(profile)/dashboard-selector' },
         { id: '5', title: 'Security & Privacy', icon: 'shield-checkmark-outline', route: '/(profile)/security' },
         // { id: '6', title: 'Payment Methods', icon: 'card-outline', route: '/(profile)/payment' },
@@ -64,12 +64,12 @@ export default function ProfileTab() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Auto-Lock Debug - Remove this in production */}
-                 {/* <AutoLockDebug />  */}
+                {/* <AutoLockDebug />  */}
 
                 {/* KYC Alert Card */}
                 {!isKycVerified && (
-                    <TouchableOpacity 
-                        style={[styles.kycAlert, { 
+                    <TouchableOpacity
+                        style={[styles.kycAlert, {
                             backgroundColor: colors.warning + '15',
                             borderColor: colors.warning + '40',
                         }]}
@@ -106,17 +106,17 @@ export default function ProfileTab() {
                                 {user?.name || 'John'} {user?.surname || 'Doe'}
                             </Text>
                             {user?.KycStatus && (
-                                <View style={[styles.verificationBadge, { 
-                                    backgroundColor: user.KycStatus === 'verified' ? colors.success + '20' : colors.warning + '20' 
+                                <View style={[styles.verificationBadge, {
+                                    backgroundColor: user.KycStatus === 'verified' ? colors.success + '20' : colors.warning + '20'
                                 }]}>
-                                    <Ionicons 
-                                        name={user.KycStatus === 'verified' ? 'checkmark-circle' : 'alert-circle'} 
-                                        size={12 * scale} 
-                                        color={user.KycStatus === 'verified' ? colors.success : colors.warning} 
+                                    <Ionicons
+                                        name={user.KycStatus === 'verified' ? 'checkmark-circle' : 'alert-circle'}
+                                        size={12 * scale}
+                                        color={user.KycStatus === 'verified' ? colors.success : colors.warning}
                                     />
-                                    <Text style={[styles.verificationText, { 
+                                    <Text style={[styles.verificationText, {
                                         color: user.KycStatus === 'verified' ? colors.success : colors.warning,
-                                        fontFamily: fonts.inter.medium 
+                                        fontFamily: fonts.inter.medium
                                     }]}>
                                         {user.KycStatus === 'verified' ? 'Verified' : 'Unverified'}
                                     </Text>
@@ -182,18 +182,18 @@ export default function ProfileTab() {
                             }]}
                             onPress={() => item.route && router.push(item.route)}
                         >
-                            <View style={[styles.menuIcon, { 
-                                backgroundColor: item.danger ? colors.error + '20' : colors.primary + '20' 
+                            <View style={[styles.menuIcon, {
+                                backgroundColor: item.danger ? colors.error + '20' : colors.primary + '20'
                             }]}>
-                                <Ionicons 
-                                    name={item.icon} 
-                                    size={18 * scale} 
-                                    color={item.danger ? colors.error : colors.primary} 
+                                <Ionicons
+                                    name={item.icon}
+                                    size={18 * scale}
+                                    color={item.danger ? colors.error : colors.primary}
                                 />
                             </View>
-                            <Text style={[styles.menuText, { 
-                                color: item.danger ? colors.error : colors.text, 
-                                fontFamily: fonts.inter.medium 
+                            <Text style={[styles.menuText, {
+                                color: item.danger ? colors.error : colors.text,
+                                fontFamily: fonts.inter.medium
                             }]}>
                                 {item.title}
                             </Text>
@@ -223,7 +223,7 @@ export default function ProfileTab() {
                 </View>
 
                 {/* Logout Button */}
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[styles.logoutButton, {
                         backgroundColor: colors.isDark ? '#1f1f1f' : '#f5f5f5',
                         opacity: isLoggingOut ? 0.6 : 1
@@ -247,11 +247,11 @@ export default function ProfileTab() {
                 animationType="fade"
                 onRequestClose={() => setShowLogoutDialog(false)}
             >
-                <Pressable 
+                <Pressable
                     style={styles.modalOverlay}
                     onPress={() => setShowLogoutDialog(false)}
                 >
-                    <Pressable 
+                    <Pressable
                         style={[styles.dialogContainer, { backgroundColor: colors.background }]}
                         onPress={(e) => e.stopPropagation()}
                     >
@@ -273,7 +273,7 @@ export default function ProfileTab() {
                         {/* Buttons */}
                         <View style={styles.dialogButtons}>
                             <Pressable
-                                style={[styles.dialogButton, styles.cancelButton, { 
+                                style={[styles.dialogButton, styles.cancelButton, {
                                     backgroundColor: colors.isDark ? colors.card : '#f5f5f5',
                                     borderColor: colors.border
                                 }]}

@@ -14,25 +14,32 @@ Notifications.setNotificationHandler({
 
 /**
  * Register for push notifications and get the Expo Push Token
+ * @see https://docs.expo.dev/push-notifications/push-notifications-setup/
  * @returns {Promise<string|null>} The Expo Push Token or null if registration fails
  */
 export async function registerForPushNotificationsAsync() {
   let token = null;
 
-  // Android-specific notification channel setup
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
-  }
-
   // Check if running on a physical device
   if (!Device.isDevice) {
     console.warn('Push notifications require a physical device');
     return null;
+  }
+
+  // Android-specific notification channel setup
+  // Required for Android 8.0 (API level 26) and higher
+  if (Platform.OS === 'android') {
+    try {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+        showBadge: true,
+      });
+    } catch (error) {
+      console.error('Error setting notification channel:', error);
+    }
   }
 
   try {
@@ -51,27 +58,34 @@ export async function registerForPushNotificationsAsync() {
       return null;
     }
 
-    // Get the project ID from app config
+    // Get the project ID from app config (required for EAS)
     const projectId =
-      Constants?.expoConfig?.extra?.eas?.projectId ?? 
+      Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
 
     if (!projectId) {
-      console.error('Project ID not found in app config');
+      console.error('Project ID not found in app config. Ensure EAS is configured.');
       return null;
     }
 
     // Get the Expo Push Token
+    // For FCM v1 (Android), this requires google-services.json configured in app.json
     const pushToken = await Notifications.getExpoPushTokenAsync({
       projectId,
     });
 
     token = pushToken.data;
-    console.log('Expo Push Token:', token);
+    console.log('✅ Registered Expo Push Token:', token);
 
     return token;
   } catch (error) {
-    console.error('Error registering for push notifications:', error);
+    console.error('❌ Error registering for push notifications:', error);
+
+    // Provide more specific error info if possible
+    if (error.message?.includes('INVALID_SENDER')) {
+      console.error('FCM configuration error: Check your google-services.json and FCM setup.');
+    }
+
     return null;
   }
 }

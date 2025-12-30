@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionSummaryScreen() {
     const params = useLocalSearchParams();
@@ -625,7 +626,7 @@ export default function TransactionSummaryScreen() {
 
     if (hasInsufficientBalance) {
         return (
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()}>
                         <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -686,12 +687,12 @@ export default function TransactionSummaryScreen() {
                         onPress={() => router.push('/fund-wallet')}
                     />
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -904,7 +905,7 @@ export default function TransactionSummaryScreen() {
             />
 
             {(loadingUser || processing) && <LoadingOverlay visible={true} />}
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -915,7 +916,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 50,
+        paddingTop: 20,
         marginBottom: 20,
     },
     headerTitle: { fontSize: 18 },

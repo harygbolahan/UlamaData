@@ -10,6 +10,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeTab() {
     const { selectedDashboard, isLoading } = useDashboard();
@@ -51,9 +52,11 @@ export default function HomeTab() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            {renderDashboard()}
-        </View>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={{ flex: 1 }}>
+                {renderDashboard()}
+            </View>
+        </SafeAreaView>
     );
 }
 

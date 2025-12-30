@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ChangePinScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -49,7 +50,7 @@ export default function ChangePinScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -137,7 +138,7 @@ export default function ChangePinScreen() {
                     style={{ opacity: (isLoading || !password || !newPin || !confirmPin) ? 0.5 : 1 }}
                 />
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 

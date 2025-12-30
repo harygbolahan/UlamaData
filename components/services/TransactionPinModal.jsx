@@ -4,6 +4,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 /**
@@ -129,6 +130,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
     };
 
     return (
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <Modal
             visible={visible}
             transparent
@@ -272,6 +274,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                 </View>
             </View>
         </Modal>
+        </SafeAreaView>
     );
 }
 

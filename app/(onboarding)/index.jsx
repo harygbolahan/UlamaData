@@ -15,6 +15,7 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -216,7 +217,7 @@ export default function OnboardingScreen() {
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <StatusBar style="light" />
             
             {/* Skip Button */}
@@ -291,7 +292,7 @@ export default function OnboardingScreen() {
                     </TouchableOpacity>
                 )}
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 

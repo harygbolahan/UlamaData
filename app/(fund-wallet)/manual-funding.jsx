@@ -7,6 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ManualFunding() {
     const { colors, fonts, isDark } = useTheme();
@@ -64,7 +65,7 @@ export default function ManualFunding() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -307,7 +308,7 @@ export default function ManualFunding() {
                     style={{ opacity: (!selectedAccount || submitting) ? 0.5 : 1 }}
                 />
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 50,
+        paddingTop: 20,
         marginBottom: 20,
     },
     headerTitle: { fontSize: 18 },

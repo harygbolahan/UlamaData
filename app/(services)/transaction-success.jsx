@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionSuccessScreen() {
     const params = useLocalSearchParams();
@@ -163,7 +164,7 @@ export default function TransactionSuccessScreen() {
     }, []);
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => router.push('/(tabs)/home')}
@@ -289,7 +290,7 @@ export default function TransactionSuccessScreen() {
                 />
             </Animated.View>
             <LoadingOverlay visible={isLoading} />
-        </View>
+        </SafeAreaView>
     );
 }
 

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
     const { colors, fonts, isDark } = useTheme();
@@ -148,6 +149,7 @@ export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
     };
 
     return (
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <Modal
             visible={visible}
             transparent
@@ -296,6 +298,7 @@ export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
                 </View>
             </View>
         </Modal>
+        </SafeAreaView>
     );
 }
 

@@ -9,6 +9,7 @@ import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionDetails() {
     const { colors, fonts, isDark } = useTheme();
@@ -651,7 +652,7 @@ export default function TransactionDetails() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Header */}
             <View style={[styles.header, { backgroundColor: colors.background }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -1062,7 +1063,7 @@ export default function TransactionDetails() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -1138,7 +1139,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 60,
+        paddingTop: 20,
         paddingBottom: 20,
     },
     backButton: {

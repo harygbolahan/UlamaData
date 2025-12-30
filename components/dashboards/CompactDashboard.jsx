@@ -56,16 +56,16 @@ export default function CompactDashboard() {
     }
   };
 
-const services = [
-        { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
-        { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
-        { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
-        { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
-        { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
-        { id: '6', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
-        { id: '7', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
-        { id: '8', name: 'More', icon: 'apps', route: '/(tabs)/services', color: '#607d8b' },
-    ];
+  const services = [
+    { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
+    { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
+    { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
+    { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
+    { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
+    { id: '6', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
+    { id: '7', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
+    { id: '8', name: 'More', icon: 'apps', route: '/(tabs)/services', color: '#607d8b' },
+  ];
 
   const getServiceIcon = (service) => {
     const serviceMap = {
@@ -135,8 +135,8 @@ const services = [
       tx.tStatus?.toLowerCase() === "completed"
         ? "success"
         : tx.tStatus?.toLowerCase() === "processing"
-        ? "pending"
-        : "failed",
+          ? "pending"
+          : "failed",
     transactionRef: tx.transref || tx.transactionRef,
   }));
 
@@ -223,9 +223,9 @@ const services = [
                 >
                   {balanceVisible
                     ? parseFloat(user?.wallet || 0).toLocaleString("en-NG", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })
                     : "****"}
                 </Text>
                 <Text
@@ -262,9 +262,9 @@ const services = [
                 >
                   {balanceVisible
                     ? parseFloat(user?.cashback || 0).toLocaleString("en-NG", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })
                     : "****"}
                 </Text>
                 <Text
@@ -535,8 +535,8 @@ const services = [
                           transaction.status === "success"
                             ? colors.success
                             : transaction.status === "pending"
-                            ? "#FFA500"
-                            : "#EF4444",
+                              ? "#FFA500"
+                              : "#EF4444",
                       },
                     ]}
                   />

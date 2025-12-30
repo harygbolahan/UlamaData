@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
@@ -49,7 +50,7 @@ export default function TerminateAccountScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="arrow-back" size={24 * scale} color={colors.text} />
@@ -234,7 +235,7 @@ export default function TerminateAccountScreen() {
                     </Pressable>
                 </Pressable>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20 * scale,
-        paddingTop: 50 * scale,
+        paddingTop: 20 * scale,
         marginBottom: 20 * scale,
     },
     headerTitle: {

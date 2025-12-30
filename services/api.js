@@ -151,6 +151,14 @@ export const getBanners = async () => {
   return apiClient.get('/banner');
 };
 
+// Notification endpoints
+export const savePushToken = async (userId, token) => {
+  return apiClient.post('https://ulamadata.ng/app/save-push-token', {
+    user_id: userId,
+    push_token: token,
+  });
+};
+
 // Default export for backward compatibility
 export default {
   setToken,
@@ -164,4 +172,5 @@ export default {
   postFormData,
   getTheme,
   getBanners,
+  savePushToken,
 };

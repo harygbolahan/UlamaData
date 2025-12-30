@@ -19,6 +19,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";    
 
 const { width } = Dimensions.get("window");
 const isSmallScreen = width < 375;
@@ -155,6 +156,7 @@ export default function SignUpScreen() {
   );
 
   return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -353,6 +355,7 @@ export default function SignUpScreen() {
           </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

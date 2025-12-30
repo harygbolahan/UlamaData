@@ -8,6 +8,7 @@ import { router, useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionsTab() {
     const { colors, fonts, toggleTheme, isDark } = useTheme();
@@ -461,7 +462,7 @@ export default function TransactionsTab() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Minimal Header */}
             <Animated.View style={[
                 styles.headerContainer,
@@ -801,7 +802,7 @@ export default function TransactionsTab() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -810,7 +811,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     headerContainer: {
-        paddingTop: 60,
+        // paddingTop: 20,
         paddingBottom: 20,
         paddingHorizontal: 20,
     },

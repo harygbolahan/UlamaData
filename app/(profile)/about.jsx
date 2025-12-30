@@ -2,6 +2,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
@@ -11,7 +12,7 @@ export default function AboutScreen() {
     const { colors, fonts, isDark } = useTheme();
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={24 * scale} color={colors.text} />
@@ -80,7 +81,7 @@ export default function AboutScreen() {
                     © 2025 UlamaData. All rights reserved.
                 </Text>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20 * scale,
-        paddingTop: 50 * scale,
+        paddingTop: 20 * scale,
         marginBottom: 20 * scale,
     },
     headerTitle: { fontSize: 18 * scale },

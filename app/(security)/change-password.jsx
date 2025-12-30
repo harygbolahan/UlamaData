@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ChangePasswordScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -31,7 +32,7 @@ export default function ChangePasswordScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -84,7 +85,7 @@ export default function ChangePasswordScreen() {
                     style={{ opacity: (!currentPassword || !newPassword || !confirmPassword) ? 0.5 : 1 }}
                 />
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 

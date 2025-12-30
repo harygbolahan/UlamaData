@@ -73,7 +73,7 @@ export default function ClassicDashboard() {
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        
+
         if (date.toDateString() === today.toDateString()) {
             return `Today, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
         } else if (date.toDateString() === yesterday.toDateString()) {
@@ -147,7 +147,7 @@ export default function ClassicDashboard() {
                             </Text>
                         </View>
                     </View>
-                    
+
                     {/* Action Buttons */}
                     <View style={styles.actionButtons}>
                         <TouchableOpacity
@@ -176,12 +176,12 @@ export default function ClassicDashboard() {
                     <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>Services</Text>
                     <View style={styles.servicesGrid}>
                         {services.map((service) => (
-                            <TouchableOpacity 
-                                key={service.id} 
-                                style={[styles.serviceCard, { 
-                                    backgroundColor: colors.isDark ? '#1f1f1f' : '#fff', 
-                                    borderColor: colors.isDark ? '#2a2a2a' : '#e0e0e0' 
-                                }]} 
+                            <TouchableOpacity
+                                key={service.id}
+                                style={[styles.serviceCard, {
+                                    backgroundColor: colors.isDark ? '#1f1f1f' : '#fff',
+                                    borderColor: colors.isDark ? '#2a2a2a' : '#e0e0e0'
+                                }]}
                                 onPress={() => service.route && router.push(service.route)}
                             >
                                 <Ionicons name={service.icon} size={22} color={colors.primary} />
@@ -193,7 +193,7 @@ export default function ClassicDashboard() {
                     </View>
                 </View>
 
-                                {/* Banners */}
+                {/* Banners */}
                 <View style={styles.section}>
                     <BannerCarousel />
                 </View>
@@ -219,16 +219,16 @@ export default function ClassicDashboard() {
                         </View>
                     ) : (
                         recentTransactions.map((transaction, index) => (
-                            <TouchableOpacity 
-                                key={transaction.id} 
-                                style={[styles.transactionCard, { 
-                                    backgroundColor: colors.isDark ? '#1f1f1f' : '#fff', 
+                            <TouchableOpacity
+                                key={transaction.id}
+                                style={[styles.transactionCard, {
+                                    backgroundColor: colors.isDark ? '#1f1f1f' : '#fff',
                                     borderColor: colors.isDark ? '#2a2a2a' : '#e0e0e0',
                                     marginBottom: index === recentTransactions.length - 1 ? 0 : 8
-                                }]} 
+                                }]}
                                 onPress={() => router.push({
                                     pathname: '/transaction-details',
-                                    params: { 
+                                    params: {
                                         transactionRef: transaction.transactionRef,
                                         transactionDate: transaction.date
                                     }
@@ -249,8 +249,8 @@ export default function ClassicDashboard() {
                                     <Text style={[styles.transactionAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                                         {transaction.amount}
                                     </Text>
-                                    <View style={[styles.statusDot, { 
-                                        backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : '#EF4444' 
+                                    <View style={[styles.statusDot, {
+                                        backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : '#EF4444'
                                     }]} />
                                 </View>
                             </TouchableOpacity>
@@ -267,25 +267,25 @@ export default function ClassicDashboard() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     // Compact Header
-    header: { 
-        paddingHorizontal: 16, 
-        paddingTop: 48, 
-        paddingBottom: 14, 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
+    header: {
+        paddingHorizontal: 16,
+        paddingTop: 48,
+        paddingBottom: 14,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-         
+
     },
     greeting: { fontSize: 12, marginBottom: 3, opacity: 0.85 },
     name: { fontSize: 18, letterSpacing: -0.3 },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    iconButton: { 
-        width: 36, 
-        height: 36, 
-        borderRadius: 18, 
+    iconButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: '#ffffff20',
-        justifyContent: 'center', 
-        alignItems: 'center' 
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     notificationButton: { position: 'relative' },
     notificationBadge: {
@@ -297,14 +297,14 @@ const styles = StyleSheet.create({
         borderRadius: 3,
         backgroundColor: '#FF6B6B',
     },
-    
+
     // Compact Balance
-    balanceSection: { 
-        paddingHorizontal: 16, 
-        paddingBottom: 14, 
+    balanceSection: {
+        paddingHorizontal: 16,
+        paddingBottom: 14,
         marginBottom: 18,
-         borderBottomEndRadius: 26,
-    borderBottomStartRadius: 26, 
+        borderBottomEndRadius: 26,
+        borderBottomStartRadius: 26,
     },
     balanceContent: {
         flexDirection: 'row',
@@ -313,27 +313,27 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     balanceInfo: { flex: 1 },
-    balanceLabel: { 
-        fontSize: 11, 
+    balanceLabel: {
+        fontSize: 11,
         opacity: 0.85,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
         marginBottom: 6,
     },
-    balanceRow: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
+    balanceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 8,
         marginBottom: 4,
     },
-    balanceAmount: { 
-        fontSize: 26, 
+    balanceAmount: {
+        fontSize: 26,
         letterSpacing: -0.5,
     },
     eyeButton: { padding: 4 },
-    cashback: { 
-        fontSize: 11, 
-        opacity: 0.85 
+    cashback: {
+        fontSize: 11,
+        opacity: 0.85
     },
     actionButtons: {
         flexDirection: 'row',
@@ -355,54 +355,54 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     actionButtonText: { fontSize: 13 },
-    
+
     // Sections
     section: { marginBottom: 18 },
-    sectionHeader: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        paddingHorizontal: 16, 
-        marginBottom: 12 
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 12
     },
-    sectionTitle: { 
-        fontSize: 17, 
-        paddingHorizontal: 16, 
+    sectionTitle: {
+        fontSize: 17,
+        paddingHorizontal: 16,
         marginBottom: 12,
         letterSpacing: -0.3,
     },
     viewAll: { fontSize: 13 },
-    
+
     // Services
-    servicesGrid: { 
-        flexDirection: 'row', 
-        flexWrap: 'wrap', 
+    servicesGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         paddingHorizontal: 12,
         gap: 8
     },
-    serviceCard: { 
-        width: '22%', 
+    serviceCard: {
+        width: '22%',
         aspectRatio: 1,
-        padding: 8, 
-        borderRadius: 12, 
+        padding: 8,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center'
     },
-    serviceIconContainer: { 
-        width: 40, 
-        height: 40, 
-        borderRadius: 20, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        marginBottom: 6 
+    serviceIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 6
     },
-    serviceName: { 
-        fontSize: 10, 
+    serviceName: {
+        fontSize: 10,
         textAlign: 'center',
         lineHeight: 12
     },
-    
-    
+
+
     // Transactions
     loadingContainer: {
         padding: 16,
@@ -417,12 +417,12 @@ const styles = StyleSheet.create({
         fontSize: 13,
         opacity: 0.6,
     },
-    transactionCard: { 
-        marginHorizontal: 16, 
-        padding: 12, 
-        borderRadius: 10, 
-        flexDirection: 'row', 
-        alignItems: 'center', 
+    transactionCard: {
+        marginHorizontal: 16,
+        padding: 12,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
         borderWidth: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -430,23 +430,23 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 1,
     },
-    transactionIcon: { 
-        width: 36, 
-        height: 36, 
-        borderRadius: 18, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        marginRight: 12 
+    transactionIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12
     },
-    transactionInfo: { 
+    transactionInfo: {
         flex: 1,
         gap: 2,
     },
-    transactionTitle: { 
+    transactionTitle: {
         fontSize: 14,
         letterSpacing: -0.2,
     },
-    transactionSubtitle: { 
+    transactionSubtitle: {
         fontSize: 12,
         opacity: 0.7,
     },
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         gap: 6,
     },
-    transactionAmount: { 
+    transactionAmount: {
         fontSize: 14,
         letterSpacing: -0.3,
     },

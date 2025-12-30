@@ -2,6 +2,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ServicesTab() {
     const { colors, fonts, toggleTheme, isDark } = useTheme();
@@ -23,7 +24,7 @@ export default function ServicesTab() {
     ];
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     Services
@@ -75,7 +76,7 @@ export default function ServicesTab() {
 
                 <View style={{ height: 20 }} />
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 50,
+        paddingTop: 20,
         marginBottom: 20,
     },
     headerTitle: {
