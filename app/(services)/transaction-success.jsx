@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionSuccessScreen() {
@@ -164,7 +164,7 @@ export default function TransactionSuccessScreen() {
     }, []);
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
             <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => router.push('/(tabs)/home')}
@@ -290,7 +290,7 @@ export default function TransactionSuccessScreen() {
                 />
             </Animated.View>
             <LoadingOverlay visible={isLoading} />
-        </SafeAreaView>
+        </ScrollView>
     );
 }
 

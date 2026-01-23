@@ -769,6 +769,22 @@ export function ServicesProvider({ children }) {
         }
     };
 
+    // Print Pins API method
+    const fetchPrintPins = async (pinRef) => {
+        try {
+            console.log('Fetching print pins for ref:', pinRef);
+            
+            const response = await api.get(`/pins/${pinRef}`);
+            
+            console.log('Print pins API response:', response);
+            
+            return response;
+        } catch (err) {
+            console.error('Error fetching print pins:', err);
+            throw err;
+        }
+    };
+
     return (
         <ServicesContext.Provider value={{
             services,
@@ -813,7 +829,8 @@ export function ServicesProvider({ children }) {
             swapAirtimeManual,
             requestSwapOtp,
             verifySwapOtp,
-            downloadTransactions
+            downloadTransactions,
+            fetchPrintPins
         }}>
             {children}
         </ServicesContext.Provider>

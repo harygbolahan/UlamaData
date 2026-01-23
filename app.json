@@ -10,13 +10,13 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.paceint.ulamadata",
+      "bundleIdentifier": "com.ulamadatanigeria.ulamadata",
       "infoPlist": {
         "NSContactsUsageDescription": "This app needs access to your contacts to help you quickly select phone numbers for airtime and data purchases."
       }
     },
     "android": {
-      "package": "com.paceint.ulamadata",
+      "package": "com.ulamadatanigeria.ulamadata",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

@@ -1,3 +1,4 @@
+import PinPrintModal from '@/components/pin-print-modal';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { useTransactions } from '@/contexts/transactions-context';
@@ -7,9 +8,9 @@ import * as Print from 'expo-print';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { captureRef } from 'react-native-view-shot';
+import { ActivityIndicator, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { captureRef } from 'react-native-view-shot';
 
 export default function TransactionDetails() {
     const { colors, fonts, isDark } = useTheme();
@@ -23,6 +24,7 @@ export default function TransactionDetails() {
     const [showDisputeModal, setShowDisputeModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+    const [showPinPrintModal, setShowPinPrintModal] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isCapturing, setIsCapturing] = useState(false);
     const receiptRef = useRef(null);
@@ -72,33 +74,63 @@ export default function TransactionDetails() {
         let pinData = null;
         let serialData = null;
         let electricityToken = null;
+        let allPins = []; // Array to store all PINs
 
         try {
             if (data.api_response_log) {
-                const logData = JSON.parse(data.api_response_log);
-                
-                // Handle Airtime PIN and Exam PIN
-                if (logData.pins && Array.isArray(logData.pins) && logData.pins.length > 0) {
-                    const firstPin = logData.pins[0];
-                    pinData = firstPin.pin || firstPin.token || null;
-                    serialData = firstPin.serial || null;
+                // Check if api_response_log is already an object or needs parsing
+                let logData;
+                if (typeof data.api_response_log === 'string') {
+                    try {
+                        logData = JSON.parse(data.api_response_log);
+                    } catch (parseErr) {
+                        // If parsing fails, it's just a plain string message, skip processing
+                        console.log('api_response_log is a plain string, not JSON:', data.api_response_log);
+                        logData = null;
+                    }
+                } else {
+                    logData = data.api_response_log;
                 }
                 
-                // Also check direct pin/serial fields
-                if (!pinData && logData.pin) {
-                    pinData = logData.pin;
-                }
-                if (!serialData && logData.serial) {
-                    serialData = logData.serial;
-                }
+                if (logData) {
+                    // Handle Airtime PIN and Exam PIN (multiple pins)
+                    if (logData.pins && Array.isArray(logData.pins) && logData.pins.length > 0) {
+                        // Store all pins for printing
+                        allPins = logData.pins.map(p => ({
+                            pin: p.pin || p.token || '',
+                            serial: p.serial || '',
+                            ref: data.transref || ''
+                        }));
+                        
+                        // Keep first pin for display
+                        const firstPin = logData.pins[0];
+                        pinData = firstPin.pin || firstPin.token || null;
+                        serialData = firstPin.serial || null;
+                    }
+                    
+                    // Also check direct pin/serial fields
+                    if (!pinData && logData.pin) {
+                        pinData = logData.pin;
+                        if (!allPins.length) {
+                            allPins = [{
+                                pin: logData.pin,
+                                serial: logData.serial || '',
+                                ref: data.transref || ''
+                            }];
+                        }
+                    }
+                    if (!serialData && logData.serial) {
+                        serialData = logData.serial;
+                    }
 
-                // Handle Electricity token (might be in different format)
-                if (serviceName.toLowerCase().includes('electric')) {
-                    electricityToken = logData.token || logData.meterToken || null;
+                    // Handle Electricity token (might be in different format)
+                    if (serviceName.toLowerCase().includes('electric')) {
+                        electricityToken = logData.token || logData.meterToken || null;
+                    }
                 }
             }
         } catch (err) {
-            console.error('Error parsing api_response_log:', err);
+            console.error('Error processing api_response_log:', err);
         }
 
         // Parse date
@@ -196,6 +228,7 @@ export default function TransactionDetails() {
             pin: pinData,
             serial: serialData,
             electricityToken: electricityToken,
+            allPins: allPins, // All PINs for printing
         };
     };
 
@@ -750,18 +783,30 @@ export default function TransactionDetails() {
                 {/* PIN/Serial Section - Airtime PIN */}
                 {transaction.pin && transaction.pin !== null && transaction.pin !== '' && (
                     <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Airtime PIN Details
-                        </Text>
+                        <View style={styles.sectionHeader}>
+                        
+                            {transaction.allPins && transaction.allPins.length > 0 && (
+                                <TouchableOpacity
+                                    style={[styles.printBadge, { backgroundColor: colors.primary }]}
+                                    onPress={() => setShowPinPrintModal(true)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="print" size={14} color="#fff" />
+                                    <Text style={[styles.printBadgeText, { fontFamily: fonts.inter.semiBold }]}>
+                                        Print {transaction.allPins.length > 1 ? `${transaction.allPins.length} PINs` : 'PIN'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
 
-                        <View style={[styles.tokenCard, { 
+                        {/* <View style={[styles.tokenCard, { 
                             backgroundColor: '#00BCD4' + '10',
                             borderColor: '#00BCD4' + '30',
                         }]}>
                             <View style={styles.tokenHeader}>
                                 <Ionicons name="card" size={18} color="#00BCD4" />
                                 <Text style={[styles.tokenLabel, { color: '#00BCD4', fontFamily: fonts.inter.medium }]}>
-                                    PIN
+                                    PIN {transaction.allPins && transaction.allPins.length > 1 ? `(1 of ${transaction.allPins.length})` : ''}
                                 </Text>
                             </View>
                             <Text style={[styles.tokenValue, { color: '#00BCD4', fontFamily: fonts.inter.bold }]}>
@@ -789,7 +834,7 @@ export default function TransactionDetails() {
                                     Copy Details
                                 </Text>
                             </TouchableOpacity>
-                        </View>
+                        </View> */}
                     </Animated.View>
                 )}
 
@@ -1018,6 +1063,18 @@ export default function TransactionDetails() {
                 </View>
             </Modal>
 
+            {/* PIN Print Modal */}
+            {transaction && transaction.pin && (
+                <PinPrintModal
+                    visible={showPinPrintModal}
+                    onClose={() => setShowPinPrintModal(false)}
+                    pinRef={transaction.ref}
+                    provider={transaction.provider}
+                    serviceName={transaction.type}
+                    amount={transaction.amount}
+                />
+            )}
+
             {/* Dispute Modal */}
             <Modal
                 visible={showDisputeModal}
@@ -1193,9 +1250,27 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginBottom: 16,
     },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
     sectionTitle: {
         fontSize: 15,
         marginBottom: 10,
+    },
+    printBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    printBadgeText: {
+        color: '#fff',
+        fontSize: 12,
     },
     detailCard: {
         borderRadius: 12,
@@ -1258,6 +1333,11 @@ const styles = StyleSheet.create({
         fontSize: 24,
         letterSpacing: 2,
         marginBottom: 12,
+    },
+    tokenActions: {
+        flexDirection: 'row',
+        gap: 8,
+        width: '100%',
     },
     copyTokenButton: {
         flexDirection: 'row',
