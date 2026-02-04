@@ -44,7 +44,7 @@ export default function PricingScreen() {
             
             const planData = {
                 size: plan.datasize,
-                price: parseFloat(plan.smartdiscount),
+                price: parseFloat(plan.smartdiscount) + parseFloat(plan.buydiscount),
                 validity: `${plan.day} ${plan.day === '1' ? 'day' : 'days'}`,
                 type: planType,
                 provider: plan.provider,
