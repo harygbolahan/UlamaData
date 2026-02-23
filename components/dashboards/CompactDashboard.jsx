@@ -11,6 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  StatusBar,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -132,16 +133,23 @@ export default function CompactDashboard() {
     date: formatDate(tx.date || tx.created_at),
     icon: getServiceIcon(tx.servicename),
     status:
-      tx.tStatus?.toLowerCase() === "completed"
+      (tx.tStatus?.toLowerCase() === "completed" || String(tx.status) === "0")
         ? "success"
-        : tx.tStatus?.toLowerCase() === "processing"
-          ? "pending"
-          : "failed",
+        : (tx.tStatus?.toLowerCase() === "refund" || tx.tStatus?.toLowerCase() === "refunded" || String(tx.status) === "3")
+          ? "refund"
+          : (tx.tStatus?.toLowerCase() === "pending" || tx.tStatus?.toLowerCase() === "processing" || String(tx.status) === "1")
+            ? "pending"
+            : "failed",
     transactionRef: tx.transref || tx.transactionRef,
   }));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar
+        backgroundColor={colors.primary}
+        barStyle={isDark ? 'light-content' : 'light-content'}
+        translucent={false}
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Compact Header */}
         <View style={[styles.header, { backgroundColor: accentColor }]}>
@@ -536,7 +544,9 @@ export default function CompactDashboard() {
                             ? colors.success
                             : transaction.status === "pending"
                               ? "#FFA500"
-                              : "#EF4444",
+                              : transaction.status === "refund"
+                                ? "#2196F3"
+                                : "#EF4444",
                       },
                     ]}
                   />

@@ -4,7 +4,6 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 /**
@@ -67,17 +66,19 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
 
     const handleBiometricAuth = async () => {
         try {
-            const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Authenticate to complete transaction',
-                fallbackLabel: 'Use PIN',
-                disableDeviceFallback: false,
-                cancelLabel: 'Cancel',
-            });
+            // Use the centralized biometric service
+            const { authenticateWithBiometric } = require('@/services/biometric');
+            const result = await authenticateWithBiometric();
 
-            if (result.success) {
-                // Biometric successful, close modal and trigger success
-                onClose();
-                // You might want to handle this differently based on your flow
+            if (result.success && result.pin) {
+                // Biometric successful, trigger confirm with stored PIN
+                const isValid = await onConfirm(result.pin);
+                if (isValid !== false) {
+                    setPin('');
+                    setError(false);
+                }
+            } else if (result.error && !result.cancelled && !result.useFallback) {
+                console.error('Biometric error:', result.error);
             }
         } catch (error) {
             console.error('Biometric error:', error);
@@ -89,7 +90,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
             const newPin = pin + num;
             setPin(newPin);
             setError(false);
-            
+
             // Animate the dot
             const index = pin.length;
             Animated.sequence([
@@ -130,7 +131,6 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <Modal
             visible={visible}
             transparent
@@ -160,12 +160,12 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                                 key={i}
                                 style={[
                                     styles.pinDot,
-                                    { 
+                                    {
                                         backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5',
                                         borderWidth: 2,
                                         borderColor: error ? colors.error : (isDark ? '#2a2a2a' : '#e0e0e0')
                                     },
-                                    pin.length > i && { 
+                                    pin.length > i && {
                                         backgroundColor: error ? colors.error : colors.primary,
                                         borderColor: error ? colors.error : colors.primary
                                     },
@@ -236,10 +236,10 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                                 activeOpacity={0.7}
                                 disabled={pin.length === 0}
                             >
-                                <Ionicons 
-                                    name="backspace-outline" 
-                                    size={26.4} 
-                                    color={pin.length === 0 ? colors.icon + '40' : colors.icon} 
+                                <Ionicons
+                                    name="backspace-outline"
+                                    size={26.4}
+                                    color={pin.length === 0 ? colors.icon + '40' : colors.icon}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -247,7 +247,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
 
                     <View style={styles.bottomActions}>
                         {biometricAvailable && (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.biometricAction}
                                 onPress={handleBiometricAuth}
                                 activeOpacity={0.7}
@@ -258,7 +258,7 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                                 </Text>
                             </TouchableOpacity>
                         )}
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.forgotPin}
                             onPress={() => {
                                 onClose();
@@ -274,7 +274,6 @@ export default function TransactionPinModal({ visible, onClose, onConfirm, onErr
                 </View>
             </View>
         </Modal>
-        </SafeAreaView>
     );
 }
 

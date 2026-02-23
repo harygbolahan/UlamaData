@@ -8,15 +8,18 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    FlatList,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View, Modal, FlatList
+    View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FundsTransferScreen() {
     const { fonts, isDark } = useTheme();
@@ -32,7 +35,7 @@ export default function FundsTransferScreen() {
     const [amount, setAmount] = useState('');
     const [source, setSource] = useState('wallet');
     const [transferCharge, setTransferCharge] = useState({ charge: 0, charge2: 0 });
-    
+
     const [loading, setLoading] = useState(false);
     const [validating, setValidating] = useState(false);
     const [balanceVisible, setBalanceVisible] = useState(true);
@@ -180,7 +183,7 @@ export default function FundsTransferScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
@@ -211,7 +214,7 @@ export default function FundsTransferScreen() {
                             onPress={() => setSource('wallet')}
                             activeOpacity={0.7}
                         >
-                            
+
                             <Text style={[styles.balanceCardLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                                 Wallet Balance
                             </Text>
@@ -232,7 +235,7 @@ export default function FundsTransferScreen() {
                             onPress={() => setSource('cashback')}
                             activeOpacity={0.7}
                         >
-                            
+
                             <Text style={[styles.balanceCardLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                                 Cashback Balance
                             </Text>
@@ -533,7 +536,7 @@ export default function FundsTransferScreen() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 

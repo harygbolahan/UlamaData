@@ -5,11 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PricingScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { services, loading, error, refreshPricing } = useServices();
+    const { services, loading, error, refreshPricing, fetchBulkSMSPricing } = useServices();
     const [selectedCategory, setSelectedCategory] = useState('data');
+    const [smsRate, setSmsRate] = useState(2.5);
     const [refreshing, setRefreshing] = useState(false);
 
     const categories = [
@@ -23,11 +25,27 @@ export default function PricingScreen() {
         { id: 'bulksms', name: 'Bulk SMS', icon: 'chatbubbles' },
     ];
 
+    const fetchSmsPricing = async () => {
+        try {
+            const data = await fetchBulkSMSPricing();
+            const rate = typeof data === 'object' ? (data.charge || data.price) : data;
+            if (rate && !isNaN(rate)) {
+                setSmsRate(Number(rate));
+            }
+        } catch (err) {
+            console.error('Failed to fetch SMS pricing in PricingScreen:', err);
+        }
+    };
+
     const onRefresh = async () => {
         setRefreshing(true);
-        await refreshPricing();
+        await Promise.all([refreshPricing(), fetchSmsPricing()]);
         setRefreshing(false);
     };
+
+    useMemo(() => {
+        fetchSmsPricing();
+    }, []);
 
     // Group data plans by network and type
     const dataPricing = useMemo(() => {
@@ -36,12 +54,12 @@ export default function PricingScreen() {
             if (!grouped[plan.network]) {
                 grouped[plan.network] = { types: {}, all: [] };
             }
-            
+
             const planType = plan.type.trim();
             if (!grouped[plan.network].types[planType]) {
                 grouped[plan.network].types[planType] = [];
             }
-            
+
             const planData = {
                 size: plan.datasize,
                 price: parseFloat(plan.smartdiscount) + parseFloat(plan.buydiscount),
@@ -50,11 +68,11 @@ export default function PricingScreen() {
                 provider: plan.provider,
                 name: plan.name
             };
-            
+
             grouped[plan.network].types[planType].push(planData);
             grouped[plan.network].all.push(planData);
         });
-        
+
         return Object.keys(grouped).map(network => ({
             network,
             types: grouped[network].types,
@@ -84,7 +102,7 @@ export default function PricingScreen() {
                 discount: parseFloat(plan.smartdiscount)
             });
         });
-        
+
         return Object.keys(grouped).map(provider => ({
             provider,
             plans: grouped[provider].slice(0, 8)
@@ -113,7 +131,7 @@ export default function PricingScreen() {
     const dataPinPricing = useMemo(() => {
         const grouped = {};
         const dataPins = services.dataPinPlans.length > 0 ? services.dataPinPlans : services.dataPlans;
-        
+
         dataPins.forEach(plan => {
             if (!grouped[plan.network]) {
                 grouped[plan.network] = [];
@@ -126,7 +144,7 @@ export default function PricingScreen() {
                 name: plan.name
             });
         });
-        
+
         return Object.keys(grouped).map(network => ({
             network,
             plans: grouped[network]
@@ -145,14 +163,14 @@ export default function PricingScreen() {
     // Bulk SMS pricing
     const bulkSMSPricing = useMemo(() => {
         return {
-            pricePerSMS: 2.5, // Default price per SMS
-            minQuantity: 100,
+            pricePerSMS: smsRate,
+            minQuantity: 1,
             description: 'Send bulk SMS to multiple recipients at once'
         };
-    }, []);
+    }, [smsRate]);
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -171,7 +189,7 @@ export default function PricingScreen() {
                     <Text style={[styles.errorText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                         {error}
                     </Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.retryButton, { backgroundColor: colors.primary }]}
                         onPress={refreshPricing}
                     >
@@ -181,7 +199,7 @@ export default function PricingScreen() {
                     </TouchableOpacity>
                 </View>
             ) : (
-                <ScrollView 
+                <ScrollView
                     showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
@@ -529,7 +547,7 @@ export default function PricingScreen() {
             )}
 
             <LoadingOverlay visible={loading && !refreshing} />
-        </View>
+        </SafeAreaView>
     );
 }
 

@@ -3,6 +3,7 @@ import Input from '@/components/ui/Input';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
+import { updateStoredPin } from '@/services/biometric';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -38,7 +39,7 @@ export default function ChangePinScreen() {
 
         setIsLoading(true);
         const result = await changePin(password, newPin);
-        
+
         if (result.success) {
             // Update stored biometric PIN if enabled
             await updateStoredPin(newPin);
@@ -79,10 +80,10 @@ export default function ChangePinScreen() {
                         editable={!isLoading}
                         rightIcon={
                             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                <Ionicons 
-                                    name={showPassword ? "eye-off" : "eye"} 
-                                    size={20} 
-                                    color={colors.text} 
+                                <Ionicons
+                                    name={showPassword ? "eye-off" : "eye"}
+                                    size={20}
+                                    color={colors.text}
                                 />
                             </TouchableOpacity>
                         }
@@ -99,10 +100,10 @@ export default function ChangePinScreen() {
                         editable={!isLoading}
                         rightIcon={
                             <TouchableOpacity onPress={() => setShowNewPin(!showNewPin)}>
-                                <Ionicons 
-                                    name={showNewPin ? "eye-off" : "eye"} 
-                                    size={20} 
-                                    color={colors.text} 
+                                <Ionicons
+                                    name={showNewPin ? "eye-off" : "eye"}
+                                    size={20}
+                                    color={colors.text}
                                 />
                             </TouchableOpacity>
                         }
@@ -119,10 +120,10 @@ export default function ChangePinScreen() {
                         editable={!isLoading}
                         rightIcon={
                             <TouchableOpacity onPress={() => setShowConfirmPin(!showConfirmPin)}>
-                                <Ionicons 
-                                    name={showConfirmPin ? "eye-off" : "eye"} 
-                                    size={20} 
-                                    color={colors.text} 
+                                <Ionicons
+                                    name={showConfirmPin ? "eye-off" : "eye"}
+                                    size={20}
+                                    color={colors.text}
                                 />
                             </TouchableOpacity>
                         }

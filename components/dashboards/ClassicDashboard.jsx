@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BannerCarousel from '../ui/BannerCarousel';
 
 export default function ClassicDashboard() {
@@ -94,7 +94,9 @@ export default function ClassicDashboard() {
         amount: `-₦${parseFloat(tx.amount || 0).toLocaleString('en-NG')}`,
         date: formatDate(tx.date || tx.created_at),
         icon: getServiceIcon(tx.servicename),
-        status: tx.tStatus?.toLowerCase() === 'completed' ? 'success' : tx.tStatus?.toLowerCase() === 'processing' ? 'pending' : 'failed',
+        status: (tx.tStatus?.toLowerCase() === 'completed' || String(tx.status) === '0') ? 'success' :
+            (tx.tStatus?.toLowerCase() === 'refund' || tx.tStatus?.toLowerCase() === 'refunded' || String(tx.status) === '3') ? 'refund' :
+                (tx.tStatus?.toLowerCase() === 'pending' || tx.tStatus?.toLowerCase() === 'processing' || String(tx.status) === '1') ? 'pending' : 'failed',
         transactionRef: tx.transref || tx.transactionRef
     }));
 
@@ -111,6 +113,11 @@ export default function ClassicDashboard() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar
+                backgroundColor={colors.primary}
+                barStyle={isDark ? 'light-content' : 'light-content'}
+                translucent={false}
+            />
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Compact Header */}
                 <View style={[styles.header, { backgroundColor: colors.primary }]}>
@@ -250,7 +257,7 @@ export default function ClassicDashboard() {
                                         {transaction.amount}
                                     </Text>
                                     <View style={[styles.statusDot, {
-                                        backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : '#EF4444'
+                                        backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : transaction.status === 'refund' ? '#2196F3' : '#EF4444'
                                     }]} />
                                 </View>
                             </TouchableOpacity>

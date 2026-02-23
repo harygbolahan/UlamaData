@@ -90,7 +90,8 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     logo: {
-        width: 60,
-        height: 60,
+        width: 80,
+        height: 80,
+        borderRadius: 50,
     },
 });

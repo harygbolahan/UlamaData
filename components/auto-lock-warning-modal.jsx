@@ -1,8 +1,9 @@
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useEffect, useRef } from 'react';
 import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function AutoLockWarningModal({ visible, secondsRemaining, onStayActive, onLockNow }) {
     const { colors, fonts, isDark } = useTheme();
@@ -57,62 +58,64 @@ export function AutoLockWarningModal({ visible, secondsRemaining, onStayActive, 
                 tint={isDark ? 'dark' : 'light'}
                 style={styles.blurContainer}
             >
-                <TouchableOpacity 
-                    style={styles.overlay}
-                    activeOpacity={1}
-                    onPress={onStayActive}
-                >
-                    <Animated.View 
-                        style={[
-                            styles.drawer,
-                            { 
-                                backgroundColor: colors.background,
-                                transform: [{ translateY: slideAnim }]
-                            }
-                        ]}
+                <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+                    <TouchableOpacity 
+                        style={styles.overlay}
+                        activeOpacity={1}
+                        onPress={onStayActive}
                     >
-                        <View style={[styles.handle, { backgroundColor: isDark ? '#3a3a3a' : '#d0d0d0' }]} />
+                        <Animated.View 
+                            style={[
+                                styles.drawer,
+                                { 
+                                    backgroundColor: colors.background,
+                                    transform: [{ translateY: slideAnim }]
+                                }
+                            ]}
+                        >
+                            <View style={[styles.handle, { backgroundColor: isDark ? '#3a3a3a' : '#d0d0d0' }]} />
 
-                        <View style={styles.content}>
-                            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                                <View style={[styles.countdownCircle, { backgroundColor: getUrgencyColor() }]}>
-                                    <Text style={[styles.countdown, { fontFamily: fonts.inter.bold }]}>
-                                        {secondsRemaining}
+                            <View style={styles.content}>
+                                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                                    <View style={[styles.countdownCircle, { backgroundColor: getUrgencyColor() }]}>
+                                        <Text style={[styles.countdown, { fontFamily: fonts.inter.bold }]}>
+                                            {secondsRemaining}
+                                        </Text>
+                                    </View>
+                                </Animated.View>
+
+                                <View style={styles.textContainer}>
+                                    <Text style={[styles.title, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                        Still here?
+                                    </Text>
+                                    <Text style={[styles.subtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                        Locking in {secondsRemaining}s
                                     </Text>
                                 </View>
-                            </Animated.View>
-
-                            <View style={styles.textContainer}>
-                                <Text style={[styles.title, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                    Still here?
-                                </Text>
-                                <Text style={[styles.subtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    Locking in {secondsRemaining}s
-                                </Text>
                             </View>
-                        </View>
 
-                        <View style={styles.actions}>
-                            <TouchableOpacity
-                                style={[styles.lockButton, { backgroundColor: isDark ? '#2a2a2a' : '#f0f0f0' }]}
-                                onPress={onLockNow}
-                                activeOpacity={0.6}
-                            >
-                                <Ionicons name="lock-closed" size={22} color={colors.icon} />
-                            </TouchableOpacity>
+                            <View style={styles.actions}>
+                                <TouchableOpacity
+                                    style={[styles.lockButton, { backgroundColor: isDark ? '#2a2a2a' : '#f0f0f0' }]}
+                                    onPress={onLockNow}
+                                    activeOpacity={0.6}
+                                >
+                                    <Ionicons name="lock-closed" size={22} color={colors.icon} />
+                                </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[styles.primaryButton, { backgroundColor: colors.primary }]}
-                                onPress={onStayActive}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={[styles.buttonText, { fontFamily: fonts.inter.medium }]}>
-                                    I'm Here
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </Animated.View>
-                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+                                    onPress={onStayActive}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.buttonText, { fontFamily: fonts.inter.medium }]}>
+                                        I'm Here
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </Animated.View>
+                    </TouchableOpacity>
+                </SafeAreaView>
             </BlurView>
         </Modal>
     );
@@ -120,6 +123,9 @@ export function AutoLockWarningModal({ visible, secondsRemaining, onStayActive, 
 
 const styles = StyleSheet.create({
     blurContainer: {
+        flex: 1,
+    },
+    safeArea: {
         flex: 1,
     },
     overlay: {

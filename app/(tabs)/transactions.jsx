@@ -39,7 +39,7 @@ export default function TransactionsTab() {
     const handleDownloadTransactions = async () => {
         try {
             setIsDownloading(true);
-            
+
             // Fetch transactions from API using services context
             const downloadedTransactions = await downloadTransactions(
                 downloadSearch.trim(),
@@ -69,11 +69,16 @@ export default function TransactionsTab() {
                 });
 
                 let status = 'Pending';
-                if (transaction.tStatus === 'Completed' || transaction.status === '0') {
+                const tStatusLower = transaction.tStatus?.toLowerCase();
+                const statusCode = String(transaction.status);
+
+                if (tStatusLower === 'completed' || statusCode === '0') {
                     status = 'Completed';
-                } else if (transaction.tStatus === 'Failed' || transaction.status === '2') {
+                } else if (tStatusLower === 'failed' || statusCode === '2') {
                     status = 'Failed';
-                } else if (transaction.tStatus === 'Pending' || transaction.status === '1') {
+                } else if (tStatusLower === 'refund' || tStatusLower === 'refunded' || statusCode === '3') {
+                    status = 'Refund';
+                } else if (tStatusLower === 'pending' || tStatusLower === 'processing' || statusCode === '1') {
                     status = 'Pending';
                 }
 
@@ -183,6 +188,10 @@ export default function TransactionsTab() {
                             background: #ffebee;
                             color: #c62828;
                         }
+                        .refund { 
+                            background: #e3f2fd;
+                            color: #1565c0;
+                        }
                         .amount {
                             font-weight: 600;
                             color: #1a1a1a;
@@ -212,11 +221,11 @@ export default function TransactionsTab() {
                         ${downloadSearch ? `<div class="info-item"><span class="info-label">Search:</span> ${downloadSearch}</div>` : ''}
                         ${downloadFromDate ? `<div class="info-item"><span class="info-label">From:</span> ${downloadFromDate}</div>` : ''}
                         ${downloadToDate ? `<div class="info-item"><span class="info-label">To:</span> ${downloadToDate}</div>` : ''}
-                        <div class="info-item"><span class="info-label">Generated:</span> ${new Date().toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric'
-                        })}</div>
+                        <div class="info-item"><span class="info-label">Generated:</span> ${new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            })}</div>
                     </div>
 
                     <table>
@@ -252,9 +261,9 @@ export default function TransactionsTab() {
             `;
 
             const { uri } = await Print.printToFileAsync({ html: htmlContent });
-            
+
             console.log('PDF generated with', mappedTransactions.length, 'transactions');
-            
+
             const canShare = await Sharing.isAvailableAsync();
             if (canShare) {
                 await Sharing.shareAsync(uri, {
@@ -292,25 +301,30 @@ export default function TransactionsTab() {
             minute: '2-digit',
             hour12: true
         });
-        
+
         // Extract phone number from servicedesc
         const phoneMatch = transaction.servicedesc?.match(/\d{11}/);
         const phone = phoneMatch ? phoneMatch[0] : 'N/A';
 
         // Map status
         let status = 'Pending';
-        if (transaction.tStatus === 'Completed' || transaction.status === '0') {
+        const tStatusLower = transaction.tStatus?.toLowerCase();
+        const statusCode = String(transaction.status);
+
+        if (tStatusLower === 'completed' || statusCode === '0') {
             status = 'Completed';
-        } else if (transaction.tStatus === 'Failed' || transaction.status === '2') {
+        } else if (tStatusLower === 'failed' || statusCode === '2') {
             status = 'Failed';
-        } else if (transaction.tStatus === 'Pending' || transaction.status === '1') {
+        } else if (tStatusLower === 'refund' || tStatusLower === 'refunded' || statusCode === '3') {
+            status = 'Refund';
+        } else if (tStatusLower === 'pending' || tStatusLower === 'processing' || statusCode === '1') {
             status = 'Pending';
         }
 
         // Map service to icon and color
         let icon = 'cube';
         let color = '#2196F3';
-        
+
         if (serviceName.toLowerCase().includes('data')) {
             icon = 'wifi';
             color = '#2196F3';
@@ -440,11 +454,11 @@ export default function TransactionsTab() {
 
     const handleScroll = useCallback((event) => {
         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-        
+
         // Calculate if user is near bottom (within 500px)
         const paddingToBottom = 500;
         const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-        
+
         if (isCloseToBottom) {
             loadMoreTransactions();
         }
@@ -457,6 +471,7 @@ export default function TransactionsTab() {
             case 'Completed': return colors.success;
             case 'Processing': return colors.warning;
             case 'Failed': return colors.error;
+            case 'Refund': return '#2196F3'; // Blue for Refund
             default: return colors.icon;
         }
     };
@@ -473,7 +488,7 @@ export default function TransactionsTab() {
                         Transactions
                     </Text>
                     <View style={styles.headerActions}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.iconButton}
                             onPress={() => setShowDownloadModal(true)}
                             disabled={isDownloading}
@@ -484,7 +499,7 @@ export default function TransactionsTab() {
                                 <Ionicons name="download-outline" size={22} color={colors.text} />
                             )}
                         </TouchableOpacity>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.iconButton}
                             onPress={toggleTheme}
                         >
@@ -494,7 +509,7 @@ export default function TransactionsTab() {
                 </View>
             </Animated.View>
 
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -534,7 +549,7 @@ export default function TransactionsTab() {
                                 </TouchableOpacity>
                             )}
                         </View>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={[styles.searchButton, { backgroundColor: colors.primary }]}
                             onPress={handleSearch}
                             activeOpacity={0.7}
@@ -559,9 +574,9 @@ export default function TransactionsTab() {
                                 maximumDate={new Date()}
                             />
                         </View>
-                        
+
                         {selectedDate !== '' && (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[styles.clearDateButton, {
                                     backgroundColor: colors.error + '15',
                                 }]}
@@ -654,7 +669,7 @@ export default function TransactionsTab() {
                                 }]}
                                 onPress={() => router.push({
                                     pathname: '/transaction-details',
-                                    params: { 
+                                    params: {
                                         transactionRef: transaction.ref,
                                         transactionDate: transaction.rawData.date
                                     }
@@ -681,12 +696,12 @@ export default function TransactionsTab() {
                                     <Text style={[styles.transactionAmount, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                                         {transaction.amount}
                                     </Text>
-                                    <View style={[styles.statusBadge, { 
+                                    <View style={[styles.statusBadge, {
                                         backgroundColor: getStatusColor(transaction.status) + '15',
                                     }]}>
-                                        <Text style={[styles.statusText, { 
-                                            color: getStatusColor(transaction.status), 
-                                            fontFamily: fonts.inter.medium 
+                                        <Text style={[styles.statusText, {
+                                            color: getStatusColor(transaction.status),
+                                            fontFamily: fonts.inter.medium
                                         }]}>
                                             {transaction.status}
                                         </Text>
@@ -741,7 +756,7 @@ export default function TransactionsTab() {
                                 <Text style={[styles.inputLabel, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                                     Search (Optional)
                                 </Text>
-                                <View style={[styles.inputContainer, { 
+                                <View style={[styles.inputContainer, {
                                     backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
                                     borderColor: isDark ? '#2a2a2a' : '#e0e0e0'
                                 }]}>

@@ -19,10 +19,9 @@ export default function PaymentWebViewScreen() {
     const handleNavigationStateChange = (navState) => {
         // Prevent multiple navigations
         if (hasNavigatedRef.current) return;
-        
+
         const url = navState.url.toLowerCase();
-        
-        // Check if redirected back to ulamdadata.ng (payment completed)
+
         if (url.includes('ulamadata.ng') && !url.includes('monnify') && !url.includes('checkout')) {
             hasNavigatedRef.current = true;
             showToast('success', 'Payment completed successfully!');
@@ -31,7 +30,7 @@ export default function PaymentWebViewScreen() {
             }, 800);
             return;
         }
-        
+
         // Check for success patterns
         if (url.includes('success') || url.includes('completed') || url.includes('approved')) {
             hasNavigatedRef.current = true;
@@ -41,7 +40,7 @@ export default function PaymentWebViewScreen() {
             }, 800);
             return;
         }
-        
+
         // Check for failure patterns
         if (url.includes('failed') || url.includes('error') || url.includes('declined')) {
             hasNavigatedRef.current = true;
@@ -51,7 +50,7 @@ export default function PaymentWebViewScreen() {
             }, 1500);
             return;
         }
-        
+
         // Check for cancellation
         if (url.includes('cancel')) {
             hasNavigatedRef.current = true;
@@ -96,7 +95,7 @@ export default function PaymentWebViewScreen() {
                     <Text style={[styles.errorText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                         Unable to load payment page. Please try again.
                     </Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.errorButton, { backgroundColor: colors.primary }]}
                         onPress={() => router.back()}
                     >
@@ -175,11 +174,11 @@ export default function PaymentWebViewScreen() {
                         <View style={[styles.modalIcon, { backgroundColor: '#EF444415' }]}>
                             <Ionicons name="warning" size={40} color="#EF4444" />
                         </View>
-                        
+
                         <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                             Cancel Payment?
                         </Text>
-                        
+
                         <Text style={[styles.modalMessage, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                             Are you sure you want to cancel this payment? Your transaction will not be completed.
                         </Text>

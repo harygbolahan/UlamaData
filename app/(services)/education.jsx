@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 export default function EducationScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -91,6 +93,7 @@ export default function EducationScreen() {
                 planId: selectedExam.id.toString(),
                 quantity: qty.toString(),
                 examName: selectedExam.name,
+                examType: selectedExam.id,
             }
         });
     };
@@ -99,7 +102,7 @@ export default function EducationScreen() {
     const totalAmount = selectedExam ? selectedExam.price * qty : 0;
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -136,13 +139,13 @@ export default function EducationScreen() {
                             {exams.map((exam) => {
                                 const isSelected = selectedExam?.id === exam.id;
                                 const examColor = getExamColor(exam.name);
-                                
+
                                 return (
                                     <TouchableOpacity
                                         key={exam.id}
                                         style={[
                                             styles.examCard,
-                                            { 
+                                            {
                                                 backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5',
                                                 borderWidth: 2,
                                                 borderColor: isSelected ? examColor : 'transparent'
@@ -181,7 +184,7 @@ export default function EducationScreen() {
                         <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Number of PINs
                         </Text>
-                        
+
                         <View style={[styles.quantityCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
                             <View style={styles.quantityControls}>
                                 <TouchableOpacity
@@ -191,7 +194,7 @@ export default function EducationScreen() {
                                 >
                                     <Ionicons name="remove" size={24} color={colors.primary} />
                                 </TouchableOpacity>
-                                
+
                                 <View style={styles.quantityInputContainer}>
                                     <TextInput
                                         value={quantity}
@@ -204,7 +207,7 @@ export default function EducationScreen() {
                                         PIN(s)
                                     </Text>
                                 </View>
-                                
+
                                 <TouchableOpacity
                                     style={[styles.quantityButton, { backgroundColor: colors.primary + '20' }]}
                                     onPress={incrementQuantity}
@@ -276,7 +279,7 @@ export default function EducationScreen() {
             )}
 
             {loading && <LoadingOverlay visible={true} />}
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -311,10 +314,10 @@ const styles = StyleSheet.create({
     section: {
         marginBottom: 24,
     },
-    sectionTitle: { 
-        fontSize: 16, 
-        paddingHorizontal: 20, 
-        marginBottom: 16 
+    sectionTitle: {
+        fontSize: 16,
+        paddingHorizontal: 20,
+        marginBottom: 16
     },
     loadingContainer: {
         paddingVertical: 40,

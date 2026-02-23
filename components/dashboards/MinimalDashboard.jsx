@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BannerCarousel from '../ui/BannerCarousel';
 
 export default function MinimalDashboard() {
@@ -49,15 +49,15 @@ export default function MinimalDashboard() {
   };
 
   const services = [
-        { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
-        { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
-        { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
-        { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
-        { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
-        { id: '6', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
-        { id: '7', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
-        { id: '8', name: 'More', icon: 'apps', route: '/(tabs)/services', color: '#607d8b' },
-    ];
+    { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
+    { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
+    { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
+    { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
+    { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
+    { id: '6', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
+    { id: '7', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
+    { id: '8', name: 'More', icon: 'apps', route: '/(tabs)/services', color: '#607d8b' },
+  ];
 
   const banners = [
     {
@@ -105,7 +105,7 @@ export default function MinimalDashboard() {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     if (date.toDateString() === today.toDateString()) {
       return `Today, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
     } else if (date.toDateString() === yesterday.toDateString()) {
@@ -126,13 +126,20 @@ export default function MinimalDashboard() {
     amount: `-₦${parseFloat(tx.amount || 0).toLocaleString('en-NG')}`,
     date: formatDate(tx.date || tx.created_at),
     icon: getServiceIcon(tx.servicename),
-    status: tx.tStatus?.toLowerCase() === 'completed' ? 'success' : tx.tStatus?.toLowerCase() === 'processing' ? 'pending' : 'failed',
+    status: (tx.tStatus?.toLowerCase() === 'completed' || String(tx.status) === '0') ? 'success' :
+      (tx.tStatus?.toLowerCase() === 'refund' || tx.tStatus?.toLowerCase() === 'refunded' || String(tx.status) === '3') ? 'refund' :
+        (tx.tStatus?.toLowerCase() === 'pending' || tx.tStatus?.toLowerCase() === 'processing' || String(tx.status) === '1') ? 'pending' : 'failed',
     transactionRef: tx.transref || tx.transactionRef
   }));
-      
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar
+                    backgroundColor={colors.primary}
+                    barStyle={isDark ? 'light-content' : 'light-content'}
+                    translucent={false}
+                />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Minimal Header */}
         <View style={[styles.header, { backgroundColor: colors.primary }]}>
@@ -143,8 +150,8 @@ export default function MinimalDashboard() {
               </Text>
             </View>
             <View style={styles.headerRight}>
-              <TouchableOpacity 
-                style={styles.iconButton} 
+              <TouchableOpacity
+                style={styles.iconButton}
                 onPress={toggleTheme}
               >
                 <Ionicons name={isDark ? "sunny" : "moon"} size={18} color={colors.primaryText} />
@@ -159,7 +166,7 @@ export default function MinimalDashboard() {
 
         {/* Elegant Balance Card */}
         <View style={styles.balanceContainer}>
-          <View style={[styles.balanceCard, { 
+          <View style={[styles.balanceCard, {
             backgroundColor: isDark ? '#1a1a1a' : '#fff',
             borderWidth: isDark ? 1 : 0,
             borderColor: isDark ? '#2a2a2a' : 'transparent'
@@ -173,7 +180,7 @@ export default function MinimalDashboard() {
                   <Text style={[styles.balanceAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     {balanceVisible ? `₦${parseFloat(user?.wallet || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "₦****"}
                   </Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={toggleBalanceVisibility}
                     style={styles.eyeButton}
                   >
@@ -211,7 +218,7 @@ export default function MinimalDashboard() {
           </View>
 
           {/* Cashback Card */}
-          <View style={[styles.cashbackCard, { 
+          <View style={[styles.cashbackCard, {
             backgroundColor: '#4ade8015',
             borderRadius: 12,
             padding: 12,
@@ -237,38 +244,38 @@ export default function MinimalDashboard() {
 
         {/* Clean Services Grid */}
         <View style={styles.servicesSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-              Services
-            </Text>
-            <View style={styles.servicesGrid}>
-              {services.map((service) => (
-                <TouchableOpacity
-                  key={service.id}
-                  style={styles.serviceItem}
-                  onPress={() => service.route && router.push(service.route)}
+          <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+            Services
+          </Text>
+          <View style={styles.servicesGrid}>
+            {services.map((service) => (
+              <TouchableOpacity
+                key={service.id}
+                style={styles.serviceItem}
+                onPress={() => service.route && router.push(service.route)}
+              >
+                <View style={[styles.serviceIcon, {
+                  backgroundColor: colors.isDark ? "#1a1a1a" : "#fff",
+                  borderWidth: isDark ? 1 : 0,
+                  borderColor: isDark ? '#2a2a2a' : 'transparent',
+                }]}>
+                  <Ionicons name={service.icon} size={24} color={colors.primary} />
+                </View>
+                <Text
+                  style={[
+                    styles.serviceName,
+                    { color: colors.text, fontFamily: fonts.inter.medium },
+                  ]}
+                  numberOfLines={1}
                 >
-                  <View style={[styles.serviceIcon, {
-                    backgroundColor: colors.isDark ? "#1a1a1a" : "#fff",
-                    borderWidth: isDark ? 1 : 0,
-                    borderColor: isDark ? '#2a2a2a' : 'transparent',
-                  }]}>
-                    <Ionicons name={service.icon} size={24} color={colors.primary} />
-                  </View>
-                  <Text
-                    style={[
-                      styles.serviceName,
-                      { color: colors.text, fontFamily: fonts.inter.medium },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {service.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  {service.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
-        
+
         {/* Banners */}
         <View style={styles.servicesSection}>
           <BannerCarousel />
@@ -277,89 +284,89 @@ export default function MinimalDashboard() {
 
         {/* Minimal Transactions */}
         <View style={styles.transactionsSection}>
-            <View style={styles.transactionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                Recent
+          <View style={styles.transactionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+              Recent
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
+              <Text style={[styles.seeAll, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                View All
               </Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/transactions")}>
-                <Text style={[styles.seeAll, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
-                  View All
-                </Text>
-              </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
             </View>
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color={colors.primary} />
-              </View>
-            ) : recentTransactions.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="receipt-outline" size={32} color={colors.icon} style={{ opacity: 0.3 }} />
-                <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                  No transactions yet
-                </Text>
-              </View>
-            ) : (
-              recentTransactions.map((transaction, index) => (
-                <TouchableOpacity
-                  key={transaction.id}
-                  style={[
-                    styles.transactionCard,
-                    {
-                      backgroundColor: colors.isDark ? "#1a1a1a" : "#fff",
-                      borderWidth: isDark ? 1 : 0,
-                      borderColor: isDark ? '#2a2a2a' : 'transparent',
-                      marginBottom: index === recentTransactions.length - 1 ? 0 : 8,
-                    },
-                  ]}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/transaction-details',
-                      params: { 
-                        transactionRef: transaction.transactionRef,
-                        transactionDate: transaction.date
-                      }
-                    })
-                  }
-                >
-                  <View style={[styles.transactionIcon, { backgroundColor: colors.primary + "15" }]}>
-                    <Ionicons name={transaction.icon} size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.transactionInfo}>
-                    <Text
-                      style={[
-                        styles.transactionTitle,
-                        { color: colors.text, fontFamily: fonts.inter.semiBold },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {transaction.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.transactionSubtitle,
-                        { color: colors.icon, fontFamily: fonts.inter.regular },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {transaction.subtitle}
-                    </Text>
-                  </View>
-                  <View style={styles.transactionRight}>
-                    <Text
-                      style={[
-                        styles.transactionAmount,
-                        { color: colors.text, fontFamily: fonts.inter.bold },
-                      ]}
-                    >
-                      {transaction.amount}
-                    </Text>
-                    <View style={[styles.statusDot, { 
-                      backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : '#EF4444' 
-                    }]} />
-                  </View>
-                </TouchableOpacity>
-              ))
-            )}
+          ) : recentTransactions.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="receipt-outline" size={32} color={colors.icon} style={{ opacity: 0.3 }} />
+              <Text style={[styles.emptyText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                No transactions yet
+              </Text>
+            </View>
+          ) : (
+            recentTransactions.map((transaction, index) => (
+              <TouchableOpacity
+                key={transaction.id}
+                style={[
+                  styles.transactionCard,
+                  {
+                    backgroundColor: colors.isDark ? "#1a1a1a" : "#fff",
+                    borderWidth: isDark ? 1 : 0,
+                    borderColor: isDark ? '#2a2a2a' : 'transparent',
+                    marginBottom: index === recentTransactions.length - 1 ? 0 : 8,
+                  },
+                ]}
+                onPress={() =>
+                  router.push({
+                    pathname: '/transaction-details',
+                    params: {
+                      transactionRef: transaction.transactionRef,
+                      transactionDate: transaction.date
+                    }
+                  })
+                }
+              >
+                <View style={[styles.transactionIcon, { backgroundColor: colors.primary + "15" }]}>
+                  <Ionicons name={transaction.icon} size={18} color={colors.primary} />
+                </View>
+                <View style={styles.transactionInfo}>
+                  <Text
+                    style={[
+                      styles.transactionTitle,
+                      { color: colors.text, fontFamily: fonts.inter.semiBold },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {transaction.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.transactionSubtitle,
+                      { color: colors.icon, fontFamily: fonts.inter.regular },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {transaction.subtitle}
+                  </Text>
+                </View>
+                <View style={styles.transactionRight}>
+                  <Text
+                    style={[
+                      styles.transactionAmount,
+                      { color: colors.text, fontFamily: fonts.inter.bold },
+                    ]}
+                  >
+                    {transaction.amount}
+                  </Text>
+                  <View style={[styles.statusDot, {
+                    backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : transaction.status === 'refund' ? '#2196F3' : '#EF4444'
+                  }]} />
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         <View style={{ height: 16 }} />
@@ -370,7 +377,7 @@ export default function MinimalDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  
+
   // Minimal Header
   header: {
     paddingTop: 48,
@@ -386,13 +393,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerLeft: { flex: 1 },
-  greeting: { 
-    fontSize: 18, 
+  greeting: {
+    fontSize: 18,
     letterSpacing: -0.3,
   },
-  headerRight: { 
-    flexDirection: "row", 
-    gap: 8 
+  headerRight: {
+    flexDirection: "row",
+    gap: 8
   },
   iconButton: {
     width: 36,
@@ -411,7 +418,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: "#ff4757",
   },
-  
+
   // Elegant Balance Card
   balanceContainer: {
     paddingHorizontal: 16,
@@ -430,8 +437,8 @@ const styles = StyleSheet.create({
   balanceHeader: {
     marginBottom: 14,
   },
-  balanceLabel: { 
-    fontSize: 11, 
+  balanceLabel: {
+    fontSize: 11,
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -442,8 +449,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  balanceAmount: { 
-    fontSize: 26, 
+  balanceAmount: {
+    fontSize: 26,
     letterSpacing: -0.5,
   },
   eyeButton: {
@@ -466,7 +473,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  actionButtonText: { 
+  actionButtonText: {
     fontSize: 12,
   },
   cashbackCard: {
@@ -485,25 +492,25 @@ const styles = StyleSheet.create({
   cashbackAmount: {
     // Styles defined inline
   },
-  
+
   // Clean Services
-  servicesSection: { 
-    paddingHorizontal: 16, 
-    marginBottom: 20 
+  servicesSection: {
+    paddingHorizontal: 16,
+    marginBottom: 20
   },
-  sectionTitle: { 
-    fontSize: 17, 
+  sectionTitle: {
+    fontSize: 17,
     marginBottom: 14,
     letterSpacing: -0.3,
   },
-  servicesGrid: { 
-    flexDirection: "row", 
-    flexWrap: "wrap", 
+  servicesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
     justifyContent: "space-between",
   },
-  serviceItem: { 
-    width: "22%", 
+  serviceItem: {
+    width: "22%",
     alignItems: "center",
     marginBottom: 12,
   },
@@ -520,12 +527,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  serviceName: { 
-    fontSize: 10, 
-    textAlign: "center", 
+  serviceName: {
+    fontSize: 10,
+    textAlign: "center",
     lineHeight: 12,
   },
-  
+
   // Minimal Transactions
   transactionsSection: { paddingHorizontal: 16 },
   transactionHeader: {
@@ -567,23 +574,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
-  transactionInfo: { 
+  transactionInfo: {
     flex: 1,
     gap: 2,
   },
-  transactionTitle: { 
+  transactionTitle: {
     fontSize: 14,
     letterSpacing: -0.2,
   },
-  transactionSubtitle: { 
+  transactionSubtitle: {
     fontSize: 12,
     opacity: 0.7,
   },
-  transactionRight: { 
+  transactionRight: {
     alignItems: "flex-end",
     gap: 6,
   },
-  transactionAmount: { 
+  transactionAmount: {
     fontSize: 14,
     letterSpacing: -0.3,
   },

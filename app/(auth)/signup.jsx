@@ -19,7 +19,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";    
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 const isSmallScreen = width < 375;
@@ -157,18 +157,18 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
-        enableOnAndroid={true}
+      <KeyboardAvoidingView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+          enableOnAndroid={true}
+        >
           <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
             {/* Header */}
             <View style={styles.header}>
@@ -353,8 +353,8 @@ export default function SignUpScreen() {
               </Pressable>
             </View>
           </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

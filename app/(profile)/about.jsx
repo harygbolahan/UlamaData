@@ -25,8 +25,8 @@ export default function AboutScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
                 <View style={[styles.logoContainer, { backgroundColor: colors.primary + '20' }]}>
-                    <Image 
-                        source={require('@/assets/images/logo.png')} 
+                    <Image
+                        source={require('@/assets/images/logo.png')}
                         style={styles.logoImage}
                         resizeMode="contain"
                     />
@@ -36,7 +36,7 @@ export default function AboutScreen() {
                     UlamaData
                 </Text>
                 <Text style={[styles.version, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                    Version 1.0.0
+                    Version 1.1.1
                 </Text>
 
                 <View style={[styles.infoCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
@@ -46,7 +46,7 @@ export default function AboutScreen() {
                 </View>
 
                 <View style={[styles.linkCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.linkItem}
                         onPress={() => router.push('/(profile)/terms-conditions')}
                     >
@@ -56,7 +56,7 @@ export default function AboutScreen() {
                         <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                     </TouchableOpacity>
                     <View style={[styles.linkDivider, { backgroundColor: colors.icon + '20' }]} />
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.linkItem}
                         onPress={() => router.push('/(profile)/privacy-policy')}
                     >
@@ -66,7 +66,7 @@ export default function AboutScreen() {
                         <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
                     </TouchableOpacity>
                     <View style={[styles.linkDivider, { backgroundColor: colors.icon + '20' }]} />
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.linkItem}
                         onPress={() => router.push('/support')}
                     >
@@ -109,8 +109,8 @@ const styles = StyleSheet.create({
         marginBottom: 20 * scale,
         overflow: 'hidden',
     },
-    logoImage: { 
-        width: '80%', 
+    logoImage: {
+        width: '80%',
         height: '80%',
     },
     appName: { fontSize: 28 * scale, marginBottom: 8 * scale },

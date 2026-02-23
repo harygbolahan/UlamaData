@@ -18,9 +18,9 @@ export function AutoLockProvider({ children }) {
     const countdownInterval = useRef(null);
     const backgroundTime = useRef(null);
     const appState = useRef(AppState.currentState);
-    const INACTIVITY_TIMEOUT = 30000000000000; // 30 seconds
-    const WARNING_TIME = 10000000000000; // Show warning 10 seconds before lock
-    const BACKGROUND_TIMEOUT = 30000000000000; // 30 seconds
+    const INACTIVITY_TIMEOUT = 300000000; // 5 minutes
+    const WARNING_TIME = 10000000; // Show warning 10 seconds before lock
+    const BACKGROUND_TIMEOUT = 300000000; // 5 minutes
 
     // Check if user should be locked based on auth settings
     const shouldLock = async () => {
@@ -35,7 +35,7 @@ export function AutoLockProvider({ children }) {
             const storedEmail = await AsyncStorage.getItem('user_email');
             console.log('Auto-lock: storedEmail:', storedEmail);
             if (!storedEmail) {
-                console.log('Auto-lock: No stored email, not locking'); 
+                console.log('Auto-lock: No stored email, not locking');
                 return false;
             }
 

@@ -37,7 +37,7 @@ export default function TransactionDetails() {
         try {
             const transactionRef = params.transactionRef;
             const transactionDate = params.transactionDate || '';
-            
+
             if (!transactionRef) {
                 setError('Transaction reference not found');
                 return;
@@ -61,7 +61,7 @@ export default function TransactionDetails() {
         const oldBalance = parseFloat(data.oldbal || 0);
         const newBalance = parseFloat(data.newbal || 0);
         const profit = parseFloat(data.profit || 0);
-        
+
         // Extract phone number from servicedesc
         const phoneMatch = data.servicedesc?.match(/\d{11}/);
         const phone = phoneMatch ? phoneMatch[0] : 'N/A';
@@ -91,7 +91,7 @@ export default function TransactionDetails() {
                 } else {
                     logData = data.api_response_log;
                 }
-                
+
                 if (logData) {
                     // Handle Airtime PIN and Exam PIN (multiple pins)
                     if (logData.pins && Array.isArray(logData.pins) && logData.pins.length > 0) {
@@ -101,13 +101,13 @@ export default function TransactionDetails() {
                             serial: p.serial || '',
                             ref: data.transref || ''
                         }));
-                        
+
                         // Keep first pin for display
                         const firstPin = logData.pins[0];
                         pinData = firstPin.pin || firstPin.token || null;
                         serialData = firstPin.serial || null;
                     }
-                    
+
                     // Also check direct pin/serial fields
                     if (!pinData && logData.pin) {
                         pinData = logData.pin;
@@ -148,9 +148,14 @@ export default function TransactionDetails() {
 
         // Map status
         let status = 'Processing';
-        if (data.tStatus === 'Completed' || data.status === '0') {
+        const tStatusLower = data.tStatus?.toLowerCase();
+        const statusCode = String(data.status);
+
+        if (tStatusLower === 'completed' || statusCode === '0') {
             status = 'Completed';
-        } else if (data.tStatus === 'Failed' || data.status === '2') {
+        } else if (tStatusLower === 'refund' || tStatusLower === 'refunded' || statusCode === '3') {
+            status = 'Refund';
+        } else if (tStatusLower === 'failed' || statusCode === "2") {
             status = 'Failed';
         }
 
@@ -158,7 +163,7 @@ export default function TransactionDetails() {
         let icon = 'cube';
         let color = '#2196F3';
         let category = 'General Services';
-        
+
         if (serviceName.toLowerCase().includes('data')) {
             icon = 'wifi';
             color = '#2196F3';
@@ -263,10 +268,10 @@ export default function TransactionDetails() {
         try {
             setIsDownloading(true);
             setShowShareModal(false);
-            
+
             // Set capturing state to hide amount and balance
             setIsCapturing(true);
-            
+
             // Wait for UI to update
             await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -329,10 +334,10 @@ export default function TransactionDetails() {
         try {
             setIsDownloading(true);
             setShowDownloadModal(false);
-            
+
             // Set capturing state to hide amount and balance
             setIsCapturing(true);
-            
+
             // Wait for UI to update
             await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -410,7 +415,7 @@ export default function TransactionDetails() {
                         .status-badge {
                             display: inline-block;
                             padding: 6px 16px;
-                            background: ${transaction.status === 'Completed' ? '#10B981' : transaction.status === 'Failed' ? '#EF4444' : '#F59E0B'};
+                            background: ${transaction.status === 'Completed' ? '#10B981' : transaction.status === 'Failed' ? '#EF4444' : transaction.status === 'Refund' ? '#2196F3' : '#F59E0B'};
                             color: #fff;
                             border-radius: 20px;
                             font-size: 12px;
@@ -634,6 +639,7 @@ export default function TransactionDetails() {
             case 'Completed': return colors.success;
             case 'Processing': return colors.warning;
             case 'Failed': return colors.error;
+            case 'Refund': return '#2196F3'; // Blue for Refund
             default: return colors.icon;
         }
     };
@@ -702,104 +708,104 @@ export default function TransactionDetails() {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {/* Receipt Container for Screenshot */}
                 <View ref={receiptRef} collapsable={false} style={{ backgroundColor: colors.background }}>
-                {/* Status Card */}
-                <Animated.View style={[{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                    <View style={[styles.statusCard, { 
-                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                    }]}>
-                        <View style={[styles.statusIconContainer, { backgroundColor: getStatusColor() + '15' }]}>
-                            <Ionicons
-                                name={transaction.status === 'Completed' ? 'checkmark-circle' : transaction.status === 'Processing' ? 'time' : 'close-circle'}
-                                size={36}
-                                color={getStatusColor()}
-                            />
-                        </View>
-                        <Text style={[styles.statusLabel, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            {transaction.status === 'Completed' ? 'Transaction Successful' : transaction.status === 'Processing' ? 'Transaction Processing' : 'Transaction Failed'}
-                        </Text>
-                        {!isCapturing && (
-                            <Text style={[styles.statusAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                {transaction.amount}
-                            </Text>
-                        )}
-                        <Text style={[styles.statusDate, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            {transaction.date} • {transaction.time}
-                        </Text>
-                    </View>
-                </Animated.View>
-
-                {/* Details Section */}
-                <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                        Transaction Details
-                    </Text>
-
-                    <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
-                        <DetailRow label="Service" value={transaction.type} colors={colors} fonts={fonts} />
-                        <DetailRow label="Category" value={transaction.category} colors={colors} fonts={fonts} />
-                        <DetailRow label="Description" value={transaction.description} colors={colors} fonts={fonts} multiline />
-                        <DetailRow label="Phone Number" value={transaction.beneficiary} colors={colors} fonts={fonts} />
-                        {transaction.plan !== 'N/A' && (
-                            <DetailRow label="Plan" value={transaction.plan} colors={colors} fonts={fonts} />
-                        )}
-                        <DetailRow label="Reference" value={transaction.ref} colors={colors} fonts={fonts} copyable onCopy={() => handleCopy(transaction.ref, 'Reference')} />
-                        {/* <DetailRow label="Session ID" value={transaction.sessionId} colors={colors} fonts={fonts} copyable onCopy={() => handleCopy(transaction.sessionId, 'Session ID')} /> */}
-                    </View>
-                </Animated.View>
-
-                {/* Token/PIN Section - Exam Token */}
-                {transactionData?.token && transactionData.token !== null && transactionData.token !== '' && (
-                    <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Exam Token
-                        </Text>
-
-                        <View style={[styles.tokenCard, { 
-                            backgroundColor: colors.primary + '10',
-                            borderColor: colors.primary + '30',
+                    {/* Status Card */}
+                    <Animated.View style={[{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                        <View style={[styles.statusCard, {
+                            backgroundColor: isDark ? '#1a1a1a' : '#fff',
                         }]}>
-                            <View style={styles.tokenHeader}>
-                                <Ionicons name="key" size={18} color={colors.primary} />
-                                <Text style={[styles.tokenLabel, { color: colors.primary, fontFamily: fonts.inter.medium }]}>
-                                    Your Token
-                                </Text>
+                            <View style={[styles.statusIconContainer, { backgroundColor: getStatusColor() + '15' }]}>
+                                <Ionicons
+                                    name={transaction.status === 'Completed' ? 'checkmark-circle' : transaction.status === 'Processing' ? 'time' : transaction.status === 'Refund' ? 'refresh-circle' : 'close-circle'}
+                                    size={36}
+                                    color={getStatusColor()}
+                                />
                             </View>
-                            <Text style={[styles.tokenValue, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
-                                {transactionData.token}
+                            <Text style={[styles.statusLabel, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                {transaction.status === 'Completed' ? 'Transaction Successful' : transaction.status === 'Processing' ? 'Transaction Processing' : transaction.status === 'Refund' ? 'Transaction Refunded' : 'Transaction Failed'}
                             </Text>
-                            <TouchableOpacity 
-                                style={[styles.copyTokenButton, { backgroundColor: colors.primary }]}
-                                onPress={() => handleCopy(transactionData.token, 'Token')}
-                            >
-                                <Ionicons name="copy-outline" size={18} color="#fff" />
-                                <Text style={[styles.copyTokenText, { fontFamily: fonts.inter.semiBold }]}>
-                                    Copy Token
+                            {!isCapturing && (
+                                <Text style={[styles.statusAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                    {transaction.amount}
                                 </Text>
-                            </TouchableOpacity>
+                            )}
+                            <Text style={[styles.statusDate, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                {transaction.date} • {transaction.time}
+                            </Text>
                         </View>
                     </Animated.View>
-                )}
 
-                {/* PIN/Serial Section - Airtime PIN */}
-                {transaction.pin && transaction.pin !== null && transaction.pin !== '' && (
+                    {/* Details Section */}
                     <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                        <View style={styles.sectionHeader}>
-                        
-                            {transaction.allPins && transaction.allPins.length > 0 && (
+                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                            Transaction Details
+                        </Text>
+
+                        <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+                            <DetailRow label="Service" value={transaction.type} colors={colors} fonts={fonts} />
+                            <DetailRow label="Category" value={transaction.category} colors={colors} fonts={fonts} />
+                            <DetailRow label="Description" value={transaction.description} colors={colors} fonts={fonts} multiline />
+                            <DetailRow label="Phone Number" value={transaction.beneficiary} colors={colors} fonts={fonts} />
+                            {transaction.plan !== 'N/A' && (
+                                <DetailRow label="Plan" value={transaction.plan} colors={colors} fonts={fonts} />
+                            )}
+                            <DetailRow label="Reference" value={transaction.ref} colors={colors} fonts={fonts} copyable onCopy={() => handleCopy(transaction.ref, 'Reference')} />
+                            {/* <DetailRow label="Session ID" value={transaction.sessionId} colors={colors} fonts={fonts} copyable onCopy={() => handleCopy(transaction.sessionId, 'Session ID')} /> */}
+                        </View>
+                    </Animated.View>
+
+                    {/* Token/PIN Section - Exam Token */}
+                    {transactionData?.token && transactionData.token !== null && transactionData.token !== '' && (
+                        <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                Exam Token
+                            </Text>
+
+                            <View style={[styles.tokenCard, {
+                                backgroundColor: colors.primary + '10',
+                                borderColor: colors.primary + '30',
+                            }]}>
+                                <View style={styles.tokenHeader}>
+                                    <Ionicons name="key" size={18} color={colors.primary} />
+                                    <Text style={[styles.tokenLabel, { color: colors.primary, fontFamily: fonts.inter.medium }]}>
+                                        Your Token
+                                    </Text>
+                                </View>
+                                <Text style={[styles.tokenValue, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                    {transactionData.token}
+                                </Text>
                                 <TouchableOpacity
-                                    style={[styles.printBadge, { backgroundColor: colors.primary }]}
-                                    onPress={() => setShowPinPrintModal(true)}
-                                    activeOpacity={0.7}
+                                    style={[styles.copyTokenButton, { backgroundColor: colors.primary }]}
+                                    onPress={() => handleCopy(transactionData.token, 'Token')}
                                 >
-                                    <Ionicons name="print" size={14} color="#fff" />
-                                    <Text style={[styles.printBadgeText, { fontFamily: fonts.inter.semiBold }]}>
-                                        Print {transaction.allPins.length > 1 ? `${transaction.allPins.length} PINs` : 'PIN'}
+                                    <Ionicons name="copy-outline" size={18} color="#fff" />
+                                    <Text style={[styles.copyTokenText, { fontFamily: fonts.inter.semiBold }]}>
+                                        Copy Token
                                     </Text>
                                 </TouchableOpacity>
-                            )}
-                        </View>
+                            </View>
+                        </Animated.View>
+                    )}
 
-                        {/* <View style={[styles.tokenCard, { 
+                    {/* PIN/Serial Section - Airtime PIN */}
+                    {transaction.pin && transaction.pin !== null && transaction.pin !== '' && (
+                        <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                            <View style={styles.sectionHeader}>
+
+                                {transaction.allPins && transaction.allPins.length > 0 && (
+                                    <TouchableOpacity
+                                        style={[styles.printBadge, { backgroundColor: colors.primary }]}
+                                        onPress={() => setShowPinPrintModal(true)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons name="print" size={14} color="#fff" />
+                                        <Text style={[styles.printBadgeText, { fontFamily: fonts.inter.semiBold }]}>
+                                            Print {transaction.allPins.length > 1 ? `${transaction.allPins.length} PINs` : 'PIN'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+
+                            {/* <View style={[styles.tokenCard, { 
                             backgroundColor: '#00BCD4' + '10',
                             borderColor: '#00BCD4' + '30',
                         }]}>
@@ -835,101 +841,101 @@ export default function TransactionDetails() {
                                 </Text>
                             </TouchableOpacity>
                         </View> */}
-                    </Animated.View>
-                )}
+                        </Animated.View>
+                    )}
 
-                {/* Electricity Token Section */}
-                {transaction.electricityToken && transaction.electricityToken !== null && transaction.electricityToken !== '' && (
-                    <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Electricity Token
-                        </Text>
+                    {/* Electricity Token Section */}
+                    {transaction.electricityToken && transaction.electricityToken !== null && transaction.electricityToken !== '' && (
+                        <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                Electricity Token
+                            </Text>
 
-                        <View style={[styles.tokenCard, { 
-                            backgroundColor: '#F44336' + '10',
-                            borderColor: '#F44336' + '30',
-                        }]}>
-                            <View style={styles.tokenHeader}>
-                                <Ionicons name="flash" size={18} color="#F44336" />
-                                <Text style={[styles.tokenLabel, { color: '#F44336', fontFamily: fonts.inter.medium }]}>
-                                    Meter Token
+                            <View style={[styles.tokenCard, {
+                                backgroundColor: '#F44336' + '10',
+                                borderColor: '#F44336' + '30',
+                            }]}>
+                                <View style={styles.tokenHeader}>
+                                    <Ionicons name="flash" size={18} color="#F44336" />
+                                    <Text style={[styles.tokenLabel, { color: '#F44336', fontFamily: fonts.inter.medium }]}>
+                                        Meter Token
+                                    </Text>
+                                </View>
+                                <Text style={[styles.tokenValue, { color: '#F44336', fontFamily: fonts.inter.bold }]}>
+                                    {transaction.electricityToken}
+                                </Text>
+                                <TouchableOpacity
+                                    style={[styles.copyTokenButton, { backgroundColor: '#F44336' }]}
+                                    onPress={() => handleCopy(transaction.electricityToken, 'Electricity Token')}
+                                >
+                                    <Ionicons name="copy-outline" size={18} color="#fff" />
+                                    <Text style={[styles.copyTokenText, { fontFamily: fonts.inter.semiBold }]}>
+                                        Copy Token
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </Animated.View>
+                    )}
+
+                    {/* API Response */}
+                    {transaction.apiResponse && transaction.apiResponse !== 'N/A' && (
+                        <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                Response
+                            </Text>
+
+                            <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+                                <Text style={[styles.responseText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
+                                    {transaction.apiResponse}
                                 </Text>
                             </View>
-                            <Text style={[styles.tokenValue, { color: '#F44336', fontFamily: fonts.inter.bold }]}>
-                                {transaction.electricityToken}
+                        </Animated.View>
+                    )}
+
+                    {/* Wallet Balance */}
+                    {!isCapturing && (
+                        <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                Wallet Balance
                             </Text>
-                            <TouchableOpacity 
-                                style={[styles.copyTokenButton, { backgroundColor: '#F44336' }]}
-                                onPress={() => handleCopy(transaction.electricityToken, 'Electricity Token')}
+
+                            <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+                                <DetailRow label="Before" value={transaction.walletBalanceBefore} colors={colors} fonts={fonts} />
+                                <DetailRow label="After" value={transaction.walletBalanceAfter} colors={colors} fonts={fonts} />
+                            </View>
+                        </Animated.View>
+                    )}
+
+                    {/* Actions */}
+                    <Animated.View style={[styles.actionsContainer, { opacity: fadeAnim }]}>
+
+
+                        <View style={styles.actionRow}>
+                            <TouchableOpacity
+                                style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
+                                onPress={handleDownload}
+                                activeOpacity={0.7}
                             >
-                                <Ionicons name="copy-outline" size={18} color="#fff" />
-                                <Text style={[styles.copyTokenText, { fontFamily: fonts.inter.semiBold }]}>
-                                    Copy Token
+                                <Ionicons name="download-outline" size={20} color={colors.text} />
+                                <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                    Download
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
+                                onPress={handleDispute}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="help-circle-outline" size={20} color={colors.text} />
+                                <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                    Support
                                 </Text>
                             </TouchableOpacity>
                         </View>
                     </Animated.View>
-                )}
 
-                {/* API Response */}
-                {transaction.apiResponse && transaction.apiResponse !== 'N/A' && (
-                    <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Response
-                        </Text>
-
-                        <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
-                            <Text style={[styles.responseText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
-                                {transaction.apiResponse}
-                            </Text>
-                        </View>
-                    </Animated.View>
-                )}
-
-                {/* Wallet Balance */}
-                {!isCapturing && (
-                    <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            Wallet Balance
-                        </Text>
-
-                        <View style={[styles.detailCard, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
-                            <DetailRow label="Before" value={transaction.walletBalanceBefore} colors={colors} fonts={fonts} />
-                            <DetailRow label="After" value={transaction.walletBalanceAfter} colors={colors} fonts={fonts} />
-                        </View>
-                    </Animated.View>
-                )}
-
-                {/* Actions */}
-                <Animated.View style={[styles.actionsContainer, { opacity: fadeAnim }]}>
-                    
-
-                    <View style={styles.actionRow}>
-                        <TouchableOpacity
-                            style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
-                            onPress={handleDownload}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="download-outline" size={20} color={colors.text} />
-                            <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                Download
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
-                            onPress={handleDispute}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="help-circle-outline" size={20} color={colors.text} />
-                            <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                Support
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </Animated.View>
-
-                <View style={{ height: 30 }} />
+                    <View style={{ height: 30 }} />
                 </View>
                 {/* End Receipt Container */}
             </ScrollView>
@@ -946,11 +952,11 @@ export default function TransactionDetails() {
                         <View style={[modalStyles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
                             <Ionicons name="download" size={48} color={colors.primary} />
                         </View>
-                        
+
                         <Text style={[modalStyles.title, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Download Receipt
                         </Text>
-                        
+
                         <Text style={[modalStyles.message, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                             Choose your preferred format to download the receipt
                         </Text>
@@ -1013,17 +1019,17 @@ export default function TransactionDetails() {
                         <View style={[modalStyles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
                             <Ionicons name="share-social" size={48} color={colors.primary} />
                         </View>
-                        
+
                         <Text style={[modalStyles.title, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Share Receipt
                         </Text>
-                        
+
                         <Text style={[modalStyles.message, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                             Choose how you want to share this receipt
                         </Text>
 
                         <View style={modalStyles.shareOptions}>
-                            
+
                             <TouchableOpacity
                                 style={[modalStyles.shareOption, { backgroundColor: isDark ? '#2a2a2a' : '#f5f5f5' }]}
                                 onPress={shareAsImage}
@@ -1087,11 +1093,11 @@ export default function TransactionDetails() {
                         <View style={[modalStyles.iconContainer, { backgroundColor: colors.warning + '15' }]}>
                             <Ionicons name="help-circle" size={48} color={colors.warning} />
                         </View>
-                        
+
                         <Text style={[modalStyles.title, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                             Dispute Transaction
                         </Text>
-                        
+
                         <Text style={[modalStyles.message, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                             Need help with this transaction? Contact our support team and we'll assist you right away.
                         </Text>
@@ -1131,12 +1137,12 @@ const DetailRow = ({ label, value, colors, fonts, copyable, onCopy, multiline })
             {label}
         </Text>
         <View style={[detailRowStyles.valueContainer, multiline && detailRowStyles.valueContainerMultiline]}>
-            <Text 
+            <Text
                 style={[
-                    detailRowStyles.value, 
+                    detailRowStyles.value,
                     { color: colors.text, fontFamily: fonts.inter.medium },
                     multiline && detailRowStyles.valueMultiline
-                ]} 
+                ]}
                 numberOfLines={multiline ? undefined : 1}
             >
                 {value}

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Network images
 const networkImages = {
@@ -234,7 +235,7 @@ export default function BulkOrderScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -554,7 +555,7 @@ export default function BulkOrderScreen() {
             </Modal>
 
             <LoadingOverlay visible={loadingNetworks || loadingTypes || loadingPlans} />
-        </View>
+        </SafeAreaView>
     );
 }
 

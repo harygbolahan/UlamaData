@@ -1,7 +1,7 @@
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -14,8 +14,8 @@ export default function SecurityScreen() {
     const securityOptions = [
         { id: '1', title: 'Change PIN', icon: 'lock-closed', route: '/(security)/change-pin' },
         { id: '2', title: 'Change Password', icon: 'key', route: '/(security)/change-password' },
-        { id: '3', title: 'Biometric Login', icon: 'finger-print', route: '/(security)/biometric-login', description: 'Login with fingerprint or face' },
-        { id: '4', title: 'Biometric for Transactions', icon: 'shield-checkmark', route: '/(security)/biometric-settings', description: 'Use biometric for payments' },
+        { id: '3', title: `${Platform.OS === 'ios' ? 'FaceID' : 'Fingerprint'} Login`, icon: Platform.OS === 'ios' ? 'scan' : 'finger-print', route: '/(security)/biometric-login', description: `Login with ${Platform.OS === 'ios' ? 'FaceID' : 'fingerprint'}` },
+        { id: '4', title: `${Platform.OS === 'ios' ? 'FaceID' : 'Fingerprint'} for Transactions`, icon: 'shield-checkmark', route: '/(security)/biometric-settings', description: `Use ${Platform.OS === 'ios' ? 'FaceID' : 'fingerprint'} for payments` },
     ];
 
     return (

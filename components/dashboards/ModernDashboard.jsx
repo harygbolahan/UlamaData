@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BannerCarousel from '../ui/BannerCarousel';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -95,7 +95,9 @@ export default function ModernDashboard() {
         amount: `-₦${parseFloat(tx.amount || 0).toLocaleString('en-NG')}`,
         time: formatDate(tx.date || tx.created_at),
         icon: getServiceIcon(tx.servicename),
-        status: tx.tStatus?.toLowerCase() === 'completed' ? 'success' : tx.tStatus?.toLowerCase() === 'processing' ? 'pending' : 'failed',
+        status: (tx.tStatus?.toLowerCase() === 'completed' || String(tx.status) === '0') ? 'success' :
+            (tx.tStatus?.toLowerCase() === 'refund' || tx.tStatus?.toLowerCase() === 'refunded' || String(tx.status) === '3') ? 'refund' :
+                (tx.tStatus?.toLowerCase() === 'pending' || tx.tStatus?.toLowerCase() === 'processing' || String(tx.status) === '1') ? 'pending' : 'failed',
         transactionRef: tx.transref || tx.transactionRef
     }));
 
@@ -117,38 +119,43 @@ export default function ModernDashboard() {
     ];
 
 
-
     return (
         <ScrollView
             style={[styles.container, { backgroundColor: colors.background }]}
             showsVerticalScrollIndicator={false}
         >
             {/* Robust Modern Header */}
-            <View style={[styles.header, { backgroundColor: colors.primary }]}>
-                <View style={styles.headerContent}>
-                    <View style={styles.headerLeft}>
-                        <View style={[styles.avatarInitials, {
-                            backgroundColor: isDark ? '#ffffff25' : '#ffffff35',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.15,
-                            shadowRadius: 4,
-                            elevation: 3,
-                        }]}>
-                            <Text style={[styles.initialsText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                                {getUserInitials()}
-                            </Text>
+            <SafeAreaView style={{ backgroundColor: colors.primary }}>
+                <StatusBar
+                    backgroundColor={colors.primary}
+                    barStyle={isDark ? 'light-content' : 'light-content'}
+                    translucent={false}
+                />
+                <View style={[styles.header, { backgroundColor: colors.primary }]}>
+                    <View style={styles.headerContent}>
+                        <View style={styles.headerLeft}>
+                            <View style={[styles.avatarInitials, {
+                                backgroundColor: isDark ? '#ffffff25' : '#ffffff35',
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.15,
+                                shadowRadius: 4,
+                                elevation: 3,
+                            }]}>
+                                <Text style={[styles.initialsText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                                    {getUserInitials()}
+                                </Text>
+                            </View>
+                            <View>
+                                <Text style={[styles.greeting, { fontFamily: fonts.inter.medium, color: colors.primaryText }]}>
+                                    Hello,
+                                </Text>
+                                <Text style={[styles.name, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
+                                    {user?.name || 'User'}
+                                </Text>
+                            </View>
                         </View>
-                        <View>
-                            <Text style={[styles.greeting, { fontFamily: fonts.inter.medium, color: colors.primaryText }]}>
-                                Hello,
-                            </Text>
-                            <Text style={[styles.name, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                                {user?.name || 'User'}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.headerRight}>
+                        <View style={styles.headerRight}>
                         <TouchableOpacity
                             style={[styles.iconButton, {
                                 backgroundColor: '#ffffff25',
@@ -175,7 +182,8 @@ export default function ModernDashboard() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+                </View>
+            </SafeAreaView>
 
             {/* Robust Balance Card */}
             <View style={styles.balanceContainer}>
@@ -375,10 +383,10 @@ export default function ModernDashboard() {
                                     {transaction.amount}
                                 </Text>
                                 <View style={[styles.statusIndicator, {
-                                    backgroundColor: transaction.status === 'success' ? '#4ade8015' : transaction.status === 'pending' ? '#FFA50015' : '#EF444415'
+                                    backgroundColor: transaction.status === 'success' ? '#4ade8015' : transaction.status === 'pending' ? '#FFA50015' : transaction.status === 'refund' ? '#2196F315' : '#EF444415'
                                 }]}>
                                     <View style={[styles.statusDot, {
-                                        backgroundColor: transaction.status === 'success' ? '#4ade80' : transaction.status === 'pending' ? '#FFA500' : '#EF4444'
+                                        backgroundColor: transaction.status === 'success' ? '#4ade80' : transaction.status === 'pending' ? '#FFA500' : transaction.status === 'refund' ? '#2196F3' : '#EF4444'
                                     }]} />
                                 </View>
                             </View>

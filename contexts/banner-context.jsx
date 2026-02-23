@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const BannerContext = createContext(null);
 
 const BANNER_STORAGE_KEY = 'banner_ads_data';
-const BASE_URL = 'https://ulamadata.ng';
+const BASE_URL = 'https://ulamadata.com';
 
 export function BannerProvider({ children }) {
     const [banners, setBanners] = useState([]);
@@ -25,11 +25,11 @@ export function BannerProvider({ children }) {
 
             // Fetch fresh banners from API
             const response = await api.getBanners();
-            
+
             if (response) {
                 const bannerArray = [];
                 const status = response.status || 'inactive';
-                
+
                 // Convert response to array format
                 if (response.ads1) {
                     bannerArray.push({
@@ -52,9 +52,9 @@ export function BannerProvider({ children }) {
                         status,
                     });
                 }
-                
+
                 setBanners(bannerArray);
-                
+
                 // Cache banner data
                 await SecureStore.setItemAsync(BANNER_STORAGE_KEY, JSON.stringify(bannerArray));
             }

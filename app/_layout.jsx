@@ -4,8 +4,8 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ActivityTracker } from '@/components/activity-tracker';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -88,6 +88,7 @@ export default function RootLayout() {
                                 }}>
                                   <Stack.Screen name="splash" />
                                   <Stack.Screen name="(onboarding)/index" />
+                                  <Stack.Screen name="(onboarding)/auth-selector" />
                                   <Stack.Screen name="(auth)/login" />
                                   <Stack.Screen name="(auth)/signup" />
                                   <Stack.Screen name="(auth)/forgot-password" />

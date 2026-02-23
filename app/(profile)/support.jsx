@@ -19,7 +19,7 @@ export default function SupportScreen() {
     const defaultSupportOptions = [
         { id: '1', title: 'FAQs', icon: 'help-circle', action: () => router.push('/(support)/faqs') },
         { id: '2', title: 'Live Chat', icon: 'chatbubbles', action: () => router.push('/(support)/live-chat') },
-        // { id: '3', title: 'Email Support', icon: 'mail', action: () => Linking.openURL('mailto:support@UlamaData.ng') },
+        // { id: '3', title: 'Email Support', icon: 'mail', action: () => Linking.openURL('mailto:support@ulamadata.ng') },
         // { id: '4', title: 'Call Us', icon: 'call', action: () => Linking.openURL('tel:+2348012345678') },
     ];
 
@@ -30,13 +30,13 @@ export default function SupportScreen() {
     const fetchSupportData = async () => {
         setIsLoading(true);
         const result = await getSupportData();
-        
+
         if (result.success && result.data.socialMedia) {
             // Map API data to social media options
             const options = result.data.socialMedia.map((item, index) => {
                 const name = item.name.toLowerCase();
                 let icon = 'help-circle';
-                
+
                 // Map social media names to icons
                 if (name.includes('whatsapp')) icon = 'logo-whatsapp';
                 else if (name.includes('facebook')) icon = 'logo-facebook';
@@ -46,7 +46,7 @@ export default function SupportScreen() {
                 else if (name.includes('email') || name.includes('mail')) icon = 'mail';
                 else if (name.includes('call') || name.includes('phone')) icon = 'call';
                 else if (name.includes('chat')) icon = 'chatbubbles';
-                
+
                 return {
                     id: String(index + 1),
                     title: item.name,
@@ -54,10 +54,10 @@ export default function SupportScreen() {
                     action: () => Linking.openURL(item.link),
                 };
             });
-            
+
             setSocialMediaOptions(options);
         }
-        
+
         setIsLoading(false);
     };
 

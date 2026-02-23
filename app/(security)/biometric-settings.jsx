@@ -3,10 +3,9 @@ import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { disableBiometric, getSupportedBiometrics, isBiometricAvailable, isBiometricEnabled } from '@/services/biometric';
 import { Ionicons } from '@expo/vector-icons';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 export default function BiometricSettingsScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -30,12 +29,10 @@ export default function BiometricSettingsScreen() {
 
         if (available) {
             const types = await getSupportedBiometrics();
-            if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-                setBiometricType('Face Recognition');
-            } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-                setBiometricType('Fingerprint');
+            if (Platform.OS === 'ios') {
+                setBiometricType('FaceID');
             } else {
-                setBiometricType('Biometric');
+                setBiometricType('Fingerprint');
             }
         }
         setLoading(false);
@@ -95,7 +92,7 @@ export default function BiometricSettingsScreen() {
                             Biometric Not Available
                         </Text>
                         <Text style={[styles.unavailableText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Your device doesn't support biometric authentication or you haven't set it up yet. Please enable fingerprint or face recognition in your device settings.
+                            Your device doesn't support biometric authentication or you haven't set it up yet. Please enable {Platform.OS === 'ios' ? 'FaceID' : 'fingerprint'} in your device settings.
                         </Text>
                     </View>
                 ) : (
@@ -119,7 +116,7 @@ export default function BiometricSettingsScreen() {
                                         Enable {biometricType}
                                     </Text>
                                     <Text style={[styles.settingDescription, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                        {biometricEnabled 
+                                        {biometricEnabled
                                             ? 'Biometric authentication is active'
                                             : 'Use biometric for transactions'
                                         }

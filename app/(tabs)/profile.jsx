@@ -35,13 +35,13 @@ export default function ProfileTab() {
 
     const menuItems = [
         { id: '1', title: 'Personal Information', icon: 'person-outline', route: '/(profile)/personal' },
-        { id: '2', title: 'Upgrade Account', icon: 'arrow-up-circle-outline', route: '/(profile)/upgrade' },
-        { id: '3', title: 'Referral Program', icon: 'gift-outline', route: '/(profile)/referral' },
-        // { id: '4', title: 'Dashboard Style', icon: 'grid-outline', route: '/(profile)/dashboard-selector' },
-        { id: '5', title: 'Security & Privacy', icon: 'shield-checkmark-outline', route: '/(profile)/security' },
+        { id: '2', title: 'Security & Privacy', icon: 'shield-checkmark-outline', route: '/(profile)/security' },
+        { id: '3', title: 'Upgrade Account', icon: 'arrow-up-circle-outline', route: '/(profile)/upgrade' },
+        // { id: '4', title: 'Referral Program', icon: 'gift-outline', route: '/(profile)/referral' },
+        // { id: '5', title: 'Dashboard Style', icon: 'grid-outline', route: '/(profile)/dashboard-selector' },
         // { id: '6', title: 'Payment Methods', icon: 'card-outline', route: '/(profile)/payment' },
         // { id: '7', title: 'Transaction History', icon: 'time-outline', route: '/(profile)/history' },
-        // { id: '8', title: 'Notifications', icon: 'notifications-outline', route: '/(profile)/notifications' },
+        { id: '8', title: 'Notifications', icon: 'notifications-outline', route: '/(profile)/notifications' },
         { id: '9', title: 'Help & Support', icon: 'help-circle-outline', route: '/(profile)/support' },
         { id: '10', title: 'Privacy Policy', icon: 'shield-outline', route: '/(profile)/privacy-policy' },
         { id: '11', title: 'Terms & Conditions', icon: 'document-text-outline', route: '/(profile)/terms-conditions' },
@@ -144,7 +144,7 @@ export default function ProfileTab() {
                                 {user?.maxTrans || '0'}
                             </Text>
                             <Text style={[styles.statLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                Max Trans
+                                Max Daily Trans
                             </Text>
                         </View>
                         <View style={[styles.statDivider, { backgroundColor: colors.isDark ? '#2a2a2a' : '#e0e0e0' }]} />
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     },
     menuText: {
         flex: 1,
-        fontSize: 14.6 * scale,
+        fontSize: 18 * scale,
     },
     themeCard: {
         marginHorizontal: 20 * scale,
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
         marginRight: 10 * scale,
     },
     themeText: {
-        fontSize: 13 * scale,
+        fontSize: 17 * scale,
     },
     toggle: {
         width: 50 * scale,
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
         gap: 10 * scale,
     },
     logoutText: {
-        fontSize: 14 * scale,
+        fontSize: 17 * scale,
     },
     modalOverlay: {
         flex: 1,

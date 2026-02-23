@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import { useEffect, useState } from 'react';
 import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const NETWORK_IMAGES = {
     mtn: require('@/assets/networks/mtn.png'),
@@ -20,6 +19,13 @@ const NETWORK_BACKGROUNDS = {
     glo: 'rgba(0, 168, 89, 0.2)',
 };
 
+const CARD_NETWORK_BACKGROUNDS = {
+    mtn: 'rgba(255, 204, 0, 0.2)',
+    airtel: 'rgba(255, 0, 0, 0.2)',
+    '9mobile': 'rgba(0, 166, 90, 0.2)',
+    glo: 'rgba(0, 168, 89, 0.2)',
+};
+
 export default function NetworkSelector({
     selectedNetwork,
     onNetworkSelect,
@@ -28,6 +34,7 @@ export default function NetworkSelector({
     onViewAllBeneficiaries,
     onSelectBeneficiary,
     beneficiaryType = 'topup', // topup, cable, electricity
+    mode = 'dropdown',
     networks = [
         { id: 'mtn', name: 'MTN', color: '#FFCC00' },
         { id: 'airtel', name: 'AIRTEL', color: '#FF0000' },
@@ -58,38 +65,17 @@ export default function NetworkSelector({
         const lowerCaseName = networkName?.toLowerCase();
         return backgroundSource[networkId] || backgroundSource[lowerCaseId] || backgroundSource[networkName] || backgroundSource[lowerCaseName] || 'rgba(128, 128, 128, 0.2)';
     };
+
+    const getCardBackground = (networkId, networkName) => {
+        if (customBackgrounds) return getBackground(networkId, networkName);
+        if (!networkId && !networkName) return 'rgba(128, 128, 128, 0.2)';
+        const lowerCaseId = networkId?.toLowerCase();
+        const lowerCaseName = networkName?.toLowerCase();
+        return CARD_NETWORK_BACKGROUNDS[networkId] || CARD_NETWORK_BACKGROUNDS[lowerCaseId] || CARD_NETWORK_BACKGROUNDS[networkName] || CARD_NETWORK_BACKGROUNDS[lowerCaseName] || 'rgba(128, 128, 128, 0.2)';
+    };
     const [showNetworkModal, setShowNetworkModal] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
-
-    // Network detection based on Nigerian phone number prefixes
-    const detectNetwork = (number) => {
-        if (!number || number.length < 4) return null;
-        
-        const prefix = number.substring(0, 4);
-        
-        // MTN prefixes: 0803, 0806, 0810, 0813, 0814, 0816, 0903, 0906, 0913, 0916
-        if (['0803', '0806', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916'].includes(prefix)) {
-            return networks.find(n => n.id === 'mtn' || n.name.toLowerCase() === 'mtn');
-        }
-        
-        // Airtel prefixes: 0802, 0808, 0812, 0901, 0902, 0904, 0907, 0912
-        if (['0802', '0808', '0812', '0901', '0902', '0904', '0907', '0912'].includes(prefix)) {
-            return networks.find(n => n.id === 'airtel' || n.name.toLowerCase() === 'airtel');
-        }
-        
-        // Glo prefixes: 0805, 0807, 0811, 0815, 0905, 0915
-        if (['0805', '0807', '0811', '0815', '0905', '0915'].includes(prefix)) {
-            return networks.find(n => n.id === 'glo' || n.name.toLowerCase() === 'glo');
-        }
-        
-        // 9mobile prefixes: 0809, 0817, 0818, 0909, 0908
-        if (['0809', '0817', '0818', '0909', '0908'].includes(prefix)) {
-            return networks.find(n => n.id === '9mobile' || n.name.toLowerCase() === '9mobile');
-        }
-        
-        return null;
-    };
 
     // Set MTN as default network on mount if no network is selected
     useEffect(() => {
@@ -100,16 +86,6 @@ export default function NetworkSelector({
             }
         }
     }, []);
-
-    // Auto-detect network when phone number changes (only for topup/phone numbers)
-    useEffect(() => {
-        if (beneficiaryType === 'topup' && phoneNumber.length >= 4) {
-            const detectedNetwork = detectNetwork(phoneNumber);
-            if (detectedNetwork && detectedNetwork.id !== selectedNetwork?.id) {
-                onNetworkSelect(detectedNetwork);
-            }
-        }
-    }, [phoneNumber, beneficiaryType]);
 
     useEffect(() => {
         if (phoneNumber.length > 0) {
@@ -197,58 +173,144 @@ export default function NetworkSelector({
 
     const showNetworkButton = networks && networks.length > 0;
 
+    const isCardsMode = mode === 'cards';
+    const networkTitle = beneficiaryType === 'cable' ? 'Select Provider' : 'Select Network';
+
     return (
         <>
-            <View style={[styles.container, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                {/* Network Selector - Only show if networks are provided */}
-                {showNetworkButton && (
-                    <TouchableOpacity
-                        style={styles.networkButton}
-                        onPress={() => setShowNetworkModal(true)}
-                    >
-                        {selectedNetwork ? (
-                            <View style={[styles.networkIcon, { backgroundColor: getBackground(selectedNetwork.id, selectedNetwork.name) }]}>
-                                {getImage(selectedNetwork.id, selectedNetwork.name) ? (
-                                    <Image
-                                        source={getImage(selectedNetwork.id, selectedNetwork.name)}
-                                        style={styles.networkImage}
-                                        resizeMode="contain"
-                                    />
-                                ) : (
-                                    <Ionicons name="business-outline" size={16} color={colors.icon} />
-                                )}
-                            </View>
-                        ) : (
-                            <View style={[styles.networkIcon, { backgroundColor: 'rgba(128, 128, 128, 0.2)' }]}>
-                                <Ionicons name="business-outline" size={16} color={colors.icon} />
-                            </View>
+            {isCardsMode ? (
+                <>
+                    {showNetworkButton && (
+                        <View style={styles.section}>
+                            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                {networkTitle}
+                            </Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.networkList}
+                            >
+                                {networks.map((network) => {
+                                    const isSelected = selectedNetwork?.id === network.id;
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={network.id}
+                                            style={[
+                                                styles.networkCard,
+                                                { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
+                                                isSelected && {
+                                                    backgroundColor: colors.primary + '20',
+                                                    borderColor: colors.primary,
+                                                    borderWidth: 2,
+                                                },
+                                            ]}
+                                            onPress={() => onNetworkSelect?.(network)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <View
+                                                style={[
+                                                    styles.networkLogoContainer,
+                                                    { backgroundColor: getCardBackground(network.id, network.name) },
+                                                ]}
+                                            >
+                                                {getImage(network.id, network.name) ? (
+                                                    <Image
+                                                        source={getImage(network.id, network.name)}
+                                                        style={styles.networkLogo}
+                                                        resizeMode="contain"
+                                                    />
+                                                ) : (
+                                                    <Ionicons name="business-outline" size={16} color={colors.icon} />
+                                                )}
+                                            </View>
+                                            <Text
+                                                style={[
+                                                    styles.networkName,
+                                                    { fontFamily: fonts.inter.semiBold },
+                                                    isSelected ? { color: colors.primary } : { color: colors.text },
+                                                ]}
+                                            >
+                                                {network.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        </View>
+                    )}
+
+                    <View style={[styles.container, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                        <TextInput
+                            placeholder={beneficiaryType === 'electricity' ? 'Meter Number' : beneficiaryType === 'cable' ? 'Smart Card Number' : 'Phone Number'}
+                            placeholderTextColor={colors.icon}
+                            value={phoneNumber}
+                            onChangeText={handlePhoneNumberChange}
+                            keyboardType={beneficiaryType === 'topup' ? 'phone-pad' : 'numeric'}
+                            maxLength={beneficiaryType === 'topup' ? 11 : undefined}
+                            style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                        />
+
+                        {beneficiaryType === 'topup' && (
+                            <TouchableOpacity
+                                style={styles.contactButton}
+                                onPress={handleContactPicker}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="person-add-outline" size={24} color={colors.icon} />
+                            </TouchableOpacity>
                         )}
-                        <Ionicons name="chevron-down" size={16} color={colors.icon} />
-                    </TouchableOpacity>
-                )}
+                    </View>
+                </>
+            ) : (
+                <View style={[styles.container, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                    {showNetworkButton && (
+                        <TouchableOpacity
+                            style={styles.networkButton}
+                            onPress={() => setShowNetworkModal(true)}
+                        >
+                            {selectedNetwork ? (
+                                <View style={[styles.networkIcon, { backgroundColor: getBackground(selectedNetwork.id, selectedNetwork.name) }]}>
+                                    {getImage(selectedNetwork.id, selectedNetwork.name) ? (
+                                        <Image
+                                            source={getImage(selectedNetwork.id, selectedNetwork.name)}
+                                            style={styles.networkImage}
+                                            resizeMode="contain"
+                                        />
+                                    ) : (
+                                        <Ionicons name="business-outline" size={16} color={colors.icon} />
+                                    )}
+                                </View>
+                            ) : (
+                                <View style={[styles.networkIcon, { backgroundColor: 'rgba(128, 128, 128, 0.2)' }]}>
+                                    <Ionicons name="business-outline" size={16} color={colors.icon} />
+                                </View>
+                            )}
+                            <Ionicons name="chevron-down" size={16} color={colors.icon} />
+                        </TouchableOpacity>
+                    )}
 
-                {/* Phone Number Input */}
-                <TextInput
-                    placeholder={beneficiaryType === 'electricity' ? 'Meter Number' : beneficiaryType === 'cable' ? 'Smart Card Number' : 'Phone Number'}
-                    placeholderTextColor={colors.icon}
-                    value={phoneNumber}
-                    onChangeText={handlePhoneNumberChange}
-                    keyboardType={beneficiaryType === 'topup' ? 'phone-pad' : 'numeric'}
-                    maxLength={beneficiaryType === 'topup' ? 11 : undefined}
-                    style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
-                />
+                    <TextInput
+                        placeholder={beneficiaryType === 'electricity' ? 'Meter Number' : beneficiaryType === 'cable' ? 'Smart Card Number' : 'Phone Number'}
+                        placeholderTextColor={colors.icon}
+                        value={phoneNumber}
+                        onChangeText={handlePhoneNumberChange}
+                        keyboardType={beneficiaryType === 'topup' ? 'phone-pad' : 'numeric'}
+                        maxLength={beneficiaryType === 'topup' ? 11 : undefined}
+                        style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                    />
 
-                {/* Contact Button - Only show for topup (phone numbers) */}
-                {beneficiaryType === 'topup' && (
-                    <TouchableOpacity 
-                        style={styles.contactButton}
-                        onPress={handleContactPicker}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="person-add-outline" size={24} color={colors.icon} />
-                    </TouchableOpacity>
-                )}
-            </View>
+                    {beneficiaryType === 'topup' && (
+                        <TouchableOpacity
+                            style={styles.contactButton}
+                            onPress={handleContactPicker}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="person-add-outline" size={24} color={colors.icon} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            )}
 
             {/* Beneficiary Suggestions */}
             {showSuggestions && suggestions.length > 0 && (
@@ -298,7 +360,7 @@ export default function NetworkSelector({
             )}
 
             {/* Network Modal - Only show if networks are provided */}
-            {showNetworkButton && (
+            {!isCardsMode && showNetworkButton && (
                 <Modal
                     visible={showNetworkModal}
                     transparent
@@ -309,7 +371,7 @@ export default function NetworkSelector({
                         <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
                             <View style={styles.modalHandle} />
                             <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                {beneficiaryType === 'cable' ? 'Select Provider' : 'Select Network'}
+                                {networkTitle}
                             </Text>
                             {networks.map((network) => (
                                 <TouchableOpacity
@@ -361,6 +423,41 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginBottom: 20,
         gap: 10,
+    },
+    section: {
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        paddingHorizontal: 20,
+        marginBottom: 12,
+    },
+    networkList: {
+        paddingHorizontal: 20,
+        gap: 12,
+    },
+    networkCard: {
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderRadius: 12,
+        minWidth: 70,
+        alignItems: 'center',
+        gap: 6,
+    },
+    networkLogoContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    networkLogo: {
+        width: 32,
+        height: 32,
+    },
+    networkName: {
+        fontSize: 12,
     },
     networkButton: {
         flexDirection: 'row',

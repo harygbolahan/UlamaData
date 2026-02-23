@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BannerCarousel from '../ui/BannerCarousel';
 
 export default function DefaultDashboard() {
@@ -50,7 +50,7 @@ export default function DefaultDashboard() {
         }
     };
 
-   const services = [
+    const services = [
         { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
         { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
         { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
@@ -92,7 +92,7 @@ export default function DefaultDashboard() {
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        
+
         if (date.toDateString() === today.toDateString()) {
             return `Today, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
         } else if (date.toDateString() === yesterday.toDateString()) {
@@ -113,12 +113,19 @@ export default function DefaultDashboard() {
         amount: `-₦${parseFloat(tx.amount || 0).toLocaleString('en-NG')}`,
         date: formatDate(tx.date || tx.created_at),
         icon: getServiceIcon(tx.servicename),
-        status: tx.tStatus?.toLowerCase() === 'completed' ? 'success' : tx.tStatus?.toLowerCase() === 'processing' ? 'pending' : 'failed',
+        status: (tx.tStatus?.toLowerCase() === 'completed' || String(tx.status) === '0') ? 'success' :
+            (tx.tStatus?.toLowerCase() === 'refund' || tx.tStatus?.toLowerCase() === 'refunded' || String(tx.status) === '3') ? 'refund' :
+                (tx.tStatus?.toLowerCase() === 'pending' || tx.tStatus?.toLowerCase() === 'processing' || String(tx.status) === '1') ? 'pending' : 'failed',
         transactionRef: tx.transref || tx.transactionRef
     }));
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar
+                backgroundColor={colors.primary}
+                barStyle={isDark ? 'light-content' : 'light-content'}
+                translucent={false}
+            />
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Compact Header */}
                 <View style={styles.header}>
@@ -161,7 +168,7 @@ export default function DefaultDashboard() {
                             <Text style={[styles.topUpText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>Top Up</Text>
                         </TouchableOpacity>
                     </View>
-                    
+
                     {/* Transfer Button */}
                     <TouchableOpacity
                         style={[styles.transferButton, { backgroundColor: colors.primaryText }]}
@@ -179,9 +186,9 @@ export default function DefaultDashboard() {
                     <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>Services</Text>
                     <View style={styles.servicesGrid}>
                         {services.map((service) => (
-                            <TouchableOpacity 
-                                key={service.id} 
-                                style={styles.serviceCard} 
+                            <TouchableOpacity
+                                key={service.id}
+                                style={styles.serviceCard}
                                 onPress={() => service.route && router.push(service.route)}
                             >
                                 <View style={[styles.serviceIconContainer, { backgroundColor: colors.primary + '15' }]}>
@@ -195,7 +202,7 @@ export default function DefaultDashboard() {
                     </View>
                 </View>
 
-                
+
                 {/* Banners */}
                 <View style={styles.section}>
                     <BannerCarousel />
@@ -221,18 +228,18 @@ export default function DefaultDashboard() {
                         </View>
                     ) : (
                         recentTransactions.map((transaction, index) => (
-                            <TouchableOpacity 
-                                key={transaction.id} 
+                            <TouchableOpacity
+                                key={transaction.id}
                                 style={[
-                                    styles.transactionCard, 
-                                    { 
+                                    styles.transactionCard,
+                                    {
                                         backgroundColor: colors.isDark ? '#1f1f1f' : '#fff',
                                         marginBottom: index === recentTransactions.length - 1 ? 0 : 8
                                     }
-                                ]} 
+                                ]}
                                 onPress={() => router.push({
                                     pathname: '/transaction-details',
-                                    params: { 
+                                    params: {
                                         transactionRef: transaction.transactionRef,
                                         transactionDate: transaction.date
                                     }
@@ -253,8 +260,8 @@ export default function DefaultDashboard() {
                                     <Text style={[styles.transactionAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                                         {transaction.amount}
                                     </Text>
-                                    <View style={[styles.statusDot, { 
-                                        backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : '#EF4444' 
+                                    <View style={[styles.statusDot, {
+                                        backgroundColor: transaction.status === 'success' ? colors.success : transaction.status === 'pending' ? '#FFA500' : transaction.status === 'refund' ? '#2196F3' : '#EF4444'
                                     }]} />
                                 </View>
                             </TouchableOpacity>
@@ -271,41 +278,41 @@ export default function DefaultDashboard() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     // Compact Header
-    header: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        paddingHorizontal: 16, 
-        paddingTop: 48, 
-        marginBottom: 16 
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 48,
+        marginBottom: 16
     },
     headerLeft: { flex: 1 },
     greeting: { fontSize: 13, marginBottom: 2, opacity: 0.7 },
     name: { fontSize: 22, letterSpacing: -0.5 },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    iconButton: { 
-        width: 36, 
-        height: 36, 
-        borderRadius: 18, 
-        justifyContent: 'center', 
+    iconButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
         alignItems: 'center',
         position: 'relative'
     },
-    badge: { 
-        position: 'absolute', 
-        top: 8, 
-        right: 8, 
-        width: 6, 
-        height: 6, 
-        borderRadius: 3, 
-        backgroundColor: '#FF6B6B' 
+    badge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#FF6B6B'
     },
-    
+
     // Compact Balance Card
-    balanceCard: { 
-        marginHorizontal: 16, 
-        padding: 16, 
-        borderRadius: 16, 
+    balanceCard: {
+        marginHorizontal: 16,
+        padding: 16,
+        borderRadius: 16,
         marginBottom: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -313,40 +320,40 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
-    balanceRow: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center' 
+    balanceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
     balanceMain: { flex: 1 },
-    balanceLabel: { 
-        fontSize: 11, 
-        opacity: 0.85, 
+    balanceLabel: {
+        fontSize: 11,
+        opacity: 0.85,
         marginBottom: 4,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
-    balanceAmountRow: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        marginBottom: 6 
+    balanceAmountRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6
     },
-    balanceAmount: { 
-        fontSize: 24, 
+    balanceAmount: {
+        fontSize: 24,
         letterSpacing: -0.5,
         marginRight: 8
     },
-    eyeIcon: { 
+    eyeIcon: {
         padding: 4,
         opacity: 0.8
     },
-    cashbackText: { 
-        fontSize: 11, 
-        opacity: 0.85 
+    cashbackText: {
+        fontSize: 11,
+        opacity: 0.85
     },
-    topUpButton: { 
-        paddingHorizontal: 16, 
-        paddingVertical: 10, 
+    topUpButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
@@ -373,72 +380,72 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     transferButtonText: { fontSize: 13 },
-    
+
     // Sections
     section: { marginBottom: 20 },
-    sectionHeader: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        paddingHorizontal: 16, 
-        marginBottom: 12 
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 12
     },
-    sectionTitle: { 
-        fontSize: 17, 
-        paddingHorizontal: 16, 
+    sectionTitle: {
+        fontSize: 17,
+        paddingHorizontal: 16,
         marginBottom: 12,
         letterSpacing: -0.3
     },
     seeAll: { fontSize: 13 },
-    
+
     // Compact Services Grid
-    servicesGrid: { 
-        flexDirection: 'row', 
-        flexWrap: 'wrap', 
+    servicesGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         paddingHorizontal: 12,
         gap: 8
     },
-    serviceCard: { 
-        width: '22.5%', 
+    serviceCard: {
+        width: '22.5%',
         aspectRatio: 1,
-        padding: 8, 
-        borderRadius: 12, 
+        padding: 8,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center'
     },
-    serviceIconContainer: { 
-        width: 40, 
-        height: 40, 
-        borderRadius: 20, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        marginBottom: 6 
+    serviceIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 6
     },
-    serviceName: { 
-        fontSize: 10, 
+    serviceName: {
+        fontSize: 10,
         textAlign: 'center',
         lineHeight: 12
     },
-    
+
     // Compact Transactions
-    loadingContainer: { 
-        padding: 16, 
-        alignItems: 'center' 
+    loadingContainer: {
+        padding: 16,
+        alignItems: 'center'
     },
-    emptyContainer: { 
-        padding: 24, 
+    emptyContainer: {
+        padding: 24,
         alignItems: 'center',
         gap: 8
     },
-    emptyText: { 
-        fontSize: 13, 
-        opacity: 0.6 
+    emptyText: {
+        fontSize: 13,
+        opacity: 0.6
     },
-    transactionCard: { 
-        marginHorizontal: 16, 
-        padding: 12, 
-        borderRadius: 12, 
-        flexDirection: 'row', 
+    transactionCard: {
+        marginHorizontal: 16,
+        padding: 12,
+        borderRadius: 12,
+        flexDirection: 'row',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -446,34 +453,34 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 1,
     },
-    transactionIcon: { 
-        width: 36, 
-        height: 36, 
-        borderRadius: 18, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        marginRight: 12 
+    transactionIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12
     },
     transactionInfo: { flex: 1, gap: 2 },
-    transactionTitle: { 
-        fontSize: 14, 
-        letterSpacing: -0.2 
+    transactionTitle: {
+        fontSize: 14,
+        letterSpacing: -0.2
     },
-    transactionSubtitle: { 
-        fontSize: 12, 
-        opacity: 0.7 
+    transactionSubtitle: {
+        fontSize: 12,
+        opacity: 0.7
     },
-    transactionRight: { 
+    transactionRight: {
         alignItems: 'flex-end',
         gap: 6
     },
-    transactionAmount: { 
-        fontSize: 14, 
-        letterSpacing: -0.3 
+    transactionAmount: {
+        fontSize: 14,
+        letterSpacing: -0.3
     },
-    statusDot: { 
-        width: 6, 
-        height: 6, 
-        borderRadius: 3 
+    statusDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3
     },
 });

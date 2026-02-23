@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ElectricityScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -100,8 +101,43 @@ export default function ElectricityScreen() {
         }
     };
 
+    const handleContinue = () => {
+        if (!selectedProvider || !meterNumber || !verifiedInfo || !amount) {
+            showToast('error', 'Please complete all fields and verify meter');
+            return;
+        }
+
+        const numericAmount = parseFloat(amount);
+        if (isNaN(numericAmount) || numericAmount <= 0) {
+            showToast('error', 'Please enter a valid amount');
+            return;
+        }
+
+        const minAmount = parseFloat(selectedProvider.minAmount || 0);
+        if (numericAmount < minAmount) {
+            showToast('error', `Minimum amount is ₦${minAmount.toLocaleString()}`);
+            return;
+        }
+
+        router.push({
+            pathname: '/(services)/transaction-summary',
+            params: {
+                service: 'electricity',
+                serviceType: 'Electricity Bill',
+                beneficiary: meterNumber,
+                amount: amount,
+                provider: selectedProvider.name,
+                providerId: selectedProvider.id,
+                meterType: meterType.charAt(0).toUpperCase() + meterType.slice(1),
+                customerName: verifiedInfo.name,
+                customerAddress: verifiedInfo.address,
+                outstandingAmount: verifiedInfo.outstandingAmount || '',
+            }
+        });
+    };
+
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -131,9 +167,9 @@ export default function ElectricityScreen() {
                         )}
                         <Text style={[
                             styles.providerSelectorText,
-                            { 
+                            {
                                 color: selectedProvider ? colors.text : colors.icon,
-                                fontFamily: fonts.inter.regular 
+                                fontFamily: fonts.inter.regular
                             }
                         ]}>
                             {selectedProvider ? selectedProvider.name : 'Select Provider'}
@@ -145,7 +181,7 @@ export default function ElectricityScreen() {
                 {/* Meter Number Input with Beneficiary Support */}
                 <NetworkSelector
                     selectedNetwork={null}
-                    onNetworkSelect={() => {}}
+                    onNetworkSelect={() => { }}
                     phoneNumber={meterNumber}
                     onPhoneNumberChange={(text) => {
                         setMeterNumber(text);
@@ -153,7 +189,7 @@ export default function ElectricityScreen() {
                     }}
                     onSelectBeneficiary={(beneficiary) => {
                         setMeterNumber(beneficiary.phoneNumber);
-                        const provider = providers.find(p => 
+                        const provider = providers.find(p =>
                             p.name.toLowerCase() === beneficiary.network.toLowerCase()
                         );
                         if (provider) {
@@ -167,8 +203,8 @@ export default function ElectricityScreen() {
 
                 <TouchableOpacity
                     style={[
-                        styles.verifyButtonFull, 
-                        { 
+                        styles.verifyButtonFull,
+                        {
                             backgroundColor: colors.primary,
                             opacity: (!selectedProvider || meterNumber.length < 10) ? 0.5 : 1
                         }
@@ -292,19 +328,38 @@ export default function ElectricityScreen() {
                     ))}
                 </View>
 
+                {/* Continue Button */}
+                <View style={{ paddingHorizontal: 20, marginTop: 10 }}>
+                    <TouchableOpacity
+                        style={[
+                            styles.continueButton,
+                            {
+                                backgroundColor: colors.primary,
+                                opacity: (!selectedProvider || !meterNumber || !verifiedInfo || !amount) ? 0.5 : 1
+                            }
+                        ]}
+                        onPress={handleContinue}
+                        disabled={!selectedProvider || !meterNumber || !verifiedInfo || !amount}
+                    >
+                        <Text style={[styles.continueButtonText, { fontFamily: fonts.inter.semiBold }]}>
+                            Continue
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
                 <View style={{ height: 30 }} />
             </ScrollView>
 
             <LoadingOverlay visible={loadingProviders || isVerifying} />
 
             <Modal visible={showProviderModal} transparent animationType="slide">
-                <TouchableOpacity 
-                    style={styles.modalOverlay} 
-                    activeOpacity={1} 
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
                     onPress={() => setShowProviderModal(false)}
                 >
-                    <TouchableOpacity 
-                        style={[styles.modalContent, { backgroundColor: colors.background }]} 
+                    <TouchableOpacity
+                        style={[styles.modalContent, { backgroundColor: colors.background }]}
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
                     >
@@ -312,7 +367,7 @@ export default function ElectricityScreen() {
                         <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                             Select Provider
                         </Text>
-                        <ScrollView 
+                        <ScrollView
                             showsVerticalScrollIndicator={false}
                             style={styles.modalScroll}
                         >
@@ -350,7 +405,7 @@ export default function ElectricityScreen() {
                     </TouchableOpacity>
                 </TouchableOpacity>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -505,4 +560,15 @@ const styles = StyleSheet.create({
     iconEmoji: { fontSize: 20 },
     optionText: { fontSize: 15 },
     discountText: { fontSize: 11, marginTop: 2 },
+    continueButton: {
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+    },
+    continueButtonText: {
+        color: '#fff',
+        fontSize: 16,
+    },
 });

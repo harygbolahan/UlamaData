@@ -103,8 +103,8 @@ export default function PrivacyPolicyScreen() {
                 ))}
 
                 {/* Contact Card */}
-                <TouchableOpacity 
-                    style={[styles.contactCard, { 
+                <TouchableOpacity
+                    style={[styles.contactCard, {
                         backgroundColor: colors.primary + '15',
                         borderColor: colors.primary + '40',
                     }]}

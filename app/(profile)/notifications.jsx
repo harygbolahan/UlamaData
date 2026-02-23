@@ -3,7 +3,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { Alert, Dimensions, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallScreen = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
@@ -11,7 +11,15 @@ const scale = isSmallScreen ? 0.7 : 1;
 
 export default function NotificationsScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { expoPushToken, isRegistering, error, isSynced, registerForNotifications } = useNotification();
+    const {
+        expoPushToken,
+        isRegistering,
+        isSyncing,
+        error,
+        isSynced,
+        registerForNotifications,
+        syncTokenWithBackend
+    } = useNotification();
 
     const notificationSettings = [
         { id: '1', title: 'Transaction Alerts', description: 'Get notified of all transactions', value: true },
@@ -24,6 +32,15 @@ export default function NotificationsScreen() {
         if (expoPushToken) {
             await Clipboard.setStringAsync(expoPushToken);
             Alert.alert('Success', 'Push token copied to clipboard');
+        }
+    };
+
+    const handleSyncToken = async () => {
+        const success = await syncTokenWithBackend();
+        if (success) {
+            Alert.alert('Success', 'Push token registered with backend successfully');
+        } else {
+            Alert.alert('Error', 'Failed to register push token. Please try again later.');
         }
     };
 
@@ -64,10 +81,28 @@ export default function NotificationsScreen() {
                                 {expoPushToken ? '✅ Token Registered' : '⏳ Registering...'}
                             </Text>
                             {expoPushToken && (
-                                <View style={[styles.statusItem, { marginTop: 4 }]}>
-                                    <Text style={[styles.statusLabel, { color: colors.text }]}>
-                                        Backend Sync: {isSynced ? '✅ Synced' : '⏳ Pending'}
-                                    </Text>
+                                <View style={styles.syncSection}>
+                                    <View style={styles.statusItem}>
+                                        <Text style={[styles.statusLabel, { color: colors.text }]}>
+                                            Backend Sync: {isSynced ? '✅ Synced' : '⏳ Pending'}
+                                        </Text>
+                                    </View>
+                                    {!isSynced && (
+                                        <TouchableOpacity
+                                            style={[styles.syncButton, { backgroundColor: colors.primary }]}
+                                            onPress={handleSyncToken}
+                                            disabled={isSyncing}
+                                        >
+                                            {isSyncing ? (
+                                                <ActivityIndicator size="small" color="#fff" />
+                                            ) : (
+                                                <>
+                                                    <Ionicons name="cloud-upload-outline" size={16} color="#fff" />
+                                                    <Text style={styles.syncButtonText}>Sync to Backend</Text>
+                                                </>
+                                            )}
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                             )}
                             {expoPushToken && (
@@ -82,7 +117,7 @@ export default function NotificationsScreen() {
                     )}
                 </View>
 
-                {notificationSettings.map((setting) => (
+                {/* {notificationSettings.map((setting) => (
                     <View
                         key={setting.id}
                         style={[styles.settingCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
@@ -101,7 +136,7 @@ export default function NotificationsScreen() {
                             thumbColor="#fff"
                         />
                     </View>
-                ))}
+                ))} */}
             </ScrollView>
         </View>
     );
@@ -172,6 +207,26 @@ const styles = StyleSheet.create({
     tokenText: {
         fontSize: 12 * scale,
         flex: 1,
+    },
+    syncSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
+        marginBottom: 12 * scale,
+    },
+    syncButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6 * scale,
+        paddingHorizontal: 12 * scale,
+        borderRadius: 8 * scale,
+        gap: 6 * scale,
+    },
+    syncButtonText: {
+        color: '#fff',
+        fontSize: 13 * scale,
+        fontWeight: '600',
     },
     settingInfo: {
         flex: 1,

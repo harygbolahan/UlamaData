@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SalesAnalysisScreen() {
   const { colors, fonts } = useTheme();
@@ -140,7 +141,7 @@ export default function SalesAnalysisScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -548,7 +549,7 @@ export default function SalesAnalysisScreen() {
           maximumDate={new Date()}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

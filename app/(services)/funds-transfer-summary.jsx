@@ -11,12 +11,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FundsTransferSummaryScreen() {
     const params = useLocalSearchParams();
@@ -71,7 +73,7 @@ export default function FundsTransferSummaryScreen() {
         // Biometric is enabled - authenticate and get stored PIN
         setProcessing(true);
         const result = await authenticateWithBiometric();
-        
+
         if (result.success && result.pin) {
             // Auto-submit with stored PIN
             await handlePinConfirm(result.pin);
@@ -112,7 +114,7 @@ export default function FundsTransferSummaryScreen() {
             if (response.status === 'success') {
                 await refreshUser();
                 showToast('success', response.message || 'Fund transfer successful');
-                
+
                 // Navigate to success screen
                 router.push({
                     pathname: '/(services)/transaction-success',
@@ -138,7 +140,7 @@ export default function FundsTransferSummaryScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
@@ -150,7 +152,7 @@ export default function FundsTransferSummaryScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                
+
                 <Text style={[styles.amount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                     ₦{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
@@ -233,14 +235,20 @@ export default function FundsTransferSummaryScreen() {
                             disabled={processing}
                         >
                             <View style={[styles.biometricIcon, { backgroundColor: accentColor + '15' }]}>
-                                <Ionicons name="finger-print" size={64} color={accentColor} />
+                                <Ionicons
+                                    name={Platform.OS === 'ios' ? 'scan' : 'finger-print'}
+                                    size={64}
+                                    color={accentColor}
+                                />
                             </View>
                             <Text style={[styles.biometricText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                {biometricEnabled ? 'Authenticate with Biometric' : 'Set Up Biometric'}
+                                {biometricEnabled
+                                    ? `Authenticate with ${Platform.OS === 'ios' ? 'FaceID' : 'Fingerprint'}`
+                                    : `Set Up ${Platform.OS === 'ios' ? 'FaceID' : 'Fingerprint'}`}
                             </Text>
                             <Text style={[styles.biometricSubtext, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                {biometricEnabled 
-                                    ? 'Quick and secure authentication' 
+                                {biometricEnabled
+                                    ? 'Quick and secure authentication'
                                     : 'Enable for faster transactions'
                                 }
                             </Text>
@@ -296,7 +304,7 @@ export default function FundsTransferSummaryScreen() {
             />
 
             {processing && <LoadingOverlay visible={true} />}
-        </View>
+        </SafeAreaView>
     );
 }
 

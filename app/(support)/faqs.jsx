@@ -2,7 +2,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FAQsScreen() {
@@ -53,7 +53,7 @@ export default function FAQsScreen() {
         {
             id: '9',
             question: 'How do I contact support?',
-            answer: 'You can reach us via Live Chat, Email (support@Ulamadata.ng), or WhatsApp.'
+            answer: 'You can reach us via Live Chat, Email (support@ulamadata.ng), or WhatsApp.'
         },
         {
             id: '10',

@@ -5,10 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// import { ScrollView } from 'react-native-reanimated/lib/typescript/Animated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function TransactionSuccessScreen() {
+export default function TransactionFailedScreen() {
     const params = useLocalSearchParams();
     const { colors, fonts, isDark } = useTheme();
     const [isLoading, setIsLoading] = useState(true);
@@ -17,37 +15,29 @@ export default function TransactionSuccessScreen() {
     const slideAnim = useRef(new Animated.Value(50)).current;
 
     const {
-        service = 'Data Subscription',
-        beneficiary = '08038295877',
-        amount = '400',
-        network = 'MTN',
+        service = 'Transaction',
+        beneficiary,
+        amount,
+        network,
+        error = 'Transaction failed. Please try again.',
+        transactionId,
+        requestId,
         planSize,
         validity,
         meterType,
         provider,
-        transactionId,
-        requestId,
-        apiResponse,
         dataSize,
         dataType,
-        oldBalance,
-        newBalance,
         airtimeType,
         phone,
         cablePlan,
         iuc,
         customerName,
         planName,
-        token,
-        units,
         meterNumber,
         discoName,
         customerAddress,
-        dataPins,
         quantity,
-        serial,
-        airtimePin,
-        pinSize,
     } = params;
 
     const additionalDetails = [];
@@ -88,45 +78,8 @@ export default function TransactionSuccessScreen() {
     if (meterNumber) {
         additionalDetails.push({ label: 'Meter Number', value: meterNumber });
     }
-    if (token) {
-        additionalDetails.push({ label: 'Token', value: token, highlight: true });
-    }
-    if (units) {
-        additionalDetails.push({ label: 'Units', value: units });
-    }
-    if (quantity && (service === 'Data Pin' || service === 'Airtime Pin')) {
+    if (quantity && (service.includes('Pin'))) {
         additionalDetails.push({ label: 'Quantity', value: `${quantity} PIN(s)` });
-    }
-    if (pinSize && service === 'Airtime Pin') {
-        additionalDetails.push({ label: 'Pin Size', value: `₦${pinSize}` });
-    }
-    if (serial) {
-        additionalDetails.push({ label: 'Serial Number', value: serial, highlight: true });
-    }
-    if (airtimePin) {
-        additionalDetails.push({ label: 'PIN', value: airtimePin, highlight: true });
-    }
-    if (dataPins) {
-        try {
-            const pins = JSON.parse(dataPins);
-            if (Array.isArray(pins) && pins.length > 0) {
-                pins.forEach((pin, index) => {
-                    additionalDetails.push({ 
-                        label: `PIN ${index + 1}`, 
-                        value: pin, 
-                        highlight: true 
-                    });
-                });
-            }
-        } catch (e) {
-            console.error('Error parsing data pins:', e);
-        }
-    }
-    if (oldBalance) {
-        additionalDetails.push({ label: 'Previous Balance', value: `₦${parseFloat(oldBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}` });
-    }
-    if (newBalance) {
-        additionalDetails.push({ label: 'New Balance', value: `₦${parseFloat(newBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}` });
     }
 
     const displayTransactionId = requestId || transactionId || `TXN${Date.now().toString().slice(-8)}`;
@@ -176,23 +129,23 @@ export default function TransactionSuccessScreen() {
             <View style={styles.content}>
                 <Animated.View
                     style={[
-                        styles.successIconContainer,
+                        styles.failedIconContainer,
                         {
-                            backgroundColor: colors.primary + '15',
+                            backgroundColor: '#FF5252' + '15',
                             transform: [{ scale: scaleAnim }]
                         }
                     ]}
                 >
-                    <Ionicons name="checkmark-circle" size={80} color={colors.primary} />
+                    <Ionicons name="close-circle" size={80} color="#FF5252" />
                 </Animated.View>
 
-                <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+                <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], alignItems: 'center' }}>
                     <Text style={[styles.title, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                        Transaction Successful!
+                        Transaction Failed
                     </Text>
 
-                    <Text style={[styles.subtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        {apiResponse || `Your ${service.toLowerCase()} was successful`}
+                    <Text style={[styles.subtitle, { color: '#FF5252', fontFamily: fonts.inter.medium }]}>
+                        {error}
                     </Text>
                 </Animated.View>
 
@@ -211,18 +164,20 @@ export default function TransactionSuccessScreen() {
                             Amount
                         </Text>
                         <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            ₦{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            ₦{parseFloat(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </Text>
                     </View>
 
-                    <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Beneficiary
-                        </Text>
-                        <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            {beneficiary}
-                        </Text>
-                    </View>
+                    {beneficiary && (
+                        <View style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                Beneficiary
+                            </Text>
+                            <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                {beneficiary}
+                            </Text>
+                        </View>
+                    )}
 
                     {network && (
                         <View style={styles.detailRow}>
@@ -236,27 +191,11 @@ export default function TransactionSuccessScreen() {
                     )}
 
                     {additionalDetails.map((detail, index) => (
-                        <View key={index} style={[
-                            styles.detailRow,
-                            detail.highlight && styles.highlightRow,
-                            detail.highlight && { backgroundColor: colors.primary + '10', padding: 12, borderRadius: 8, marginVertical: 4 }
-                        ]}>
-                            <Text style={[
-                                styles.detailLabel, 
-                                { 
-                                    color: detail.highlight ? colors.primary : colors.icon, 
-                                    fontFamily: detail.highlight ? fonts.inter.semiBold : fonts.inter.regular 
-                                }
-                            ]}>
+                        <View key={index} style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                                 {detail.label}
                             </Text>
-                            <Text style={[
-                                styles.detailValue, 
-                                { 
-                                    color: detail.highlight ? colors.primary : colors.text, 
-                                    fontFamily: detail.highlight ? fonts.inter.bold : fonts.inter.semiBold 
-                                }
-                            ]}>
+                            <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                                 {detail.value}
                             </Text>
                         </View>
@@ -281,14 +220,29 @@ export default function TransactionSuccessScreen() {
                     </View>
                 </Animated.View>
 
-               
+                <Animated.View style={[styles.infoBox, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                    <Ionicons name="information-circle-outline" size={20} color={colors.icon} />
+                    <Text style={[styles.infoText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                        If your account was debited, it will be automatically refunded within few minutes. You can also contact support for further assistance.
+                    </Text>
+                </Animated.View>
             </View>
 
             <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
-                <Button
-                    title="Done"
-                    onPress={() => router.push('/(tabs)/home')}
-                />
+                <View style={styles.buttonContainer}>
+                    <Button
+                        title="Try Again"
+                        onPress={() => router.back()}
+                        variant="outline"
+                        style={{ flex: 1 }}
+                    />
+                    <View style={{ width: 12 }} />
+                    <Button
+                        title="Go Home"
+                        onPress={() => router.push('/(tabs)/home')}
+                        style={{ flex: 1 }}
+                    />
+                </View>
             </Animated.View>
             <LoadingOverlay visible={isLoading} />
         </ScrollView>
@@ -314,7 +268,7 @@ const styles = StyleSheet.create({
         paddingTop: 100,
         alignItems: 'center',
     },
-    successIconContainer: {
+    failedIconContainer: {
         width: 120,
         height: 120,
         borderRadius: 60,
@@ -345,29 +299,27 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    highlightRow: {
-        marginHorizontal: -4,
-    },
     detailLabel: { fontSize: 14 },
     detailValue: { fontSize: 14, textAlign: 'right', flex: 1, marginLeft: 16 },
-    actions: {
+    infoBox: {
         flexDirection: 'row',
-        gap: 32,
-    },
-    actionButton: {
+        padding: 16,
+        borderRadius: 12,
+        backgroundColor: '#FF5252' + '10',
         alignItems: 'center',
-        gap: 8,
+        gap: 10,
+        width: '100%',
     },
-    actionIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
+    infoText: {
+        fontSize: 12,
+        lineHeight: 18,
+        flex: 1,
     },
-    actionText: { fontSize: 13 },
     footer: {
         padding: 20,
         paddingBottom: 30,
     },
+    buttonContainer: {
+        flexDirection: 'row',
+    }
 });

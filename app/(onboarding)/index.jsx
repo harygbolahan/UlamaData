@@ -66,7 +66,7 @@ function AnimatedIcon({ icon, iconType, isActive }) {
                 damping: 12,
                 stiffness: 100,
             });
-            
+
             translateY.value = withSpring(0, {
                 damping: 15,
                 stiffness: 90,
@@ -157,8 +157,8 @@ function OnboardingSlide({ item, fonts, isActive }) {
 
                 <Animated.View style={[styles.content, contentStyle]}>
                     {/* Animated Icon */}
-                    <AnimatedIcon 
-                        icon={item.icon} 
+                    <AnimatedIcon
+                        icon={item.icon}
                         iconType={item.iconType}
                         isActive={isActive}
                     />
@@ -195,13 +195,13 @@ export default function OnboardingScreen() {
             flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
         } else {
             await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-            router.replace('/(auth)/signup');
+            router.replace('/(onboarding)/auth-selector');
         }
     };
 
     const handleSkip = async () => {
         await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-        router.replace('/(auth)/login');
+        router.replace('/(onboarding)/auth-selector');
     };
 
     const buttonStyle = useAnimatedStyle(() => ({
@@ -209,9 +209,9 @@ export default function OnboardingScreen() {
     }));
 
     const renderItem = ({ item, index }) => (
-        <OnboardingSlide 
-            item={item} 
-            fonts={fonts} 
+        <OnboardingSlide
+            item={item}
+            fonts={fonts}
             isActive={index === currentIndex}
         />
     );
@@ -219,7 +219,7 @@ export default function OnboardingScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar style="light" />
-            
+
             {/* Skip Button */}
             {currentIndex < slides.length - 1 && (
                 <View style={styles.skipContainer}>
@@ -256,8 +256,8 @@ export default function OnboardingScreen() {
                             style={[
                                 styles.indicator,
                                 {
-                                    backgroundColor: index === currentIndex 
-                                        ? '#ffffff' 
+                                    backgroundColor: index === currentIndex
+                                        ? '#ffffff'
                                         : 'rgba(255,255,255,0.3)',
                                     width: index === currentIndex ? 32 : 8,
                                 }
@@ -279,18 +279,7 @@ export default function OnboardingScreen() {
                     </TouchableOpacity>
                 </Animated.View>
 
-                {/* Sign In Link */}
-                {currentIndex === slides.length - 1 && (
-                    <TouchableOpacity
-                        onPress={handleSkip}
-                        style={styles.signInLink}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.signInText, { fontFamily: fonts.inter.regular }]}>
-                            Already have an account? <Text style={[styles.signInBold, { fontFamily: fonts.inter.semiBold }]}>Sign In</Text>
-                        </Text>
-                    </TouchableOpacity>
-                )}
+
             </View>
         </SafeAreaView>
     );

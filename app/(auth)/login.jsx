@@ -69,11 +69,11 @@ export default function LoginScreen() {
 
             if (result.success && result.email && result.password) {
                 // Use stored credentials to login via API
-                const loginResult = await login({ 
-                    email: result.email, 
-                    password: result.password 
+                const loginResult = await login({
+                    email: result.email,
+                    password: result.password
                 }, true); // Skip toast for biometric login
-                
+
                 if (loginResult.success) {
                     unlock(); // Unlock the app
                     router.replace('/(tabs)/home');
@@ -104,7 +104,7 @@ export default function LoginScreen() {
         setIsSubmitting(true);
         const result = await login({ email, password });
         setIsSubmitting(false);
-        
+
         if (result.success) {
             unlock(); // Unlock the app
             router.replace('/(tabs)/home');
@@ -113,17 +113,17 @@ export default function LoginScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <KeyboardAvoidingView
-            style={[styles.container, { backgroundColor: colors.background }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-        >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                bounces={true}
+            <KeyboardAvoidingView
+                style={[styles.container, { backgroundColor: colors.background }]}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    bounces={true}
+                >
                     <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                         {/* Header */}
                         <View style={styles.header}>
@@ -145,7 +145,7 @@ export default function LoginScreen() {
                                 <Text style={[styles.label, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                                     Email Address
                                 </Text>
-                                <View style={[styles.inputWrapper, { 
+                                <View style={[styles.inputWrapper, {
                                     backgroundColor: isDark ? colors.card : colors.background,
                                     borderColor: colors.border,
                                 }]}>
@@ -168,7 +168,7 @@ export default function LoginScreen() {
                                 <Text style={[styles.label, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                                     Password
                                 </Text>
-                                <View style={[styles.inputWrapper, { 
+                                <View style={[styles.inputWrapper, {
                                     backgroundColor: isDark ? colors.card : colors.background,
                                     borderColor: colors.border,
                                 }]}>
@@ -242,9 +242,9 @@ export default function LoginScreen() {
                                         }]}
                                         onPress={handleBiometricLogin}
                                     >
-                                        <Ionicons name="finger-print" size={24} color={colors.primary} />
+                                        <Ionicons name={Platform.OS === 'ios' ? 'scan' : 'finger-print'} size={24} color={colors.primary} />
                                         <Text style={[styles.biometricText, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                            Use Biometrics
+                                            Use {Platform.OS === 'ios' ? 'FaceID' : 'Fingerprint'}
                                         </Text>
                                     </Pressable>
                                 </>
@@ -263,8 +263,8 @@ export default function LoginScreen() {
                             </Pressable>
                         </View>
                     </Animated.View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }

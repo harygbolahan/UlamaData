@@ -3,21 +3,39 @@ import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function BulkSMSScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { purchaseBulkSMS } = useServices();
+    const { purchaseBulkSMS, fetchBulkSMSPricing } = useServices();
     const { showToast } = useToast();
     const [phoneNumbers, setPhoneNumbers] = useState('');
     const [message, setMessage] = useState('');
     const [senderName, setSenderName] = useState('');
     const [subject, setSubject] = useState('');
     const [loading, setLoading] = useState(false);
+    const [pricePerSMS, setPricePerSMS] = useState(4); // Default price
+
+    useEffect(() => {
+        const loadPricing = async () => {
+            try {
+                const data = await fetchBulkSMSPricing();
+                console.log('SMS Pricing data:', data);
+                // Check if data is an object with a charge property (API uses 'charge')
+                const price = typeof data === 'object' ? (data.charge || data.price || data.amount) : data;
+                if (price && !isNaN(price)) {
+                    setPricePerSMS(Number(price));
+                }
+            } catch (err) {
+                console.error('Failed to load SMS pricing:', err);
+            }
+        };
+        loadPricing();
+    }, []);
 
     const getPhoneCount = () => {
-        const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
+        const numbers = phoneNumbers.split(',').filter(n => n.trim().length > 0);
         return numbers.length;
     };
 
@@ -25,14 +43,14 @@ export default function BulkSMSScreen() {
         return Math.ceil(message.length / 160);
     };
 
-    const getPricePerSMS = () => 4; // ₦4 per SMS
+    const getPricePerSMS = () => pricePerSMS;
 
     const getTotalAmount = () => {
         return getPhoneCount() * getMessageCount() * getPricePerSMS();
     };
 
     const handleContinue = () => {
-        const numbers = phoneNumbers.split('\n').filter(n => n.trim().length > 0);
+        const numbers = phoneNumbers.split(',').filter(n => n.trim().length > 0);
         if (numbers.length === 0 || !message || !subject) {
             showToast('warning', 'Please fill in all required fields');
             return;
@@ -54,7 +72,7 @@ export default function BulkSMSScreen() {
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             style={[styles.container, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={0}
@@ -69,7 +87,7 @@ export default function BulkSMSScreen() {
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
@@ -104,21 +122,21 @@ export default function BulkSMSScreen() {
 
                 {/* Phone Numbers */}
                 <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                    Phone Numbers (One per line)
+                    Phone Numbers (Comma separated)
                 </Text>
                 <View style={[styles.textAreaContainer, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
                     <TextInput
-                        placeholder="08012345678&#10;08098765432&#10;07011223344"
+                        placeholder="08012345678, 08098765432, 07011223344"
                         placeholderTextColor={colors.icon}
                         value={phoneNumbers}
                         onChangeText={setPhoneNumbers}
                         multiline
-                        numberOfLines={6}
+                        numberOfLines={4}
                         keyboardType="default"
                         returnKeyType="default"
                         blurOnSubmit={false}
                         textAlignVertical="top"
-                        style={[styles.textArea, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                        style={[styles.textArea, { color: colors.text, fontFamily: fonts.inter.regular, minHeight: 80 }]}
                     />
                     <View style={styles.countBadge}>
                         <Text style={[styles.countText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>

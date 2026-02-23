@@ -258,6 +258,8 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: isSmallScreen ? 15 : 16,
+        paddingHorizontal: 20
+
     },
     successContent: {
         alignItems: 'center',

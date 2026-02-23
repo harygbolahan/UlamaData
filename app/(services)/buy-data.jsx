@@ -8,25 +8,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BuyDataScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { fetchDataNetworks, fetchDataTypes, fetchDataPlans } = useServices();
     const { showToast } = useToast();
-    
+
     const [activeTab, setActiveTab] = useState('data');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [selectedNetwork, setSelectedNetwork] = useState(null);
     const [activePlanType, setActivePlanType] = useState(null);
-    
+
     const [networks, setNetworks] = useState([]);
     const [dataTypes, setDataTypes] = useState([]);
     const [dataPlans, setDataPlans] = useState([]);
-    
+
     const [loadingNetworks, setLoadingNetworks] = useState(false);
     const [loadingTypes, setLoadingTypes] = useState(false);
     const [loadingPlans, setLoadingPlans] = useState(false);
-    
+
     const [scrollProgress, setScrollProgress] = useState(0);
     const [scrollBarWidth, setScrollBarWidth] = useState(0);
     const scrollViewRef = useRef(null);
@@ -61,7 +62,7 @@ export default function BuyDataScreen() {
         try {
             const data = await fetchDataNetworks();
             setNetworks(data);
-            
+
             // Auto-select MTN as default network
             const mtnNetwork = data.find(n => n.network.toLowerCase() === 'mtn');
             if (mtnNetwork && !selectedNetwork) {
@@ -127,7 +128,7 @@ export default function BuyDataScreen() {
                     amount: plan.price.toString(),
                     bonus: '0',
                     network: selectedNetwork.name,
-                    planSize: plan.datasize,
+                    planSize: plan.name ? `${plan.datasize} (${plan.name})` : plan.datasize,
                     validity: `${plan.day} days`,
                     planId: plan.id.toString(),
                     planType: activePlanType,
@@ -140,25 +141,25 @@ export default function BuyDataScreen() {
 
     const handleBeneficiarySelect = (beneficiary) => {
         // Find and set the network - match by network name
-        const network = networks.find(n => 
+        const network = networks.find(n =>
             n.network.toLowerCase() === beneficiary.network.toLowerCase()
         );
-        
+
         // Update all states
         setPhoneNumber(beneficiary.phoneNumber);
         if (network) {
-            setSelectedNetwork({ 
-                id: network.network.toLowerCase(), 
-                name: network.network.toUpperCase() 
+            setSelectedNetwork({
+                id: network.network.toLowerCase(),
+                name: network.network.toUpperCase()
             });
         }
-        
+
         // Switch to data tab immediately
         setActiveTab('data');
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
@@ -213,6 +214,7 @@ export default function BuyDataScreen() {
                     <>
                         {/* Network & Phone Number Selector */}
                         <NetworkSelector
+                            mode="cards"
                             selectedNetwork={selectedNetwork}
                             onNetworkSelect={setSelectedNetwork}
                             phoneNumber={phoneNumber}
@@ -346,17 +348,17 @@ export default function BuyDataScreen() {
                     </>
                 )}
 
-                <View style={{ height: 30 }} />
+                        <View style={{ height: 30 }} />
                     </>
                 ) : (
-                    <BeneficiaryList 
+                    <BeneficiaryList
                         onSelectBeneficiary={handleBeneficiarySelect}
                     />
                 )}
             </ScrollView>
 
             <LoadingOverlay visible={loadingNetworks || loadingPlans} />
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -414,11 +416,11 @@ const styles = StyleSheet.create({
         borderRadius: 1.5,
     },
     planTypeChip: {
-        paddingHorizontal: 5,
-        paddingVertical: 5,
-        borderRadius: 10,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
     },
-    planTypeText: { fontSize: 10 },
+    planTypeText: { fontSize: 13 },
     plansGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -426,8 +428,9 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     planCard: {
-        width: '31%',
-        padding: 12,
+        width: '45%',
+        margin: '1.5%',
+        padding: 16,
         borderRadius: 12,
         minHeight: 140,
         flexDirection: 'column',
@@ -441,7 +444,8 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     planLabelText: { fontSize: 8 },
-    planSize: { fontSize: 16, marginBottom: 6, lineHeight: 20 },
+    planSize: { fontSize: 16, marginBottom: 4, lineHeight: 20 },
+    planName: { fontSize: 11, marginBottom: 8, opacity: 0.8, lineHeight: 14 },
     planDetails: {
         marginTop: 'auto',
     },
