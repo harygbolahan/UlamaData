@@ -156,32 +156,32 @@ export default function ModernDashboard() {
                             </View>
                         </View>
                         <View style={styles.headerRight}>
-                        <TouchableOpacity
-                            style={[styles.iconButton, {
+                            <TouchableOpacity
+                                style={[styles.iconButton, {
+                                    backgroundColor: '#ffffff25',
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 1 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 2,
+                                    elevation: 2,
+                                }]}
+                                onPress={toggleTheme}
+                            >
+                                <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color={colors.primaryText} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.iconButton, {
                                 backgroundColor: '#ffffff25',
                                 shadowColor: '#000',
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
                                 elevation: 2,
-                            }]}
-                            onPress={toggleTheme}
-                        >
-                            <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color={colors.primaryText} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.iconButton, {
-                            backgroundColor: '#ffffff25',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 2,
-                            elevation: 2,
-                        }]}>
-                            <Ionicons name="notifications-outline" size={18} color={colors.primaryText} />
-                            <View style={styles.notificationBadge} />
-                        </TouchableOpacity>
+                            }]}>
+                                <Ionicons name="notifications-outline" size={18} color={colors.primaryText} />
+                                <View style={styles.notificationBadge} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
                 </View>
             </SafeAreaView>
 
@@ -244,15 +244,19 @@ export default function ModernDashboard() {
                 </View>
 
                 {/* Cashback Card */}
-                <View style={[styles.cashbackCard, {
-                    backgroundColor: '#4ade8015',
-                    borderRadius: 12,
-                    padding: 14,
-                    marginTop: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                }]}>
+                <TouchableOpacity
+                    style={[styles.cashbackCard, {
+                        backgroundColor: '#4ade8015',
+                        borderRadius: 12,
+                        padding: 14,
+                        marginTop: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                    }]}
+                    onPress={() => router.push('/(tabs)/earn')}
+                    activeOpacity={0.7}
+                >
                     <View style={[styles.cashbackIconBg, { backgroundColor: '#4ade8025' }]}>
                         <Ionicons name="gift" size={20} color="#4ade80" />
                     </View>
@@ -265,7 +269,7 @@ export default function ModernDashboard() {
                         </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={colors.icon} />
-                </View>
+                </TouchableOpacity>
             </View>
 
 
