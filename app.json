@@ -15,6 +15,7 @@
         "NSFaceIDUsageDescription": "This app uses Face ID to securely authenticate you.",
         "ITSAppUsesNonExemptEncryption": false
       },
+      "bundleIdentifier": "com.ulamadatanigeria.app"
     },
     "android": {
       "package": "com.ulamadatanigeria.app",
