@@ -10,17 +10,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ulamadatanigeria.app",
       "infoPlist": {
-        "NSContactsUsageDescription": "This app needs access to your contacts to help you quickly select phone numbers for airtime and data purchases."
-      }
+        "NSContactsUsageDescription": "This app needs access to your contacts to help you quickly select phone numbers for airtime and data purchases.",
+        "NSFaceIDUsageDescription": "This app uses Face ID to securely authenticate you.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
     },
     "android": {
       "package": "com.ulamadatanigeria.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/Ulama.png"
+        "foregroundImage": "./assets/images/Ulama.png",
+        "backgroundImage": "./assets/images/Ulama.png",
+        "monochromeImage": "./assets/images/Ulama.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
