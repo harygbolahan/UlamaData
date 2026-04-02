@@ -18,7 +18,7 @@
       "bundleIdentifier": "com.ulamadatanigeria.app"
     },
     "android": {
-      "package": "com.ulamadatanigeria.ulamadata",
+      "package": "com.ulamadatanigeria.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
