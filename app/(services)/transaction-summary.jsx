@@ -1,6 +1,6 @@
 import BiometricSetupModal from "@/components/services/BiometricSetupModal";
 import SaveBeneficiaryModal from "@/components/services/SaveBeneficiaryModal";
-import TransactionPinModal from "@/components/services/TransactionPinModal";
+import TransactionConfirmModal from "@/components/services/TransactionConfirmModal";
 import Button from "@/components/ui/Button";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { useAuth } from "@/contexts/auth-context";
@@ -47,7 +47,7 @@ export default function TransactionSummaryScreen() {
   const { user, updateUser, refreshUser } = useAuth();
   const { addBeneficiary } = useBeneficiaries();
   const [useCashback, setUseCashback] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showBiometricSetup, setShowBiometricSetup] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -146,17 +146,17 @@ export default function TransactionSummaryScreen() {
       return;
     }
 
-    // Biometric is enabled - authenticate and get stored PIN
+    // Biometric is enabled - authenticate
     setProcessing(true);
     const result = await authenticateWithBiometric();
 
-    if (result.success && result.pin) {
-      // Auto-submit with stored PIN
-      await handlePinConfirm(result.pin);
+    if (result.success) {
+      // Pass 12345 as default pin
+      await handlePinConfirm("12345");
     } else if (result.useFallback) {
-      // User chose to use PIN instead
+      // User chose to use PIN instead -> use confirm modal
       setProcessing(false);
-      setShowPinModal(true);
+      setShowConfirmModal(true);
     } else if (result.cancelled) {
       // User cancelled
       setProcessing(false);
@@ -165,7 +165,15 @@ export default function TransactionSummaryScreen() {
       // Authentication failed
       setProcessing(false);
       showToast("error", result.error || "Biometric authentication failed");
-      setShowPinModal(true);
+      setShowConfirmModal(true);
+    }
+  };
+
+  const handleProceed = () => {
+    if (biometricAvailable && biometricEnabled) {
+      handleBiometric();
+    } else {
+      setShowConfirmModal(true);
     }
   };
 
@@ -174,8 +182,8 @@ export default function TransactionSummaryScreen() {
     showToast("success", "Biometric authentication enabled successfully!");
   };
 
-  const handlePinConfirm = async (pin) => {
-    setShowPinModal(false);
+  const handlePinConfirm = async (pin = "12345") => {
+    setShowConfirmModal(false);
 
     if (
       isSchedule === "true" &&
@@ -1143,82 +1151,14 @@ export default function TransactionSummaryScreen() {
             </TouchableOpacity>
           )}
 
-        <View style={styles.authContainer}>
-          {biometricAvailable && (
-            <TouchableOpacity
-              style={styles.biometricButton}
-              onPress={handleBiometric}
-              activeOpacity={0.7}
-              disabled={processing}
-            >
-              <View
-                style={[
-                  styles.biometricIcon,
-                  { backgroundColor: colors.primary + "15" },
-                ]}
-              >
-                <Ionicons
-                  name={Platform.OS === "ios" ? "scan" : "finger-print"}
-                  size={64}
-                  color={colors.primary}
-                />
-              </View>
-              <Text
-                style={[
-                  styles.biometricText,
-                  { color: colors.text, fontFamily: fonts.inter.medium },
-                ]}
-              >
-                {biometricEnabled
-                  ? `Authenticate with ${Platform.OS === "ios" ? "FaceID" : "Fingerprint"}`
-                  : `Set Up ${Platform.OS === "ios" ? "FaceID" : "Fingerprint"}`}
-              </Text>
-              <Text
-                style={[
-                  styles.biometricSubtext,
-                  { color: colors.icon, fontFamily: fonts.inter.regular },
-                ]}
-              >
-                {biometricEnabled
-                  ? "Quick and secure authentication"
-                  : "Enable for faster transactions"}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {biometricAvailable && (
-            <View style={styles.dividerContainer}>
-              <View
-                style={[
-                  styles.dividerLine,
-                  { backgroundColor: colors.icon + "30" },
-                ]}
-              />
-              <Text
-                style={[
-                  styles.dividerText,
-                  { color: colors.icon, fontFamily: fonts.inter.regular },
-                ]}
-              >
-                or
-              </Text>
-              <View
-                style={[
-                  styles.dividerLine,
-                  { backgroundColor: colors.icon + "30" },
-                ]}
-              />
-            </View>
-          )}
-
           <TouchableOpacity
             style={[styles.pinButton, { backgroundColor: colors.primary }]}
-            onPress={() => setShowPinModal(true)}
+            onPress={handleProceed}
             activeOpacity={0.8}
             disabled={processing}
           >
             <Ionicons
-              name="keypad-outline"
+              name={biometricAvailable && biometricEnabled ? (Platform.OS === "ios" ? "scan" : "finger-print") : "checkmark-circle-outline"}
               size={20}
               color="#fff"
               style={{ marginRight: 8 }}
@@ -1229,26 +1169,28 @@ export default function TransactionSummaryScreen() {
                 { fontFamily: fonts.inter.semiBold },
               ]}
             >
-              Continue with PIN
+              {biometricAvailable && biometricEnabled ? "Pay with Biometrics" : "Confirm Payment"}
             </Text>
           </TouchableOpacity>
-        </View>
       </ScrollView>
 
-      <TransactionPinModal
-        visible={showPinModal}
+      <TransactionConfirmModal
+        visible={showConfirmModal}
         onClose={() => {
-          setShowPinModal(false);
+          setShowConfirmModal(false);
           setProcessing(false);
         }}
-        onConfirm={async (pin) => {
-          setShowPinModal(false);
-          setProcessing(false);
-          return await handlePinConfirm(pin);
+        onConfirm={async () => {
+          setShowConfirmModal(false);
+          setProcessing(true);
+          return await handlePinConfirm("12345");
         }}
-        onError={() => {
-          showToast("error", "Incorrect PIN. Please try again.");
-        }}
+        amount={transactionAmount.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}
+        service={service === "airtime" ? "Airtime Purchase" : (serviceType || service)}
+        beneficiary={beneficiary}
       />
 
       <BiometricSetupModal
@@ -1290,7 +1232,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 20,
     marginBottom: 20,
   },
   headerTitle: { fontSize: 18 },
@@ -1414,6 +1356,7 @@ const styles = StyleSheet.create({
   },
   pinButton: {
     height: 56,
+    marginHorizontal: 20,
     borderRadius: 16,
     flexDirection: "row",
     justifyContent: "center",

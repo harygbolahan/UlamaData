@@ -18,6 +18,7 @@ export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
   const { showToast } = useToast();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Enter PIN, 2: Confirm PIN, 3: Success
   const [error, setError] = useState("");
   const [biometricType, setBiometricType] = useState("biometric");
@@ -48,84 +49,28 @@ export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
     setError("");
   };
 
-  const handlePinPress = (num) => {
-    const currentPin = step === 1 ? pin : confirmPin;
-    if (currentPin.length < 5) {
-      const newPin = currentPin + num;
-      if (step === 1) {
-        setPin(newPin);
-      } else {
-        setConfirmPin(newPin);
-      }
-      setError("");
+  const handleEnableBiometric = async () => {
+    setLoading(true);
+    setError("");
 
-      // Animate the dot
-      const index = currentPin.length;
-      Animated.sequence([
-        Animated.timing(scaleAnims[index], {
-          toValue: 1.3,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnims[index], {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Auto-proceed when PIN is complete
-      if (newPin.length === 5) {
-        setTimeout(() => {
-          if (step === 1) {
-            setStep(2);
-          } else {
-            handleConfirmPin(newPin);
-          }
-        }, 300);
-      }
-    }
-  };
-
-  const handlePinDelete = () => {
-    if (step === 1 && pin.length > 0) {
-      setPin(pin.slice(0, -1));
-      setError("");
-    } else if (step === 2 && confirmPin.length > 0) {
-      setConfirmPin(confirmPin.slice(0, -1));
-      setError("");
-    }
-  };
-
-  const handleConfirmPin = async (confirmedPin) => {
-    if (pin !== confirmedPin) {
-      shake();
-      setError("PINs do not match");
-      setTimeout(() => {
-        setConfirmPin("");
-        setError("");
-      }, 1000);
-      return;
-    }
-
-    // Directly enable biometric as there is no endpoint for pin verification
     try {
-      const result = await enableBiometric(pin);
+      // Use '12345' as the default transaction pin for biometric setup
+      const result = await enableBiometric("12345");
       if (result.success) {
-        setStep(3);
+        setStep(2);
         setTimeout(() => {
           onSuccess?.();
           onClose();
         }, 2000);
       } else {
-        showToast(
-          "error",
-          result.error || "Failed to enable biometric authentication",
-        );
-        onClose();
+        if (result.error !== "Authentication cancelled") {
+          setError(result.error || "Failed to enable biometric authentication");
+        }
+        setLoading(false);
       }
     } catch (error) {
-      showToast("error", error.message || "An error occurred");
+      setError(error.message || "An error occurred");
+      setLoading(false);
     }
   };
 
@@ -192,7 +137,7 @@ export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
             ]}
           />
 
-          {step === 3 ? (
+          {step === 2 ? (
             <View style={styles.successContainer}>
               <View
                 style={[
@@ -245,7 +190,7 @@ export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
                   { color: colors.text, fontFamily: fonts.inter.bold },
                 ]}
               >
-                {step === 1 ? "Set Up Biometric" : "Confirm Your PIN"}
+                Quick Authentication
               </Text>
               <Text
                 style={[
@@ -253,175 +198,33 @@ export default function BiometricSetupModal({ visible, onClose, onSuccess }) {
                   { color: colors.icon, fontFamily: fonts.inter.regular },
                 ]}
               >
-                {step === 1
-                  ? "Enter your 5-digit transaction PIN to enable biometric authentication"
-                  : "Re-enter your PIN to confirm"}
+                Enable {getBiometricText()} to authorize your transactions quickly without entering any PIN.
               </Text>
 
               {error && (
                 <Text
                   style={[
                     styles.errorText,
-                    { color: colors.error, fontFamily: fonts.inter.medium },
+                    { color: colors.error, fontFamily: fonts.inter.medium, marginBottom: 16 },
                   ]}
                 >
                   {error}
                 </Text>
               )}
 
-              {/* PIN Display */}
-              <Animated.View
-                style={[
-                  styles.pinDisplay,
-                  { transform: [{ translateX: shakeAnim }] },
-                ]}
+              <TouchableOpacity
+                style={[styles.enableButton, { backgroundColor: colors.primary }]}
+                onPress={handleEnableBiometric}
+                disabled={loading}
               >
-                {[0, 1, 2, 3, 4].map((i) => {
-                  const currentPin = step === 1 ? pin : confirmPin;
-                  return (
-                    <Animated.View
-                      key={i}
-                      style={[
-                        styles.pinDot,
-                        {
-                          backgroundColor: isDark ? "#1f1f1f" : "#f5f5f5",
-                          borderWidth: 2,
-                          borderColor: error
-                            ? colors.error
-                            : isDark
-                              ? "#2a2a2a"
-                              : "#e0e0e0",
-                        },
-                        currentPin.length > i && {
-                          backgroundColor: error
-                            ? colors.error
-                            : colors.primary,
-                          borderColor: error ? colors.error : colors.primary,
-                        },
-                        { transform: [{ scale: scaleAnims[i] }] },
-                      ]}
-                    />
-                  );
-                })}
-              </Animated.View>
-
-              {/* Number Pad */}
-              <View style={styles.numberPad}>
-                <View style={styles.numberRow}>
-                  {[1, 2, 3].map((num) => (
-                    <TouchableOpacity
-                      key={num}
-                      style={[
-                        styles.numberButton,
-                        { backgroundColor: isDark ? "#1f1f1f" : "#f5f5f5" },
-                      ]}
-                      onPress={() => handlePinPress(num.toString())}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.numberText,
-                          {
-                            color: colors.text,
-                            fontFamily: fonts.inter.semiBold,
-                          },
-                        ]}
-                      >
-                        {num}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.numberRow}>
-                  {[4, 5, 6].map((num) => (
-                    <TouchableOpacity
-                      key={num}
-                      style={[
-                        styles.numberButton,
-                        { backgroundColor: isDark ? "#1f1f1f" : "#f5f5f5" },
-                      ]}
-                      onPress={() => handlePinPress(num.toString())}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.numberText,
-                          {
-                            color: colors.text,
-                            fontFamily: fonts.inter.semiBold,
-                          },
-                        ]}
-                      >
-                        {num}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.numberRow}>
-                  {[7, 8, 9].map((num) => (
-                    <TouchableOpacity
-                      key={num}
-                      style={[
-                        styles.numberButton,
-                        { backgroundColor: isDark ? "#1f1f1f" : "#f5f5f5" },
-                      ]}
-                      onPress={() => handlePinPress(num.toString())}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.numberText,
-                          {
-                            color: colors.text,
-                            fontFamily: fonts.inter.semiBold,
-                          },
-                        ]}
-                      >
-                        {num}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.numberRow}>
-                  <View style={styles.numberButton} />
-                  <TouchableOpacity
-                    style={[
-                      styles.numberButton,
-                      { backgroundColor: isDark ? "#1f1f1f" : "#f5f5f5" },
-                    ]}
-                    onPress={() => handlePinPress("0")}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.numberText,
-                        {
-                          color: colors.text,
-                          fontFamily: fonts.inter.semiBold,
-                        },
-                      ]}
-                    >
-                      0
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.numberButton}
-                    onPress={handlePinDelete}
-                    activeOpacity={0.7}
-                    disabled={(step === 1 ? pin : confirmPin).length === 0}
-                  >
-                    <Ionicons
-                      name="backspace-outline"
-                      size={24}
-                      color={
-                        (step === 1 ? pin : confirmPin).length === 0
-                          ? colors.icon + "40"
-                          : colors.icon
-                      }
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
+                <Text style={[styles.enableButtonText, { fontFamily: fonts.inter.bold }]}>
+                  {loading ? "Processing..." : `Enable ${getBiometricText()}`}
+                </Text>
+              </TouchableOpacity>
+              
+              <Text style={[styles.disclaimerText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                By enabling, you agree to use your biometric profile for transaction security.
+              </Text>
             </>
           )}
         </View>
@@ -528,5 +331,22 @@ const styles = StyleSheet.create({
   successText: {
     fontSize: 14,
     textAlign: "center",
+  },
+  enableButton: {
+    height: 56,
+    borderRadius: 16,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  enableButtonText: {
+    fontSize: 16,
+    color: "#fff",
+  },
+  disclaimerText: {
+    fontSize: 11,
+    textAlign: "center",
+    opacity: 0.6,
   },
 });

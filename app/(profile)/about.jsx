@@ -36,7 +36,7 @@ export default function AboutScreen() {
                     UlamaData
                 </Text>
                 <Text style={[styles.version, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                    Version 1.1.1
+                    Version 2.0.0
                 </Text>
 
                 <View style={[styles.infoCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
