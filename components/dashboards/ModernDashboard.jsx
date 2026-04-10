@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, PixelRatio, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import BannerCarousel from '../ui/BannerCarousel';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRef } from 'react';
@@ -21,7 +21,29 @@ export default function ModernDashboard() {
     const { accountDetails } = usePayment();
     const { showToast } = useToast();
     const { transactions, loading, fetchTransactions } = useTransactions();
+    const { width, height } = useWindowDimensions();
     const [balanceVisible, setBalanceVisible] = useState(true);
+
+    // Responsive scaling helpers
+    const isSmallScreen = width < 375;
+    const fontScale = width / 375;
+    const normalize = (size) => Math.round(PixelRatio.roundToNearestPixel(size * fontScale));
+    
+    // Dynamic styles based on screen size
+    const dynamicStyles = {
+        balanceAmount: {
+            fontSize: normalize(width < 340 ? 24 : 32),
+            marginTop: 2,
+        },
+        headerPadding: {
+            paddingHorizontal: width < 350 ? 15 : 20,
+            paddingTop: width < 350 ? 10 : 15,
+            paddingBottom: width < 350 ? 30 : 40,
+        },
+        gridItemWidth: width < 330 ? '31%' : '31%', // Two columns on tiny screens, three otherwise
+        iconCircleSize: normalize(width < 350 ? 40 : 50),
+        transactionPadding: width < 350 ? 12 : 20,
+    };
 
     // Marquee continuous animation
     const scrollX = useRef(new Animated.Value(0)).current;
@@ -158,15 +180,15 @@ export default function ModernDashboard() {
             
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, backgroundColor: isDark ? '#121212' : '#f5f5f5' }}>
                 {/* Header Background */}
-                <View style={[styles.headerBg, { backgroundColor: '#000066' }]}>
+                <View style={[styles.headerBg, { backgroundColor: '#000066' }, dynamicStyles.headerPadding]}>
                     {/* Top Row: Welcome & Profile */}
                     <View style={styles.headerTopRow}>
                         <View>
-                            <Text style={[styles.welcomeText, { fontFamily: fonts?.inter?.semiBold || 'System' }]}>Welcome back</Text>
-                            <Text style={[styles.nameText, { fontFamily: fonts?.inter?.bold || 'System' }]}>{user?.name || 'Mubarak'}</Text>
+                            <Text style={[styles.welcomeText, { fontFamily: fonts?.inter?.semiBold || 'System', fontSize: normalize(14) }]}>Welcome back</Text>
+                            <Text style={[styles.nameText, { fontFamily: fonts?.inter?.bold || 'System', fontSize: normalize(16) }]}>{user?.name || 'Mubarak'}</Text>
                         </View>
                         <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/(tabs)/profile')}>
-                            <Ionicons name="person-circle" size={42} color="#fff" />
+                            <Ionicons name="person-circle" size={normalize(42)} color="#fff" />
                             <View style={styles.redDot} />
                         </TouchableOpacity>
                     </View>
@@ -174,28 +196,28 @@ export default function ModernDashboard() {
                     {/* Balance Row */}
                     <View style={styles.balanceRow}>
                         <View>
-                            <Text style={[styles.balanceLabel, { fontFamily: fonts?.inter?.medium || 'System' }]}>Wallet Balance</Text>
+                            <Text style={[styles.balanceLabel, { fontFamily: fonts?.inter?.medium || 'System', fontSize: normalize(18) }]}>Wallet Balance</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={[styles.balanceAmount, { fontFamily: fonts?.inter?.bold || 'System' }]}>
+                                <Text style={[styles.balanceAmount, { fontFamily: fonts?.inter?.bold || 'System' }, dynamicStyles.balanceAmount]}>
                                     {balanceVisible ? `₦${parseFloat(user?.wallet || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₦****'}
                                 </Text>
                             </View>
                         </View>
                         <TouchableOpacity style={styles.eyeBtn} onPress={toggleBalanceVisibility}>
-                            <Ionicons name={balanceVisible ? "eye" : "eye-off"} size={26} color="#fff" />
+                            <Ionicons name={balanceVisible ? "eye" : "eye-off"} size={normalize(26)} color="#fff" />
                         </TouchableOpacity>
                     </View>
 
                     {/* Bonus & Withdraw Row */}
-                    <View style={[styles.bonusRow, { backgroundColor: '#ffffff1a', alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 }]}>
-                        <Text style={[styles.bonusText, { fontFamily: fonts?.inter?.medium || 'System', marginRight: 8, fontSize: 13 }]}>
+                    <View style={[styles.bonusRow, { backgroundColor: '#ffffff1a', alignSelf: 'flex-start', paddingVertical: normalize(6), paddingHorizontal: normalize(12), borderRadius: 20 }]}>
+                        <Text style={[styles.bonusText, { fontFamily: fonts?.inter?.medium || 'System', marginRight: 8, fontSize: normalize(13) }]}>
                             Bonus: {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₦****'}
                         </Text>
                         <TouchableOpacity 
-                            style={[styles.withdrawBtn, { borderColor: '#fff', borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 }]} 
+                            style={[styles.withdrawBtn, { borderColor: '#fff', borderWidth: 1, borderRadius: 12, paddingHorizontal: normalize(10), paddingVertical: normalize(4) }]} 
                             onPress={() => router.push('/(tabs)/earn')}
                         >
-                            <Text style={[styles.withdrawBtnText, { fontFamily: fonts?.inter?.bold || 'System', fontSize: 11 }]}>Withdraw</Text>
+                            <Text style={[styles.withdrawBtnText, { fontFamily: fonts?.inter?.bold || 'System', fontSize: normalize(11) }]}>Withdraw</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -203,11 +225,11 @@ export default function ModernDashboard() {
                     <View style={styles.palmpayRow}>
                         {displayAccount ? (
                             <>
-                                <Text style={[styles.palmpayText, { fontFamily: fonts?.inter?.bold || 'System' }]}>{displayAccount[1].name}</Text>
+                                <Text style={[styles.palmpayText, { fontFamily: fonts?.inter?.bold || 'System', fontSize: normalize(14) }]}>{displayAccount[1].name}</Text>
                                 <TouchableOpacity onPress={() => handleCopy(displayAccount[1].number)}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                        <Text style={[styles.loadingText, { fontFamily: fonts?.inter?.bold || 'System' }]}>{displayAccount[1].number}</Text>
-                                        <Ionicons name="copy-outline" size={16} color="#fff" />
+                                        <Text style={[styles.loadingText, { fontFamily: fonts?.inter?.bold || 'System', fontSize: normalize(14) }]}>{displayAccount[1].number}</Text>
+                                        <Ionicons name="copy-outline" size={14} color="#fff" />
                                     </View>
                                 </TouchableOpacity>
                             </>
@@ -218,22 +240,25 @@ export default function ModernDashboard() {
                 </View>
 
                 {/* White Overlapping Card */}
-                <View style={[styles.whiteCard, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
+                <View style={[styles.whiteCard, { 
+                    backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+                    paddingHorizontal: dynamicStyles.headerPadding.paddingHorizontal 
+                }]}>
                     {/* Action Buttons */}
                     <View style={styles.actionRow}>
                         <TouchableOpacity 
-                            style={[styles.actionBox, { backgroundColor: colors.button || colors.primary }]}
+                            style={[styles.actionBox, { backgroundColor: colors.button || colors.primary, paddingVertical: normalize(14) }]}
                             onPress={() => router.push('/fund-wallet')}
                         >
-                            <Ionicons name="add" size={18} color="#fff" style={{ marginRight: 6 }} />
-                            <Text style={[styles.actionBoxText, { fontFamily: fonts?.inter?.medium || 'System' }]}>Fund Wallet</Text>
+                            <Ionicons name="add" size={normalize(18)} color="#fff" style={{ marginRight: 6 }} />
+                            <Text style={[styles.actionBoxText, { fontFamily: fonts?.inter?.medium || 'System', fontSize: normalize(14) }]}>Fund Wallet</Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Animated Marquee */}
                     <View style={styles.marqueeContainer}>
                         <Animated.View style={{ transform: [{ translateX: scrollX }] }}>
-                            <Text style={[styles.marqueeText, { fontFamily: fonts?.inter?.bold || 'System' }]} numberOfLines={1}>
+                            <Text style={[styles.marqueeText, { fontFamily: fonts?.inter?.bold || 'System', fontSize: normalize(13) }]} numberOfLines={1}>
                                 (DATA PIN) ........................... (EXAM PIN) ........................... (AIRTIME2CASH) ........................... (ELECTRICITY) ........................... (CABLE HUB) ........................... (ULAMADATA 08027080407)  
                             </Text>
                         </Animated.View>
@@ -244,13 +269,25 @@ export default function ModernDashboard() {
                         {services.map((svc) => (
                             <TouchableOpacity 
                                 key={svc.id} 
-                                style={[styles.gridItem, { backgroundColor: isDark ? '#2a2a2a' : svc.bgColor }]}
+                                style={[styles.gridItem, { 
+                                    backgroundColor: isDark ? '#2a2a2a' : svc.bgColor,
+                                    width: dynamicStyles.gridItemWidth 
+                                }]}
                                 onPress={() => svc.route && svc.route !== '#' && router.push(svc.route)}
                             >
-                                <View style={[styles.iconCircle, { backgroundColor: svc.color }]}>
-                                    <Ionicons name={svc.icon} size={22} color="#fff" />
+                                <View style={[styles.iconCircle, { 
+                                    backgroundColor: svc.color,
+                                    width: dynamicStyles.iconCircleSize,
+                                    height: dynamicStyles.iconCircleSize,
+                                    borderRadius: dynamicStyles.iconCircleSize / 2
+                                }]}>
+                                    <Ionicons name={svc.icon} size={normalize(22)} color="#fff" />
                                 </View>
-                                <Text style={[styles.gridItemText, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.medium || 'System' }]}>
+                                <Text style={[styles.gridItemText, { 
+                                    color: isDark ? '#fff' : '#333', 
+                                    fontFamily: fonts?.inter?.medium || 'System',
+                                    fontSize: normalize(12) 
+                                }]}>
                                     {svc.name}
                                 </Text>
                             </TouchableOpacity>
@@ -263,16 +300,24 @@ export default function ModernDashboard() {
 
                 {/* Recent Transactions */}
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={[styles.sectionTitle, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.bold || 'System' }]}>
+                    <View style={[styles.sectionHeader, { paddingHorizontal: dynamicStyles.headerPadding.paddingHorizontal }]}>
+                        <Text style={[styles.sectionTitle, { 
+                            color: isDark ? '#fff' : '#333', 
+                            fontFamily: fonts?.inter?.bold || 'System',
+                            fontSize: normalize(18)
+                        }]}>
                             Recent Activity
                         </Text>
                         <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
                             <View style={styles.viewAllButton}>
-                                <Text style={[styles.seeAll, { color: colors.primary, fontFamily: fonts?.inter?.bold || 'System' }]}>
+                                <Text style={[styles.seeAll, { 
+                                    color: colors.primary, 
+                                    fontFamily: fonts?.inter?.bold || 'System',
+                                    fontSize: normalize(13)
+                                }]}>
                                     View All
                                 </Text>
-                                <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+                                <Ionicons name="arrow-forward" size={normalize(14)} color={colors.primary} />
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -306,7 +351,9 @@ export default function ModernDashboard() {
                                         backgroundColor: isDark ? '#1a1a1a' : '#fff',
                                         borderWidth: isDark ? 1 : 0,
                                         borderColor: isDark ? '#2a2a2a' : 'transparent',
-                                        marginBottom: index === recentTransactions.length - 1 ? 0 : 10
+                                        marginBottom: index === recentTransactions.length - 1 ? 0 : 10,
+                                        marginHorizontal: dynamicStyles.headerPadding.paddingHorizontal,
+                                        padding: normalize(14)
                                     }
                                 ]}
                                 onPress={() => router.push({
@@ -319,19 +366,34 @@ export default function ModernDashboard() {
                             >
                                 <View style={[styles.transactionIconBox, {
                                     backgroundColor: colors.primary + '15',
+                                    width: normalize(40),
+                                    height: normalize(40),
+                                    borderRadius: normalize(20),
                                 }]}>
-                                    <Ionicons name={transaction.icon} size={20} color={colors.primary} />
+                                    <Ionicons name={transaction.icon} size={normalize(20)} color={colors.primary} />
                                 </View>
                                 <View style={styles.transactionDetails}>
-                                    <Text style={[styles.transactionTitle, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.bold || 'System' }]} numberOfLines={1}>
+                                    <Text style={[styles.transactionTitle, { 
+                                        color: isDark ? '#fff' : '#333', 
+                                        fontFamily: fonts?.inter?.bold || 'System',
+                                        fontSize: normalize(14)
+                                    }]} numberOfLines={1}>
                                         {transaction.title}
                                     </Text>
-                                    <Text style={[styles.transactionSubtitle, { color: isDark ? '#aaa' : '#666', fontFamily: fonts?.inter?.medium || 'System' }]} numberOfLines={1}>
+                                    <Text style={[styles.transactionSubtitle, { 
+                                        color: isDark ? '#aaa' : '#666', 
+                                        fontFamily: fonts?.inter?.medium || 'System',
+                                        fontSize: normalize(12)
+                                    }]} numberOfLines={1}>
                                         {transaction.subtitle}
                                     </Text>
                                 </View>
                                 <View style={styles.transactionRight}>
-                                    <Text style={[styles.transactionAmount, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.bold || 'System' }]}>
+                                    <Text style={[styles.transactionAmount, { 
+                                        color: isDark ? '#fff' : '#333', 
+                                        fontFamily: fonts?.inter?.bold || 'System',
+                                        fontSize: normalize(15)
+                                    }]}>
                                         {transaction.amount}
                                     </Text>
                                     <View style={[styles.statusIndicator, {
