@@ -1,21 +1,59 @@
 import { useAuth } from '@/contexts/auth-context';
+import { usePayment } from '@/contexts/payment-context';
+import { useToast } from '@/contexts/toast-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useTransactions } from '@/contexts/transactions-context';
 import { useApiColors } from '@/hooks/use-api-colors';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BannerCarousel from '../ui/BannerCarousel';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRef } from 'react';
 
 export default function ModernDashboard() {
     const { fonts, toggleTheme, isDark } = useTheme();
     const colors = useApiColors();
     const { user } = useAuth();
+    const { accountDetails } = usePayment();
+    const { showToast } = useToast();
     const { transactions, loading, fetchTransactions } = useTransactions();
     const [balanceVisible, setBalanceVisible] = useState(true);
+
+    // Marquee continuous animation
+    const scrollX = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const startMarquee = () => {
+            scrollX.setValue(400); // Start off-screen right
+            Animated.loop(
+                Animated.timing(scrollX, {
+                    toValue: -800, // Scroll to far left
+                    duration: 10000, // Control speed here
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            ).start();
+        };
+        startMarquee();
+    }, []);
+
+    const virtualAccounts = accountDetails?.virtual_accounts || {};
+    const availableAccounts = Object.entries(virtualAccounts).filter(
+        ([_, account]) => account.status === 'On'
+    );
+    let displayAccount = availableAccounts.find(([_, account]) => account.name?.toLowerCase().includes('palm'));
+    if (!displayAccount && availableAccounts.length > 0) {
+        displayAccount = availableAccounts[0];
+    }
+
+    const handleCopy = async (text) => {
+        await Clipboard.setStringAsync(text);
+        showToast('success', 'Account number copied');
+    };
 
     useEffect(() => {
         loadBalanceVisibility();
@@ -51,8 +89,8 @@ export default function ModernDashboard() {
 
     const getServiceIcon = (service) => {
         const serviceMap = {
-            'data': 'wifi',
-            'airtime': 'phone-portrait',
+            'data': 'cellular',
+            'airtime': 'call',
             'cable': 'tv',
             'electricity': 'flash',
             'exam': 'school',
@@ -101,464 +139,385 @@ export default function ModernDashboard() {
         transactionRef: tx.transref || tx.transactionRef
     }));
 
-    const getUserInitials = () => {
-        const name = user?.name || 'U';
-        const surname = user?.surname || '';
-        return `${name.charAt(0)}${surname.charAt(0) || ''}`.toUpperCase();
-    };
-
     const services = [
-        { id: '1', name: 'Data', icon: 'wifi', route: '/(services)/buy-data', color: '#667eea' },
-        { id: '2', name: 'Airtime', icon: 'phone-portrait', route: '/(services)/buy-airtime', color: '#f5576c' },
-        { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
-        { id: '4', name: 'Electricity', icon: 'flash', color: '#F44336', category: 'Bills', route: '/(services)/electricity' },
-        { id: '5', name: 'Education', icon: 'school', color: '#FF5722', category: 'Bills', route: '/(services)/education' },
-        { id: '6', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },
-        { id: '7', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
-        { id: '8', name: 'More', icon: 'apps', route: '/(tabs)/services', color: '#607d8b' },
+        { id: '1', name: 'Airtime', icon: 'call', route: '/(services)/buy-airtime', color: '#e91e63', bgColor: '#fce4ec' },
+        { id: '2', name: 'Data', icon: 'cellular', route: '/(services)/buy-data', color: '#00bcd4', bgColor: '#e0f7fa' },
+        { id: '3', name: 'Electricity', icon: 'flash', route: '/(services)/electricity', color: '#8bc34a', bgColor: '#f1f8e9' },
+        { id: '4', name: 'Data Pin', icon: 'print', route: '/(services)/buy-data-pin', color: '#f44336', bgColor: '#ffebee' },
+        { id: '5', name: 'Exam Pin', icon: 'school', route: '/(services)/education', color: '#ff9800', bgColor: '#fff3e0' },
+        { id: '6', name: 'Cable', icon: 'tv', route: '/(services)/cable-tv', color: '#03a9f4', bgColor: '#e1f5fe' },
+        { id: '7', name: 'Airtime Pin', icon: 'print', route: '/(services)/buy-airtime-pin', color: '#26a69a', bgColor: '#e0f2f1' },
+        { id: '8', name: 'Airtime2Cash', icon: 'cash', route: '/(services)/airtime-to-cash', color: '#ff5722', bgColor: '#fbe9e7' },
+        { id: '9', name: 'More', icon: 'ellipsis-horizontal', route: '/(tabs)/services', color: '#ab47bc', bgColor: '#f3e5f5' },
     ];
 
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: colors.background }]}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* Robust Modern Header */}
-            <SafeAreaView style={{ backgroundColor: colors.primary }}>
-                <StatusBar
-                    backgroundColor={colors.primary}
-                    barStyle={isDark ? 'light-content' : 'light-content'}
-                    translucent={false}
-                />
-                <View style={[styles.header, { backgroundColor: colors.primary }]}>
-                    <View style={styles.headerContent}>
-                        <View style={styles.headerLeft}>
-                            <View style={[styles.avatarInitials, {
-                                backgroundColor: isDark ? '#ffffff25' : '#ffffff35',
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.15,
-                                shadowRadius: 4,
-                                elevation: 3,
-                            }]}>
-                                <Text style={[styles.initialsText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                                    {getUserInitials()}
-                                </Text>
-                            </View>
-                            <View>
-                                <Text style={[styles.greeting, { fontFamily: fonts.inter.medium, color: colors.primaryText }]}>
-                                    Hello,
-                                </Text>
-                                <Text style={[styles.name, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                                    {user?.name || 'User'}
-                                </Text>
-                            </View>
+        <View style={[styles.container, { backgroundColor: isDark ? '#121212' : '#f5f5f5' }]}>
+            <StatusBar backgroundColor="#000066" barStyle="light-content" translucent={false} />
+            
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, backgroundColor: isDark ? '#121212' : '#f5f5f5' }}>
+                {/* Header Background */}
+                <View style={[styles.headerBg, { backgroundColor: '#000066' }]}>
+                    {/* Top Row: Welcome & Profile */}
+                    <View style={styles.headerTopRow}>
+                        <View>
+                            <Text style={[styles.welcomeText, { fontFamily: fonts?.inter?.semiBold || 'System' }]}>Welcome back</Text>
+                            <Text style={[styles.nameText, { fontFamily: fonts?.inter?.bold || 'System' }]}>{user?.name || 'Mubarak'}</Text>
                         </View>
-                        <View style={styles.headerRight}>
-                            <TouchableOpacity
-                                style={[styles.iconButton, {
-                                    backgroundColor: '#ffffff25',
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 1 },
-                                    shadowOpacity: 0.1,
-                                    shadowRadius: 2,
-                                    elevation: 2,
-                                }]}
-                                onPress={toggleTheme}
-                            >
-                                <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color={colors.primaryText} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.iconButton, {
-                                backgroundColor: '#ffffff25',
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 1 },
-                                shadowOpacity: 0.1,
-                                shadowRadius: 2,
-                                elevation: 2,
-                            }]}>
-                                <Ionicons name="notifications-outline" size={18} color={colors.primaryText} />
-                                <View style={styles.notificationBadge} />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </SafeAreaView>
-
-            {/* Robust Balance Card */}
-            <View style={styles.balanceContainer}>
-                <View style={[styles.balanceCard, {
-                    backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
-                    borderWidth: isDark ? 1 : 0,
-                    borderColor: isDark ? '#2a2a2a' : 'transparent'
-                }]}>
-                    <View style={styles.balanceMain}>
-                        <View style={styles.balanceTop}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.balanceLabel, { color: colors.icon, fontFamily: fonts.inter.semiBold }]}>
-                                    WALLET BALANCE
-                                </Text>
-                                <View style={styles.balanceAmountRow}>
-                                    <Text style={[styles.balanceAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                        {balanceVisible ? `₦${parseFloat(user?.wallet || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₦****'}
-                                    </Text>
-                                    <TouchableOpacity
-                                        onPress={toggleBalanceVisibility}
-                                        style={[styles.eyeIcon, {
-                                            backgroundColor: isDark ? '#ffffff10' : '#00000005',
-                                            borderRadius: 8,
-                                        }]}
-                                    >
-                                        <Ionicons
-                                            name={balanceVisible ? 'eye-outline' : 'eye-off-outline'}
-                                            size={16}
-                                            color={colors.icon}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Action Buttons */}
-                        <View style={styles.actionButtons}>
-                            <TouchableOpacity
-                                style={[styles.actionButton, { backgroundColor: colors.button }]}
-                                onPress={() => router.push('/fund-wallet')}
-                            >
-                                <Ionicons name="add-circle" size={20} color={colors.primaryText} />
-                                <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                                    Fund Wallet
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.actionButton, { backgroundColor: colors.button }]}
-                                onPress={() => router.push('/(services)/funds-transfer')}
-                            >
-                                <Ionicons name="swap-horizontal" size={20} color={colors.primaryText} />
-                                <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                                    Transfer
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Cashback Card */}
-                <TouchableOpacity
-                    style={[styles.cashbackCard, {
-                        backgroundColor: '#4ade8015',
-                        borderRadius: 12,
-                        padding: 14,
-                        marginTop: 12,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                    }]}
-                    onPress={() => router.push('/(tabs)/earn')}
-                    activeOpacity={0.7}
-                >
-                    <View style={[styles.cashbackIconBg, { backgroundColor: '#4ade8025' }]}>
-                        <Ionicons name="gift" size={20} color="#4ade80" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={[styles.cashbackLabel, { color: colors.icon, fontFamily: fonts.inter.medium, fontSize: 11 }]}>
-                            Available Cashback
-                        </Text>
-                        <Text style={[styles.cashbackAmount, { color: colors.text, fontFamily: fonts.inter.bold, fontSize: 16 }]}>
-                            {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG')}` : '₦****'}
-                        </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.icon} />
-                </TouchableOpacity>
-            </View>
-
-
-
-            {/* Enhanced Services Grid */}
-            <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                    Quick Services
-                </Text>
-                <View style={styles.servicesGrid}>
-                    {services.map((service) => (
-                        <TouchableOpacity
-                            key={service.id}
-                            style={[styles.serviceCard, {
-                                backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                                borderWidth: isDark ? 1 : 0,
-                                borderColor: isDark ? '#2a2a2a' : 'transparent',
-
-                                elevation: 2,
-                            }]}
-                            onPress={() => service.route && router.push(service.route)}
-                        >
-                            <View style={[styles.serviceIconWrapper, {
-                                backgroundColor: service.color + '15',
-
-                            }]}>
-                                <Ionicons name={service.icon} size={22} color={service.color} />
-                            </View>
-                            <Text style={[styles.serviceName, { color: colors.text, fontFamily: fonts.inter.bold }]} numberOfLines={1}>
-                                {service.name}
-                            </Text>
+                        <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/(tabs)/profile')}>
+                            <Ionicons name="person-circle" size={42} color="#fff" />
+                            <View style={styles.redDot} />
                         </TouchableOpacity>
-                    ))}
+                    </View>
+
+                    {/* Balance Row */}
+                    <View style={styles.balanceRow}>
+                        <View>
+                            <Text style={[styles.balanceLabel, { fontFamily: fonts?.inter?.medium || 'System' }]}>Wallet Balance</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={[styles.balanceAmount, { fontFamily: fonts?.inter?.bold || 'System' }]}>
+                                    {balanceVisible ? `₦${parseFloat(user?.wallet || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₦****'}
+                                </Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity style={styles.eyeBtn} onPress={toggleBalanceVisibility}>
+                            <Ionicons name={balanceVisible ? "eye" : "eye-off"} size={26} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Bonus & Withdraw Row */}
+                    <View style={[styles.bonusRow, { backgroundColor: '#ffffff1a', alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 }]}>
+                        <Text style={[styles.bonusText, { fontFamily: fonts?.inter?.medium || 'System', marginRight: 8, fontSize: 13 }]}>
+                            Bonus: {balanceVisible ? `₦${parseFloat(user?.cashback || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₦****'}
+                        </Text>
+                        <TouchableOpacity 
+                            style={[styles.withdrawBtn, { borderColor: '#fff', borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 }]} 
+                            onPress={() => router.push('/(tabs)/earn')}
+                        >
+                            <Text style={[styles.withdrawBtnText, { fontFamily: fonts?.inter?.bold || 'System', fontSize: 11 }]}>Withdraw</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Palmpay Row */}
+                    <View style={styles.palmpayRow}>
+                        {displayAccount ? (
+                            <>
+                                <Text style={[styles.palmpayText, { fontFamily: fonts?.inter?.bold || 'System' }]}>{displayAccount[1].name}</Text>
+                                <TouchableOpacity onPress={() => handleCopy(displayAccount[1].number)}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Text style={[styles.loadingText, { fontFamily: fonts?.inter?.bold || 'System' }]}>{displayAccount[1].number}</Text>
+                                        <Ionicons name="copy-outline" size={16} color="#fff" />
+                                    </View>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <Text style={[styles.palmpayText, { fontFamily: fonts?.inter?.bold || 'System', opacity: 0.7 }]}>No Virtual Account setup</Text>
+                        )}
+                    </View>
                 </View>
-            </View>
 
+                {/* White Overlapping Card */}
+                <View style={[styles.whiteCard, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
+                    {/* Action Buttons */}
+                    <View style={styles.actionRow}>
+                        <TouchableOpacity 
+                            style={[styles.actionBox, { backgroundColor: colors.button || colors.primary }]}
+                            onPress={() => router.push('/fund-wallet')}
+                        >
+                            <Ionicons name="add" size={18} color="#fff" style={{ marginRight: 6 }} />
+                            <Text style={[styles.actionBoxText, { fontFamily: fonts?.inter?.medium || 'System' }]}>Fund Wallet</Text>
+                        </TouchableOpacity>
+                    </View>
 
-            {/* Banners */}
-            <View style={styles.section}>
+                    {/* Animated Marquee */}
+                    <View style={styles.marqueeContainer}>
+                        <Animated.View style={{ transform: [{ translateX: scrollX }] }}>
+                            <Text style={[styles.marqueeText, { fontFamily: fonts?.inter?.bold || 'System' }]} numberOfLines={1}>
+                                (DATA PIN) ........................... (EXAM PIN) ........................... (AIRTIME2CASH) ........................... (ELECTRICITY) ........................... (CABLE HUB) ........................... (ULAMADATA 08027080407)  
+                            </Text>
+                        </Animated.View>
+                    </View>
+
+                    {/* 3x3 Grid Services */}
+                    <View style={styles.gridContainer}>
+                        {services.map((svc) => (
+                            <TouchableOpacity 
+                                key={svc.id} 
+                                style={[styles.gridItem, { backgroundColor: isDark ? '#2a2a2a' : svc.bgColor }]}
+                                onPress={() => svc.route && svc.route !== '#' && router.push(svc.route)}
+                            >
+                                <View style={[styles.iconCircle, { backgroundColor: svc.color }]}>
+                                    <Ionicons name={svc.icon} size={22} color="#fff" />
+                                </View>
+                                <Text style={[styles.gridItemText, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.medium || 'System' }]}>
+                                    {svc.name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                {/* Banner */}
                 <BannerCarousel />
-            </View>
 
-            {/* Enhanced Transactions */}
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                        Recent Activity
-                    </Text>
-                    <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
-                        <View style={styles.viewAllButton}>
-                            <Text style={[styles.seeAll, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
-                                View All
-                            </Text>
-                            <Ionicons name="arrow-forward" size={14} color={colors.primary} />
-                        </View>
-                    </TouchableOpacity>
-                </View>
-                {loading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                    </View>
-                ) : recentTransactions.length === 0 ? (
-                    <View style={[styles.emptyContainer, {
-                        backgroundColor: isDark ? '#1a1a1a' : '#f8f9fa',
-                        borderRadius: 16,
-                        marginHorizontal: 16,
-                    }]}>
-                        <View style={[styles.emptyIconBg, { backgroundColor: colors.primary + '15' }]}>
-                            <Ionicons name="receipt-outline" size={32} color={colors.primary} />
-                        </View>
-                        <Text style={[styles.emptyText, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            No transactions yet
+                {/* Recent Transactions */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={[styles.sectionTitle, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.bold || 'System' }]}>
+                            Recent Activity
                         </Text>
-                        <Text style={[styles.emptySubtext, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Your transactions will appear here
-                        </Text>
-                    </View>
-                ) : (
-                    recentTransactions.map((transaction, index) => (
-                        <TouchableOpacity
-                            key={transaction.id}
-                            style={[
-                                styles.transactionCard,
-                                {
-                                    backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                                    borderWidth: isDark ? 1 : 0,
-                                    borderColor: isDark ? '#2a2a2a' : 'transparent',
-                                    marginBottom: index === recentTransactions.length - 1 ? 0 : 10
-                                }
-                            ]}
-                            onPress={() => router.push({
-                                pathname: '/transaction-details',
-                                params: {
-                                    transactionRef: transaction.transactionRef,
-                                    transactionDate: transaction.time
-                                }
-                            })}
-                        >
-                            <View style={[styles.transactionIconBox, {
-                                backgroundColor: colors.primary + '15',
-
-                            }]}>
-                                <Ionicons name={transaction.icon} size={20} color={colors.primary} />
-                            </View>
-                            <View style={styles.transactionDetails}>
-                                <Text style={[styles.transactionTitle, { color: colors.text, fontFamily: fonts.inter.bold }]} numberOfLines={1}>
-                                    {transaction.title}
+                        <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
+                            <View style={styles.viewAllButton}>
+                                <Text style={[styles.seeAll, { color: colors.primary, fontFamily: fonts?.inter?.bold || 'System' }]}>
+                                    View All
                                 </Text>
-                                <Text style={[styles.transactionSubtitle, { color: colors.icon, fontFamily: fonts.inter.medium }]} numberOfLines={1}>
-                                    {transaction.subtitle}
-                                </Text>
-                            </View>
-                            <View style={styles.transactionRight}>
-                                <Text style={[styles.transactionAmount, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                    {transaction.amount}
-                                </Text>
-                                <View style={[styles.statusIndicator, {
-                                    backgroundColor: transaction.status === 'success' ? '#4ade8015' : transaction.status === 'pending' ? '#FFA50015' : transaction.status === 'refund' ? '#2196F315' : '#EF444415'
-                                }]}>
-                                    <View style={[styles.statusDot, {
-                                        backgroundColor: transaction.status === 'success' ? '#4ade80' : transaction.status === 'pending' ? '#FFA500' : transaction.status === 'refund' ? '#2196F3' : '#EF4444'
-                                    }]} />
-                                </View>
+                                <Ionicons name="arrow-forward" size={14} color={colors.primary} />
                             </View>
                         </TouchableOpacity>
-                    ))
-                )}
-            </View>
+                    </View>
+                    {loading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color={colors.primary} />
+                        </View>
+                    ) : recentTransactions.length === 0 ? (
+                        <View style={[styles.emptyContainer, {
+                            backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                            borderRadius: 16,
+                            marginHorizontal: 16,
+                        }]}>
+                            <View style={[styles.emptyIconBg, { backgroundColor: colors.primary + '15' }]}>
+                                <Ionicons name="receipt-outline" size={32} color={colors.primary} />
+                            </View>
+                            <Text style={[styles.emptyText, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.semiBold || 'System' }]}>
+                                No transactions yet
+                            </Text>
+                            <Text style={[styles.emptySubtext, { color: isDark ? '#aaa' : '#666', fontFamily: fonts?.inter?.regular || 'System' }]}>
+                                Your transactions will appear here
+                            </Text>
+                        </View>
+                    ) : (
+                        recentTransactions.map((transaction, index) => (
+                            <TouchableOpacity
+                                key={transaction.id}
+                                style={[
+                                    styles.transactionCard,
+                                    {
+                                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                                        borderWidth: isDark ? 1 : 0,
+                                        borderColor: isDark ? '#2a2a2a' : 'transparent',
+                                        marginBottom: index === recentTransactions.length - 1 ? 0 : 10
+                                    }
+                                ]}
+                                onPress={() => router.push({
+                                    pathname: '/transaction-details',
+                                    params: {
+                                        transactionRef: transaction.transactionRef,
+                                        transactionDate: transaction.time
+                                    }
+                                })}
+                            >
+                                <View style={[styles.transactionIconBox, {
+                                    backgroundColor: colors.primary + '15',
+                                }]}>
+                                    <Ionicons name={transaction.icon} size={20} color={colors.primary} />
+                                </View>
+                                <View style={styles.transactionDetails}>
+                                    <Text style={[styles.transactionTitle, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.bold || 'System' }]} numberOfLines={1}>
+                                        {transaction.title}
+                                    </Text>
+                                    <Text style={[styles.transactionSubtitle, { color: isDark ? '#aaa' : '#666', fontFamily: fonts?.inter?.medium || 'System' }]} numberOfLines={1}>
+                                        {transaction.subtitle}
+                                    </Text>
+                                </View>
+                                <View style={styles.transactionRight}>
+                                    <Text style={[styles.transactionAmount, { color: isDark ? '#fff' : '#333', fontFamily: fonts?.inter?.bold || 'System' }]}>
+                                        {transaction.amount}
+                                    </Text>
+                                    <View style={[styles.statusIndicator, {
+                                        backgroundColor: transaction.status === 'success' ? '#4ade8015' : transaction.status === 'pending' ? '#FFA50015' : transaction.status === 'refund' ? '#2196F315' : '#EF444415'
+                                    }]}>
+                                        <View style={[styles.statusDot, {
+                                            backgroundColor: transaction.status === 'success' ? '#4ade80' : transaction.status === 'pending' ? '#FFA500' : transaction.status === 'refund' ? '#2196F3' : '#EF4444'
+                                        }]} />
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        ))
+                    )}
+                </View>
 
-            <View style={{ height: 20 }} />
-        </ScrollView>
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-
-    // Robust Header
-    header: {
-        paddingTop: 10,
-        paddingBottom: 108,
-        paddingHorizontal: 16,
-        borderBottomEndRadius: 26,
-        borderBottomStartRadius: 26,
+    headerBg: {
+        paddingTop: 15,
+        paddingHorizontal: 20,
+        paddingBottom: 40, 
     },
-    headerContent: {
+    headerTopRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 20,
     },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-        flex: 1
+    welcomeText: {
+        color: '#fff',
+        fontSize: 14,
+        opacity: 0.9,
     },
-    avatarInitials: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center',
+    nameText: {
+        color: '#fff',
+        fontSize: 16,
+        marginTop: 2,
     },
-    initialsText: {
-        fontSize: 17,
-        letterSpacing: 0.5,
+    profileIconContainer: {
+        position: 'relative',
     },
-    greeting: {
-        fontSize: 13,
-        marginBottom: 3,
-        opacity: 0.85,
-        letterSpacing: 0.2,
-    },
-    name: {
-        fontSize: 19,
-        letterSpacing: -0.4,
-    },
-    headerRight: {
-        flexDirection: 'row',
-        gap: 10
-    },
-    iconButton: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    notificationBadge: {
+    redDot: {
         position: 'absolute',
-        top: 9,
-        right: 9,
-        width: 7,
-        height: 7,
-        borderRadius: 3.5,
-        backgroundColor: '#ff4757',
-        borderWidth: 1.5,
-        borderColor: '#fff',
+        top: 2,
+        right: 2,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#ff3b3b',
+        borderWidth: 2,
+        borderColor: '#000066',
     },
-
-    // Robust Balance Card
-    balanceContainer: {
-        paddingHorizontal: 16,
-        marginTop: -90,
-        marginBottom: 22,
-    },
-    balanceCard: {
-        padding: 18,
-        borderRadius: 18,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 4,
-    },
-    balanceMain: { gap: 16 },
-    balanceTop: {
-        marginBottom: 4,
+    balanceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
     },
     balanceLabel: {
-        fontSize: 10,
-        marginBottom: 8,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    balanceAmountRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
+        color: '#fff',
+        fontSize: 18,
     },
     balanceAmount: {
-        fontSize: 28,
-        letterSpacing: -0.8,
+        color: '#fff',
+        fontSize: 32,
+        marginTop: 2,
     },
-    eyeIcon: {
-        padding: 6,
+    eyeBtn: {
+        padding: 5,
     },
-    actionButtons: {
+    bonusRow: {
         flexDirection: 'row',
-        gap: 10,
+        alignItems: 'center',
+        marginBottom: 15,
     },
-    actionButton: {
+    bonusText: {
+        color: '#fff',
+        fontSize: 16,
+        marginRight: 10,
+    },
+    withdrawBtn: {
+        borderWidth: 1,
+        borderColor: '#fff',
+        borderRadius: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    withdrawBtnText: {
+        color: '#fff',
+        fontSize: 12,
+    },
+    palmpayRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 5,
+    },
+    palmpayText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    loadingText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    whiteCard: {
+        marginTop: -20,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 20,
+    },
+    actionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 20,
+    },
+    actionBox: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 12,
-        borderRadius: 12,
-        gap: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
+        paddingVertical: 14,
+        borderRadius: 25,
     },
-    actionButtonText: {
-        fontSize: 13,
+    actionBoxText: {
+        color: '#fff',
+        fontSize: 14,
     },
-    cashbackCard: {
-        // Styles defined inline
+    marqueeContainer: {
+        marginBottom: 20,
+        overflow: 'hidden',
+        height: 25,
+        justifyContent: 'center',
     },
-    cashbackIconBg: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+    marqueeText: {
+        color: '#ff3b3b',
+        fontSize: 14,
+        letterSpacing: 1.5,
+        width: 1500, // Very long width for the animation
+    },
+    gridContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    gridItem: {
+        width: '31%',
+        aspectRatio: 1,
+        borderRadius: 15,
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: 5,
     },
-    cashbackLabel: {
-        // Styles defined inline
+    iconCircle: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 10,
     },
-    cashbackAmount: {
-        // Styles defined inline
+    gridItemText: {
+        fontSize: 12,
+        textAlign: 'center',
     },
-
-    // Sections
-    section: { marginBottom: 22 },
+    
+    // Sections lower down
+    // section: { marginBottom: 22, marginTop: 10 },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         marginBottom: 14
     },
     sectionTitle: {
         fontSize: 18,
-        paddingHorizontal: 16,
-        marginBottom: 14,
-        letterSpacing: -0.4,
     },
     viewAllButton: {
         flexDirection: 'row',
@@ -568,40 +527,6 @@ const styles = StyleSheet.create({
     seeAll: {
         fontSize: 13,
     },
-
-    // Enhanced Services Grid
-
-
-    servicesGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        paddingHorizontal: 12,
-        gap: 8
-    },
-    serviceCard: {
-        width: '22%',
-        aspectRatio: 1,
-        padding: 8,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    serviceIconWrapper: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 6
-    },
-    serviceName: {
-        fontSize: 10,
-        textAlign: 'center',
-        lineHeight: 12
-    },
-
-
-    // Enhanced Transactions
     loadingContainer: {
         padding: 20,
         alignItems: 'center',
@@ -627,7 +552,7 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     transactionCard: {
-        marginHorizontal: 16,
+        marginHorizontal: 20,
         padding: 14,
         borderRadius: 14,
         flexDirection: 'row',
@@ -677,3 +602,4 @@ const styles = StyleSheet.create({
         borderRadius: 3,
     },
 });
+

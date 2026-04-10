@@ -8,8 +8,8 @@ export default function ServicesTab() {
     const { colors, fonts, toggleTheme, isDark } = useTheme();
 
     const allServices = [
-        { id: '1', name: 'Data', icon: 'wifi', color: '#2196F3', category: 'Recharge', route: '/(services)/buy-data' },
-        { id: '2', name: 'Airtime', icon: 'phone-portrait', color: '#4CAF50', category: 'Recharge', route: '/(services)/buy-airtime' },
+        { id: '1', name: 'Data', icon: 'cellular', color: '#2196F3', category: 'Recharge', route: '/(services)/buy-data' },
+        { id: '2', name: 'Airtime', icon: 'call', color: '#4CAF50', category: 'Recharge', route: '/(services)/buy-airtime' },
         { id: '3', name: 'Data Pin', icon: 'card', color: '#009688', category: 'Recharge', route: '/(services)/buy-data-pin' },
         { id: '4', name: 'Airtime Pin', icon: 'wallet', color: '#E91E63', category: 'Recharge', route: '/(services)/buy-airtime-pin' },
         { id: '5', name: 'Cable TV', icon: 'tv', color: '#FF9800', category: 'Entertainment', route: '/(services)/cable-tv' },

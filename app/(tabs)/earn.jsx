@@ -52,7 +52,7 @@ export default function EarnTab() {
 
 
     const handleCopyCode = async () => {
-        const link = referralData?.referralLink || `https://ulamadata.ng/register?ref=${referralData?.referralCode || user?.referral_code}`;
+        const link = referralData?.referralLink || `https://ulamadata.ng/register?ref=${user?.id || referralData?.referralCode || user?.referral_code}`;
         if (link) {
             await Clipboard.setStringAsync(link);
             showToast('success', 'Referral link copied to clipboard');
@@ -60,7 +60,7 @@ export default function EarnTab() {
     };
 
     const handleShareCode = async () => {
-        const link = referralData?.referralLink || `https://ulamadata.ng/register?ref=${referralData?.referralCode || user?.referral_code}`;
+        const link = referralData?.referralLink || `https://ulamadata.ng/register?ref=${user?.id || referralData?.referralCode || user?.referral_code}`;
         if (link) {
             try {
                 await Share.share({
@@ -231,7 +231,7 @@ export default function EarnTab() {
                     </Text>
                     <View style={[styles.codeContainer, { backgroundColor: colors.background }]}>
                         <Text style={[styles.linkText, { color: colors.text, fontFamily: fonts.inter.medium }]} numberOfLines={1} ellipsizeMode="middle">
-                            {referralData?.referralLink || `https://ulamadata.ng/register?ref=${referralData?.referralCode || user?.referral_code || ''}`}
+                            {referralData?.referralLink || `https://ulamadata.ng/register?ref=${user?.id || referralData?.referralCode || user?.referral_code || ''}`}
                         </Text>
                         <TouchableOpacity onPress={handleCopyCode}>
                             <Ionicons name="copy-outline" size={20} color={colors.primary} />

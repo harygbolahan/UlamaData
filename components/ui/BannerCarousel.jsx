@@ -24,8 +24,11 @@ export default function BannerCarousel() {
 
   
 
-  // Filter only active banners
-  const activeBanners = banners.filter(banner => banner.status === 'active');
+  // Filter only active banners (accepting multiple common active states from API)
+  const activeBanners = banners.filter(banner => {
+    const s = String(banner.status).toLowerCase();
+    return s === 'active' || s === 'on' || s === '1' || s === 'true';
+  });
 
   useEffect(() => {
     if (activeBanners.length <= 1) return;

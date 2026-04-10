@@ -38,7 +38,7 @@ export default function ReferralScreen() {
 
     const shareReferralLink = async () => {
         try {
-            const link = referralData?.referralLink || `https://ulamadata.ng/register?ref=${referralData?.referralCode || user?.referral_code}`;
+            const link = referralData?.referralLink || `https://ulamadata.ng/register?ref=${user?.id || referralData?.referralCode || user?.referral_code}`;
             const message = `Join UlamaData using my referral link: ${link}\n\nDownload the app and start enjoying amazing benefits!`;
 
             await Share.share({
@@ -49,7 +49,7 @@ export default function ReferralScreen() {
         }
     };
 
-    const referralLink = referralData?.referralLink || `https://ulamadata.ng/register?ref=${referralData?.referralCode || user?.referral_code || ''}`;
+    const referralLink = referralData?.referralLink || `https://ulamadata.ng/register?ref=${user?.id || referralData?.referralCode || user?.referral_code || ''}`;
     const totalReferrals = referralData?.totalReferrals || 0;
     const referralEarnings = referralData?.totalEarnings || 0;
     const referralsList = referralData?.referrals || [];

@@ -329,7 +329,7 @@ export default function TransactionsTab() {
             icon = 'wifi';
             color = '#2196F3';
         } else if (serviceName.toLowerCase().includes('airtime')) {
-            icon = 'phone-portrait';
+            icon = 'call';
             color = '#4CAF50';
         } else if (serviceName.toLowerCase().includes('cable') || serviceName.toLowerCase().includes('tv')) {
             icon = 'tv';
@@ -357,6 +357,8 @@ export default function TransactionsTab() {
             icon: icon,
             color: color,
             description: transaction.servicedesc || 'N/A',
+            oldbal: transaction.oldbal,
+            newbal: transaction.newbal,
             rawData: transaction
         };
     };
@@ -690,6 +692,14 @@ export default function TransactionsTab() {
                                         <Text style={[styles.transactionDate, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
                                             {transaction.date}
                                         </Text>
+                                        <View style={styles.balanceContainer}>
+                                            <Text style={[styles.balanceText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                                Before: ₦{parseFloat(transaction.oldbal || 0).toLocaleString()}
+                                            </Text>
+                                            <Text style={[styles.balanceText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                                After: ₦{parseFloat(transaction.newbal || 0).toLocaleString()}
+                                            </Text>
+                                        </View>
                                     </View>
                                 </View>
                                 <View style={styles.transactionRight}>
@@ -1106,5 +1116,14 @@ const styles = StyleSheet.create({
     downloadButtonText: {
         color: '#fff',
         fontSize: 16,
+    },
+    balanceContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 4,
+    },
+    balanceText: {
+        fontSize: 10,
+        opacity: 0.8,
     },
 });
