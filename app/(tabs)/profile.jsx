@@ -38,7 +38,7 @@ export default function ProfileTab() {
         { id: '2', title: 'Security & Privacy', icon: 'shield-checkmark-outline', route: '/(profile)/security' },
         { id: '3', title: 'Upgrade Account', icon: 'arrow-up-circle-outline', route: '/(profile)/upgrade' },
         // { id: '4', title: 'Referral Program', icon: 'gift-outline', route: '/(profile)/referral' },
-        { id: '5', title: 'Dashboard Style', icon: 'grid-outline', route: '/(profile)/dashboard-selector' },
+        // { id: '5', title: 'Dashboard Style', icon: 'grid-outline', route: '/(profile)/dashboard-selector' },
         // { id: '6', title: 'Payment Methods', icon: 'card-outline', route: '/(profile)/payment' },
         // { id: '7', title: 'Transaction History', icon: 'time-outline', route: '/(profile)/history' },
         // { id: '8', title: 'Notifications', icon: 'notifications-outline', route: '/(profile)/notifications' },

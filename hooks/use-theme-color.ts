@@ -4,13 +4,19 @@
  */
 
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/contexts/theme-context';
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
   colorName: keyof typeof Colors.light & keyof typeof Colors.dark
 ) {
-  const theme = useColorScheme() ?? 'light';
+  let theme: 'light' | 'dark' = 'light';
+  try {
+    const themeContext = useTheme();
+    theme = (themeContext.colorScheme as 'light' | 'dark') ?? 'light';
+  } catch (e) {
+    // Fallback if hook is used outside of ThemeProvider
+  }
   const colorFromProps = props[theme];
 
   if (colorFromProps) {

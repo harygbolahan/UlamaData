@@ -16,17 +16,15 @@ import { DashboardProvider } from '@/contexts/dashboard-context';
 import { NotificationProvider } from '@/contexts/notification-context';
 import { PaymentProvider } from '@/contexts/payment-context';
 import { ServicesProvider } from '@/contexts/services-context';
-import { ThemeProvider } from '@/contexts/theme-context';
+import { ThemeProvider, useTheme } from '@/contexts/theme-context';
 import { ToastProvider } from '@/contexts/toast-context';
 import { TransactionsProvider } from '@/contexts/transactions-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const router = useRouter();
   const segments = useSegments();
   const [isReady, setIsReady] = useState(false);
@@ -81,22 +79,7 @@ export default function RootLayout() {
                         <PaymentProvider>
                           <TransactionsProvider>
                             <BeneficiaryProvider>
-                              <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                                <Stack screenOptions={{
-                                  headerShown: false,
-                                  contentStyle: { flex: 1 }
-                                }}>
-                                  <Stack.Screen name="splash" />
-                                  <Stack.Screen name="(onboarding)/index" />
-                                  <Stack.Screen name="(onboarding)/auth-selector" />
-                                  <Stack.Screen name="(auth)/login" />
-                                  <Stack.Screen name="(auth)/signup" />
-                                  <Stack.Screen name="(auth)/forgot-password" />
-                                  <Stack.Screen name="index" />
-                                  <Stack.Screen name="(tabs)" />
-                                </Stack>
-                                <StatusBar style="auto" />
-                              </NavigationThemeProvider>
+                              <AppContent />
                             </BeneficiaryProvider>
                           </TransactionsProvider>
                         </PaymentProvider>
@@ -110,5 +93,27 @@ export default function RootLayout() {
         </ThemeProvider>
       </DashboardProvider>
     </SafeAreaProvider>
+  );
+}
+
+function AppContent() {
+  const { colorScheme } = useTheme();
+  return (
+    <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack screenOptions={{
+        headerShown: false,
+        contentStyle: { flex: 1 }
+      }}>
+        <Stack.Screen name="splash" />
+        <Stack.Screen name="(onboarding)/index" />
+        <Stack.Screen name="(onboarding)/auth-selector" />
+        <Stack.Screen name="(auth)/login" />
+        <Stack.Screen name="(auth)/signup" />
+        <Stack.Screen name="(auth)/forgot-password" />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+    </NavigationThemeProvider>
   );
 }

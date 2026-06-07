@@ -199,11 +199,15 @@ export default function NetworkSelector({
                                             style={[
                                                 styles.networkCard,
                                                 { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
-                                                isSelected && {
+                                                isSelected && (isDark ? {
+                                                    backgroundColor: colors.primary,
+                                                    borderColor: colors.primary,
+                                                    borderWidth: 2,
+                                                } : {
                                                     backgroundColor: colors.primary + '20',
                                                     borderColor: colors.primary,
                                                     borderWidth: 2,
-                                                },
+                                                }),
                                             ]}
                                             onPress={() => onNetworkSelect?.(network)}
                                             activeOpacity={0.7}
@@ -228,7 +232,9 @@ export default function NetworkSelector({
                                                 style={[
                                                     styles.networkName,
                                                     { fontFamily: fonts.inter.semiBold },
-                                                    isSelected ? { color: colors.primary } : { color: colors.text },
+                                                    isSelected 
+                                                        ? (isDark ? { color: colors.apiTextColor || '#fff' } : { color: colors.primary }) 
+                                                        : { color: colors.text },
                                                 ]}
                                             >
                                                 {network.name}
@@ -327,8 +333,17 @@ export default function NetworkSelector({
                                 onPress={() => handleSelectSuggestion(item)}
                                 activeOpacity={0.7}
                             >
-                                <View style={[styles.suggestionAvatar, { backgroundColor: colors.primary + '20' }]}>
-                                    <Ionicons name="person" size={16} color={colors.primary} />
+                                <View style={[
+                                    styles.suggestionAvatar, 
+                                    isDark 
+                                        ? { backgroundColor: colors.primary } 
+                                        : { backgroundColor: colors.primary + '20' }
+                                ]}>
+                                    <Ionicons 
+                                        name="person" 
+                                        size={16} 
+                                        color={isDark ? (colors.apiTextColor || '#fff') : colors.primary} 
+                                    />
                                 </View>
                                 <View style={styles.suggestionDetails}>
                                     <Text style={[styles.suggestionName, { color: colors.text, fontFamily: fonts.inter.medium }]}>

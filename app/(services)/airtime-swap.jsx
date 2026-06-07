@@ -895,7 +895,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 50,
+        paddingTop: 20,
         marginBottom: 20,
     },
     headerTitle: { fontSize: 18 },

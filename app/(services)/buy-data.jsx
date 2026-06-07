@@ -318,8 +318,17 @@ export default function BuyDataScreen() {
                                         onPress={() => handlePlanSelect(plan)}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.planLabel, { backgroundColor: colors.primary + '20' }]}>
-                                            <Text style={[styles.planLabelText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                        <View style={[
+                                            styles.planLabel, 
+                                            isDark 
+                                                ? { backgroundColor: colors.primary } 
+                                                : { backgroundColor: colors.primary + '20' }
+                                        ]}>
+                                            <Text style={[
+                                                styles.planLabelText, 
+                                                { fontFamily: fonts.inter.semiBold },
+                                                isDark ? { color: colors.apiTextColor || '#fff' } : { color: colors.primary }
+                                            ]}>
                                                 {plan.type}
                                             </Text>
                                         </View>
@@ -327,7 +336,11 @@ export default function BuyDataScreen() {
                                             {plan.datasize}
                                         </Text>
                                         <View style={styles.planDetails}>
-                                            <Text style={[styles.planPrice, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                            <Text style={[
+                                                styles.planPrice, 
+                                                { fontFamily: fonts.inter.bold },
+                                                isDark ? { color: colors.text } : { color: colors.primary }
+                                            ]}>
                                                 ₦{plan.price}
                                             </Text>
                                             <Text style={[styles.planDays, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
@@ -369,7 +382,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 50,
+        paddingTop: 20,
         marginBottom: 20,
     },
     headerTitle: { fontSize: 18 },

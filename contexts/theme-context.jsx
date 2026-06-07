@@ -1,13 +1,11 @@
 import { Colors, Fonts } from '@/constants/theme';
 import { useDashboard } from '@/contexts/dashboard-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-    const systemColorScheme = useColorScheme();
     const [manualTheme, setManualTheme] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -28,7 +26,7 @@ export function ThemeProvider({ children }) {
         }
     };
 
-    const colorScheme = manualTheme ?? systemColorScheme;
+    const colorScheme = manualTheme ?? 'light';
     const isDark = colorScheme === 'dark';
 
     const toggleTheme = async () => {

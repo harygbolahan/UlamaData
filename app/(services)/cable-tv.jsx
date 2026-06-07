@@ -244,8 +244,17 @@ export default function CableTVScreen() {
                                         activeOpacity={0.7}
                                         disabled={!verifiedInfo}
                                     >
-                                        <View style={[styles.planLabel, { backgroundColor: colors.primary + '20' }]}>
-                                            <Text style={[styles.planLabelText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                        <View style={[
+                                            styles.planLabel, 
+                                            isDark 
+                                                ? { backgroundColor: colors.primary } 
+                                                : { backgroundColor: colors.primary + '20' }
+                                        ]}>
+                                            <Text style={[
+                                                styles.planLabelText, 
+                                                { fontFamily: fonts.inter.semiBold },
+                                                isDark ? { color: colors.apiTextColor || '#fff' } : { color: colors.primary }
+                                            ]}>
                                                 {selectedProvider?.name || 'Cable TV'}
                                             </Text>
                                         </View>
@@ -253,7 +262,11 @@ export default function CableTVScreen() {
                                             {plan.name}
                                         </Text>
                                         <View style={styles.planDetails}>
-                                            <Text style={[styles.planPrice, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                            <Text style={[
+                                                styles.planPrice, 
+                                                { fontFamily: fonts.inter.bold },
+                                                isDark ? { color: colors.text } : { color: colors.primary }
+                                            ]}>
                                                 ₦{parseFloat(plan.price).toLocaleString()}
                                             </Text>
                                         </View>

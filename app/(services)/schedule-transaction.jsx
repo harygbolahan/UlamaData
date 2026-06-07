@@ -359,22 +359,40 @@ export default function ScheduleTransactionScreen() {
                                                 style={[
                                                     styles.planCard,
                                                     { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
-                                                    selectedPlan?.id === plan.id && {
+                                                    selectedPlan?.id === plan.id && (isDark ? {
+                                                        backgroundColor: colors.primary,
+                                                        borderColor: colors.primary,
+                                                        borderWidth: 2
+                                                    } : {
                                                         backgroundColor: colors.primary + '20',
                                                         borderColor: colors.primary,
                                                         borderWidth: 2
-                                                    }
+                                                    })
                                                 ]}
                                                 onPress={() => setSelectedPlan(plan)}
                                                 activeOpacity={0.7}
                                             >
-                                                <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                                <Text style={[
+                                                    styles.planSize, 
+                                                    { fontFamily: fonts.inter.bold },
+                                                    (selectedPlan?.id === plan.id && isDark) ? { color: colors.apiTextColor || '#fff' } : { color: colors.text }
+                                                ]}>
                                                     {plan.datasize}
                                                 </Text>
-                                                <Text style={[styles.planPrice, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                                <Text style={[
+                                                    styles.planPrice, 
+                                                    { fontFamily: fonts.inter.semiBold },
+                                                    (selectedPlan?.id === plan.id && isDark) 
+                                                        ? { color: colors.apiTextColor || '#fff' } 
+                                                        : (isDark ? { color: colors.text } : { color: colors.primary })
+                                                ]}>
                                                     ₦{plan.price}
                                                 </Text>
-                                                <Text style={[styles.planDays, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                                <Text style={[
+                                                    styles.planDays, 
+                                                    { fontFamily: fonts.inter.regular },
+                                                    (selectedPlan?.id === plan.id && isDark) ? { color: colors.apiTextColor || '#fff' } : { color: colors.icon }
+                                                ]}>
                                                     {plan.day} {plan.day === '1' ? 'day' : 'days'}
                                                 </Text>
                                             </TouchableOpacity>

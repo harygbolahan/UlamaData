@@ -242,11 +242,15 @@ export default function BuyAirtimeScreen() {
                                     style={[
                                         styles.quickAmountCard,
                                         { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' },
-                                        amount === quickAmount.toString() && {
+                                        amount === quickAmount.toString() && (isDark ? {
+                                            backgroundColor: colors.primary,
+                                            borderColor: colors.primary,
+                                            borderWidth: 2
+                                        } : {
                                             backgroundColor: colors.primary + '20',
                                             borderColor: colors.primary,
                                             borderWidth: 2
-                                        }
+                                        })
                                     ]}
                                     onPress={() => handleQuickAmountSelect(quickAmount)}
                                     activeOpacity={0.7}
@@ -254,7 +258,9 @@ export default function BuyAirtimeScreen() {
                                     <Text style={[
                                         styles.quickAmountText,
                                         {
-                                            color: amount === quickAmount.toString() ? colors.primary : colors.text,
+                                            color: amount === quickAmount.toString() 
+                                                ? (isDark ? (colors.apiTextColor || '#fff') : colors.primary) 
+                                                : colors.text,
                                             fontFamily: fonts.inter.semiBold
                                         }
                                     ]}>
@@ -306,7 +312,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 50,
+        paddingTop: 20,
         marginBottom: 20,
     },
     headerTitle: { fontSize: 18 },

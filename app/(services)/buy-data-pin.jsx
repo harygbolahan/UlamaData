@@ -469,16 +469,18 @@ export default function BuyDataPinScreen() {
                       <View
                         style={[
                           styles.planLabel,
-                          { backgroundColor: colors.primary + "20" },
+                          isDark 
+                            ? { backgroundColor: colors.primary } 
+                            : { backgroundColor: colors.primary + "20" },
                         ]}
                       >
                         <Text
                           style={[
                             styles.planLabelText,
                             {
-                              color: colors.primary,
                               fontFamily: fonts.inter.semiBold,
                             },
+                            isDark ? { color: colors.apiTextColor || '#fff' } : { color: colors.primary }
                           ]}
                         >
                           {plan.type}
@@ -498,9 +500,9 @@ export default function BuyDataPinScreen() {
                             style={[
                               styles.planPrice,
                               {
-                                color: colors.primary,
                                 fontFamily: fonts.inter.bold,
                               },
+                              isDark ? { color: colors.text } : { color: colors.primary }
                             ]}
                           >
                             ₦{totalPrice.toLocaleString()}
