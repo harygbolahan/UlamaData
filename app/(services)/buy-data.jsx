@@ -313,7 +313,10 @@ export default function BuyDataScreen() {
                                         key={plan.id}
                                         style={[
                                             styles.planCard,
-                                            { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }
+                                            { 
+                                                backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
+                                                borderColor: isDark ? '#2d2d2d' : '#f0f0f0',
+                                            }
                                         ]}
                                         onPress={() => handlePlanSelect(plan)}
                                         activeOpacity={0.7}
@@ -326,27 +329,27 @@ export default function BuyDataScreen() {
                                         ]}>
                                             <Text style={[
                                                 styles.planLabelText, 
-                                                { fontFamily: fonts.inter.semiBold },
+                                                { fontFamily: fonts.inter.bold },
                                                 isDark ? { color: colors.apiTextColor || '#fff' } : { color: colors.primary }
                                             ]}>
                                                 {plan.type}
                                             </Text>
                                         </View>
+
                                         <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
                                             {plan.datasize}
                                         </Text>
-                                        <View style={styles.planDetails}>
-                                            <Text style={[
-                                                styles.planPrice, 
-                                                { fontFamily: fonts.inter.bold },
-                                                isDark ? { color: colors.text } : { color: colors.primary }
-                                            ]}>
-                                                ₦{plan.price}
-                                            </Text>
-                                            <Text style={[styles.planDays, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                                {plan.day} {plan.day === '1' ? 'day' : 'days'}
-                                            </Text>
-                                        </View>
+
+                                        <Text style={[
+                                            styles.planPrice, 
+                                            { fontFamily: fonts.inter.bold, color: isDark ? '#fff' : colors.primary }
+                                        ]}>
+                                            ₦{plan.price}
+                                        </Text>
+
+                                        <Text style={[styles.planDays, { color: colors.icon, fontFamily: fonts.inter.semiBold }]}>
+                                            {plan.day} {plan.day === '1' ? 'day' : 'days'}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -413,7 +416,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     planTypes: {
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         gap: 10,
         marginBottom: 8,
     },
@@ -429,41 +432,44 @@ const styles = StyleSheet.create({
         borderRadius: 1.5,
     },
     planTypeChip: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
+        paddingHorizontal: 18,
+        paddingVertical: 8,
+        borderRadius: 12,
     },
-    planTypeText: { fontSize: 13 },
+    planTypeText: { fontSize: 14 },
     plansGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 10,
-        gap: 10,
-    },
-    planCard: {
-        width: '45%',
-        margin: '1.5%',
-        padding: 16,
-        borderRadius: 12,
-        minHeight: 140,
-        flexDirection: 'column',
+        paddingHorizontal: 20,
         justifyContent: 'space-between',
     },
+    planCard: {
+        width: '48%',
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        borderRadius: 16,
+        minHeight: 135,
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+    },
     planLabel: {
-        paddingHorizontal: 6,
-        paddingVertical: 3,
-        borderRadius: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
         alignSelf: 'flex-start',
-        marginBottom: 6,
     },
-    planLabelText: { fontSize: 8 },
-    planSize: { fontSize: 16, marginBottom: 4, lineHeight: 20 },
+    planLabelText: { fontSize: 10, textTransform: 'uppercase' },
+    planSize: { fontSize: 22, lineHeight: 26 },
     planName: { fontSize: 11, marginBottom: 8, opacity: 0.8, lineHeight: 14 },
-    planDetails: {
-        marginTop: 'auto',
-    },
-    planPrice: { fontSize: 14, marginBottom: 2 },
-    planDays: { fontSize: 10 },
+    planPrice: { fontSize: 16 },
+    planDays: { fontSize: 14 },
     cashbackBadge: {
         backgroundColor: '#E8F5E9',
         paddingHorizontal: 8,

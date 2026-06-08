@@ -7,7 +7,7 @@ import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,11 +30,44 @@ export default function BuyAirtimeScreen() {
 
     const quickAmounts = [100, 200, 500, 1000, 2000, 5000];
 
-    // Fetch networks and types on mount
+    const loadNetworks = useCallback(async () => {
+        setLoadingNetworks(true);
+        try {
+            const data = await fetchAirtimeNetworks();
+            setNetworks(data);
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load networks');
+        } finally {
+            setLoadingNetworks(false);
+        }
+    }, [fetchAirtimeNetworks, showToast]);
+
+    const loadAirtimeTypes = useCallback(async () => {
+        setLoadingTypes(true);
+        try {
+            const types = await fetchAirtimeTypes(selectedNetwork ? { network: selectedNetwork.name } : undefined);
+            setAirtimeTypes(types);
+            if (types.length > 0) {
+                setSelectedType(types[0].type);
+            }
+        } catch (error) {
+            showToast('error', error.message || 'Failed to load airtime types');
+        } finally {
+            setLoadingTypes(false);
+        }
+    }, [fetchAirtimeTypes, selectedNetwork, showToast]);
+
+    // Fetch networks on mount
     useEffect(() => {
         loadNetworks();
-        loadAirtimeTypes();
-    }, []);
+    }, [loadNetworks]);
+
+    // Fetch airtime types when selected network changes
+    useEffect(() => {
+        if (selectedNetwork) {
+            loadAirtimeTypes();
+        }
+    }, [selectedNetwork, loadAirtimeTypes]);
 
     // Auto-select MTN as default network once networks are loaded
     useEffect(() => {
@@ -47,34 +80,7 @@ export default function BuyAirtimeScreen() {
                 });
             }
         }
-    }, [networks]);
-
-    const loadNetworks = async () => {
-        setLoadingNetworks(true);
-        try {
-            const data = await fetchAirtimeNetworks();
-            setNetworks(data);
-        } catch (error) {
-            showToast('error', error.message || 'Failed to load networks');
-        } finally {
-            setLoadingNetworks(false);
-        }
-    };
-
-    const loadAirtimeTypes = async () => {
-        setLoadingTypes(true);
-        try {
-            const types = await fetchAirtimeTypes();
-            setAirtimeTypes(types);
-            if (types.length > 0) {
-                setSelectedType(types[0].type);
-            }
-        } catch (error) {
-            showToast('error', error.message || 'Failed to load airtime types');
-        } finally {
-            setLoadingTypes(false);
-        }
-    };
+    }, [networks, selectedNetwork]);
 
     const handleQuickAmountSelect = async (quickAmount) => {
         setAmount(quickAmount.toString());

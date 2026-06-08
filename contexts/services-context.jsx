@@ -203,9 +203,9 @@ export function ServicesProvider({ children }) {
     }
   };
 
-  const fetchAirtimeTypes = async () => {
+  const fetchAirtimeTypes = async (payload) => {
     try {
-      const data = await api.post("/get-airtime-type");
+      const data = await api.post("/get-airtime-type", payload);
       return data;
     } catch (err) {
       console.error("Error fetching airtime types:", err);
