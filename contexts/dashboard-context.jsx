@@ -1,143 +1,271 @@
-import api from '@/services/api';
-import * as SecureStore from 'expo-secure-store';
-import { createContext, useContext, useEffect, useState } from 'react';
+import api from "@/services/api";
+import Constants from "expo-constants";
+import * as SecureStore from "expo-secure-store";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const DashboardContext = createContext(null);
 
-const STORAGE_KEY = 'user_dashboard_preference';
-const THEME_STORAGE_KEY = 'user_theme_data';
+const STORAGE_KEY = "user_dashboard_preference";
+const THEME_STORAGE_KEY = "user_theme_data";
 
 export const DASHBOARD_TYPES = {
-    DEFAULT: 'default',
-    MODERN: 'modern',
-    CLASSIC: 'classic',
-    COMPACT: 'compact',
-    MINIMAL: 'minimal',
+  DEFAULT: "default",
+  MODERN: "modern",
+  CLASSIC: "classic",
+  COMPACT: "compact",
+  MINIMAL: "minimal",
 };
 
 export const DASHBOARD_INFO = {
-    [DASHBOARD_TYPES.DEFAULT]: {
-        name: 'Default',
-        description: 'Balanced design with all features',
-        icon: 'grid-outline',
-    },
-    [DASHBOARD_TYPES.MODERN]: {
-        name: 'Modern',
-        description: 'Sleek and contemporary layout',
-        icon: 'sparkles-outline',
-    },
-    [DASHBOARD_TYPES.CLASSIC]: {
-        name: 'Classic',
-        description: 'Traditional and familiar design',
-        icon: 'albums-outline',
-    },
-    [DASHBOARD_TYPES.COMPACT]: {
-        name: 'Compact',
-        description: 'Space-efficient compact layout',
-        icon: 'phone-portrait-outline',
-    },
-    [DASHBOARD_TYPES.MINIMAL]: {
-        name: 'Minimal',
-        description: 'Clean and simple interface',
-        icon: 'remove-outline',
-    },
+  [DASHBOARD_TYPES.DEFAULT]: {
+    name: "Default",
+    description: "Balanced design with all features",
+    icon: "grid-outline",
+  },
+  [DASHBOARD_TYPES.MODERN]: {
+    name: "Modern",
+    description: "Sleek and contemporary layout",
+    icon: "sparkles-outline",
+  },
+  [DASHBOARD_TYPES.CLASSIC]: {
+    name: "Classic",
+    description: "Traditional and familiar design",
+    icon: "albums-outline",
+  },
+  [DASHBOARD_TYPES.COMPACT]: {
+    name: "Compact",
+    description: "Space-efficient compact layout",
+    icon: "phone-portrait-outline",
+  },
+  [DASHBOARD_TYPES.MINIMAL]: {
+    name: "Minimal",
+    description: "Clean and simple interface",
+    icon: "remove-outline",
+  },
 };
 
+/**
+ * Compares two semantic version strings (e.g. "1.4.4" vs "3.1.2").
+ * Returns:
+ *  -1 if v1 < v2 (v1 is older than v2)
+ *   0 if v1 === v2
+ *   1 if v1 > v2 (v1 is newer than v2)
+ */
+function compareVersions(v1, v2) {
+  if (!v1 && !v2) return 0;
+  if (!v1) return -1;
+  if (!v2) return 1;
+
+  const parts1 = String(v1).split('.').map((p) => parseInt(p, 10) || 0);
+  const parts2 = String(v2).split('.').map((p) => parseInt(p, 10) || 0);
+  const maxLen = Math.max(parts1.length, parts2.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const num1 = parts1[i] || 0;
+    const num2 = parts2[i] || 0;
+    if (num1 < num2) return -1;
+    if (num1 > num2) return 1;
+  }
+  return 0;
+}
+
 export function DashboardProvider({ children }) {
-    const [selectedDashboard, setSelectedDashboard] = useState(DASHBOARD_TYPES.DEFAULT);
-    const [themeData, setThemeData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const [selectedDashboard, setSelectedDashboard] = useState(
+    DASHBOARD_TYPES.DEFAULT,
+  );
+  const [themeData, setThemeData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [scrollText, setScrollText] = useState("");
+  const [popupNotification, setPopupNotification] = useState(null);
+  const [needsUpdate, setNeedsUpdate] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState({
+    needsUpdate: false,
+    forceUpdate: false,
+    appVersion: null,
+    androidAppUrl: null,
+    iosAppUrl: null,
+    currentVersion: Constants?.expoConfig?.version || '1.0.0',
+    isDismissed: false,
+  });
 
-    useEffect(() => {
-        loadDashboard();
-        fetchTheme();
-    }, []);
+  useEffect(() => {
+    loadDashboard();
+    fetchTheme();
+    fetchNotifications();
+  }, []);
 
-    const loadDashboard = async () => {
-        try {
-            const saved = await SecureStore.getItemAsync(STORAGE_KEY);
-            if (saved && Object.values(DASHBOARD_TYPES).includes(saved)) {
-                setSelectedDashboard(saved);
-            }
-        } catch (error) {
-            console.error('Error loading dashboard preference:', error);
-        } finally {
-            setIsLoading(false);
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get("/get-notification");
+      console.log("Notification Response:", response);
+      if (response) {
+        if (Array.isArray(response)) {
+          const popup = response.find((item) => item.msgfor === "popup");
+          const scroll = response.find(
+            (item) => item.msgfor === "scroll" || item.msgfor === "scrolll",
+          );
+          if (popup) {
+            setPopupNotification(popup);
+          }
+          if (scroll) {
+            setScrollText(scroll.msg || scroll.message || scroll.content || "");
+          }
+        } else {
+          if (response.msgfor === "popup") {
+            setPopupNotification(response);
+          } else if (
+            response.msgfor === "scroll" ||
+            response.msgfor === "scrolll"
+          ) {
+            setScrollText(
+              response.msg || response.message || response.content || "",
+            );
+          }
         }
-    };
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
 
-    const fetchTheme = async () => {
-        try {
-            // Try to load cached theme first
-            const cachedTheme = await SecureStore.getItemAsync(THEME_STORAGE_KEY);
-            if (cachedTheme) {
-                setThemeData(JSON.parse(cachedTheme));
-            }
+  const loadDashboard = async () => {
+    try {
+      const saved = await SecureStore.getItemAsync(STORAGE_KEY);
+      if (saved && Object.values(DASHBOARD_TYPES).includes(saved)) {
+        setSelectedDashboard(saved);
+      }
+    } catch (error) {
+      console.error("Error loading dashboard preference:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-            // Fetch fresh theme from API
-            const response = await api.getTheme();
-            
-            if (response) {
-                const theme = {
-                    style: response.style || 'default',
-                    bgColor: response.bg_color || '#002db3',
-                    textColor: response.text_color || '#ffffff',
-                    buttonColor: response.button_color || '#002db3',
-                };
-                
-                setThemeData(theme);
-                
-                // Update dashboard type if style is different
-                if (theme.style && Object.values(DASHBOARD_TYPES).includes(theme.style)) {
-                    setSelectedDashboard(theme.style);
-                    await SecureStore.setItemAsync(STORAGE_KEY, theme.style);
-                }
-                
-                // Cache theme data
-                await SecureStore.setItemAsync(THEME_STORAGE_KEY, JSON.stringify(theme));
-            }
-        } catch (error) {
-            console.error('Error fetching theme:', error);
-            // Continue with cached or default theme
+  const fetchTheme = async () => {
+    try {
+      // Try to load cached theme first
+      const cachedTheme = await SecureStore.getItemAsync(THEME_STORAGE_KEY);
+      if (cachedTheme) {
+        setThemeData(JSON.parse(cachedTheme));
+      }
+
+      // Fetch fresh theme from API
+      const response = await api.getTheme();
+
+      if (response) {
+        const data = response.data || response;
+
+        const theme = {
+          style: data.style || "default",
+          bgColor: data.bg_color || "#002db3",
+          textColor: data.text_color || "#ffffff",
+          buttonColor: data.button_color || "#002db3",
+        };
+
+        setThemeData(theme);
+
+        // Process auto-update check details
+        const serverVersion = data.app_version || data.appVersion;
+        const isForce = data.force_update === true || data.force_update === 'true' || data.force_update === 1;
+        const androidUrl = data.android_app_url || data.androidAppUrl || "https://play.google.com/store/apps/details?id=com.ulamadatanigeria.ulamadata";
+        const iosUrl = data.ios_app_url || data.iosAppUrl || "https://apps.apple.com/app/ulamadata/id6760598685";
+
+        const installedVersion = Constants?.expoConfig?.version || '1.0.0';
+        const isOlder = serverVersion ? compareVersions(installedVersion, serverVersion) < 0 : false;
+
+        console.log("📱 Auto Update Check:", {
+          installedVersion,
+          serverVersion,
+          isOlder,
+          forceUpdate: isForce,
+          androidUrl,
+          iosUrl,
+        });
+
+        setUpdateInfo((prev) => ({
+          ...prev,
+          needsUpdate: isOlder,
+          forceUpdate: isOlder ? isForce : false,
+          appVersion: serverVersion || installedVersion,
+          androidAppUrl: androidUrl,
+          iosAppUrl: iosUrl,
+          currentVersion: installedVersion,
+        }));
+        setNeedsUpdate(isOlder);
+
+        // Update dashboard type if style is different
+        if (
+          theme.style &&
+          Object.values(DASHBOARD_TYPES).includes(theme.style)
+        ) {
+          setSelectedDashboard(theme.style);
+          await SecureStore.setItemAsync(STORAGE_KEY, theme.style);
         }
-    };
 
-    const changeDashboard = async (dashboardType) => {
-        if (!Object.values(DASHBOARD_TYPES).includes(dashboardType)) {
-            console.error('Invalid dashboard type:', dashboardType);
-            return;
-        }
+        // Cache theme data
+        await SecureStore.setItemAsync(
+          THEME_STORAGE_KEY,
+          JSON.stringify(theme),
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching theme:", error);
+      // Continue with cached or default theme
+    }
+  };
 
-        setSelectedDashboard(dashboardType);
-        try {
-            await SecureStore.setItemAsync(STORAGE_KEY, dashboardType);
-        } catch (error) {
-            console.error('Error saving dashboard preference:', error);
-        }
-    };
+  const dismissUpdateModal = () => {
+    setUpdateInfo((prev) => ({
+      ...prev,
+      isDismissed: true,
+    }));
+  };
 
-    const refreshTheme = async () => {
-        await fetchTheme();
-    };
+  const changeDashboard = async (dashboardType) => {
+    if (!Object.values(DASHBOARD_TYPES).includes(dashboardType)) {
+      console.error("Invalid dashboard type:", dashboardType);
+      return;
+    }
 
-    return (
-        <DashboardContext.Provider value={{
-            selectedDashboard,
-            changeDashboard,
-            themeData,
-            refreshTheme,
-            isLoading,
-            dashboardInfo: DASHBOARD_INFO,
-        }}>
-            {children}
-        </DashboardContext.Provider>
-    );
+    setSelectedDashboard(dashboardType);
+    try {
+      await SecureStore.setItemAsync(STORAGE_KEY, dashboardType);
+    } catch (error) {
+      console.error("Error saving dashboard preference:", error);
+    }
+  };
+
+  const refreshTheme = async () => {
+    await fetchTheme();
+  };
+
+  return (
+    <DashboardContext.Provider
+      value={{
+        selectedDashboard,
+        changeDashboard,
+        themeData,
+        refreshTheme,
+        isLoading,
+        dashboardInfo: DASHBOARD_INFO,
+        scrollText,
+        popupNotification,
+        setPopupNotification,
+        fetchNotifications,
+        needsUpdate,
+        updateInfo,
+        dismissUpdateModal,
+      }}
+    >
+      {children}
+    </DashboardContext.Provider>
+  );
 }
 
 export function useDashboard() {
-    const context = useContext(DashboardContext);
-    if (!context) {
-        throw new Error('useDashboard must be used within DashboardProvider');
-    }
-    return context;
+  const context = useContext(DashboardContext);
+  if (!context) {
+    throw new Error("useDashboard must be used within DashboardProvider");
+  }
+  return context;
 }

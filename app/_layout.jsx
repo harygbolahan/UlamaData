@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ActivityTracker } from '@/components/activity-tracker';
+import AppUpdateModal from '@/components/AppUpdateModal';
 import { AuthProvider } from '@/contexts/auth-context';
 import { AutoLockProvider } from '@/contexts/auto-lock-context';
 import { BannerProvider } from '@/contexts/banner-context';
@@ -113,6 +114,7 @@ function AppContent() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
       </Stack>
+      <AppUpdateModal />
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </NavigationThemeProvider>
   );

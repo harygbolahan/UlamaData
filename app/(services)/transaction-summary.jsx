@@ -669,6 +669,7 @@ export default function TransactionSummaryScreen() {
       amount,
       network: network || provider,
       transactionId: response?.transaction_id || Date.now().toString(),
+      transref: response?.transref || response?.transaction_id || response?.reference || "",
     };
 
     // Add API response data if available
@@ -888,7 +889,7 @@ export default function TransactionSummaryScreen() {
 
         <View style={styles.footer}>
           <Button
-            title="Fund Wallet"
+            title="Add Money"
             onPress={() => router.push("/fund-wallet")}
           />
         </View>

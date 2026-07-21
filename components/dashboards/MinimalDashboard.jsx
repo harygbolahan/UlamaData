@@ -202,7 +202,7 @@ export default function MinimalDashboard() {
               >
                 <Ionicons name="add-circle" size={18} color={colors.primaryText} />
                 <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.bold, color: colors.primaryText }]}>
-                  Fund Wallet
+                  Add Money
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity

@@ -9,16 +9,28 @@ import { DASHBOARD_TYPES, useDashboard } from '@/contexts/dashboard-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Linking, StatusBar, StyleSheet, TouchableOpacity, View, Modal, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeTab() {
-    const { selectedDashboard, isLoading } = useDashboard();
-    const { colors, isDark } = useTheme();
+    const { selectedDashboard, isLoading, popupNotification, fetchNotifications } = useDashboard();
+    const { colors, fonts, isDark } = useTheme();
     const { refreshUser, getSupportData } = useAuth();
     const [refreshing, setRefreshing] = useState(false);
     const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
+    const [popupVisible, setPopupVisible] = useState(false);
+
+    useEffect(() => {
+        if (popupNotification) {
+            const timer = setTimeout(() => {
+                setPopupVisible(true);
+            }, 800);
+            return () => clearTimeout(timer);
+        } else {
+            setPopupVisible(false);
+        }
+    }, [popupNotification]);
 
     const handleWhatsAppSupport = async () => {
         setOpeningWhatsApp(true);
@@ -42,7 +54,7 @@ export default function HomeTab() {
         useCallback(() => {
             const fetchData = async () => {
                 setRefreshing(true);
-                await refreshUser();
+                await Promise.all([refreshUser(), fetchNotifications()]);
                 setRefreshing(false);
             };
             fetchData();
@@ -110,6 +122,57 @@ export default function HomeTab() {
                     <Ionicons name="logo-whatsapp" size={32} color="#ffffff" />
                 )}
             </TouchableOpacity>
+
+            {/* Pop-up Notification Drawer */}
+            <Modal
+                visible={popupVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setPopupVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <TouchableOpacity 
+                        style={styles.modalBackdrop} 
+                        activeOpacity={1} 
+                        onPress={() => setPopupVisible(false)} 
+                    />
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
+                        {/* Drawer Handle Indicator */}
+                        <View style={[styles.modalHandle, { backgroundColor: isDark ? '#3a3a3a' : '#e5e5e5' }]} />
+                        
+                        <View style={styles.modalHeader}>
+                            <View style={[styles.modalIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                                <Ionicons name="megaphone-outline" size={24} color={colors.primary} />
+                            </View>
+                            <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts?.inter?.bold || 'System', fontSize: 18, flex: 1 }]}>
+                                {popupNotification?.title || "Announcement"}
+                            </Text>
+                            <TouchableOpacity 
+                                style={styles.closeButton} 
+                                onPress={() => setPopupVisible(false)}
+                            >
+                                <Ionicons name="close" size={20} color={colors.text} />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                            <Text style={[styles.modalMessage, { color: colors.text, fontFamily: fonts?.inter?.regular || 'System', fontSize: 14, lineHeight: 22 }]}>
+                                {popupNotification?.msg || popupNotification?.message || popupNotification?.content || ""}
+                            </Text>
+                        </ScrollView>
+                        
+                        <TouchableOpacity 
+                            style={[styles.dismissButton, { backgroundColor: colors.primary }]}
+                            onPress={() => setPopupVisible(false)}
+                        >
+                            <Text style={[styles.dismissButtonText, { fontFamily: fonts?.inter?.bold || 'System', color: '#ffffff', fontSize: 16 }]}>
+                                Dismiss
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
         </SafeAreaView>
     );
 }
@@ -134,5 +197,58 @@ const styles = StyleSheet.create({
         shadowRadius: 4.65,
         elevation: 8,
         zIndex: 999,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    modalBackdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 20,
+        paddingBottom: 40,
+        paddingTop: 8,
+        maxHeight: '80%',
+    },
+    modalHandle: {
+        width: 40,
+        height: 5,
+        borderRadius: 2.5,
+        alignSelf: 'center',
+        marginBottom: 16,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    modalIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    modalBody: {
+        marginBottom: 24,
+        maxHeight: 300,
+    },
+    dismissButton: {
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

@@ -2,13 +2,14 @@ import PinPrintModal from '@/components/pin-print-modal';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { useTransactions } from '@/contexts/transactions-context';
+import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Print from 'expo-print';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 
@@ -27,6 +28,9 @@ export default function TransactionDetails() {
     const [showPinPrintModal, setShowPinPrintModal] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isCapturing, setIsCapturing] = useState(false);
+    const [resendModalVisible, setResendModalVisible] = useState(false);
+    const [resendStatus, setResendStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+    const [resendMessage, setResendMessage] = useState('');
     const receiptRef = useRef(null);
 
     useEffect(() => {
@@ -75,6 +79,7 @@ export default function TransactionDetails() {
         let serialData = null;
         let electricityToken = null;
         let allPins = []; // Array to store all PINs
+        let logObj = null;
 
         try {
             if (data.api_response_log) {
@@ -91,6 +96,8 @@ export default function TransactionDetails() {
                 } else {
                     logData = data.api_response_log;
                 }
+
+                logObj = logData;
 
                 if (logData) {
                     // Handle Airtime PIN and Exam PIN (multiple pins)
@@ -234,6 +241,8 @@ export default function TransactionDetails() {
             serial: serialData,
             electricityToken: electricityToken,
             allPins: allPins, // All PINs for printing
+            customerAddress: data.customerAddress || data.customer_address || data.address || logObj?.customerAddress || logObj?.customer_address || logObj?.address || null,
+            customerName: data.customerName || data.customer_name || logObj?.customerName || logObj?.customer_name || null,
         };
     };
 
@@ -261,6 +270,35 @@ export default function TransactionDetails() {
 
     const handleShare = () => {
         setShowShareModal(true);
+    };
+
+    const handleResend = () => {
+        setResendStatus('idle');
+        setResendMessage('Are you sure you want to resend this transaction?');
+        setResendModalVisible(true);
+    };
+
+    const confirmResend = async () => {
+        setResendStatus('loading');
+        try {
+            const refToUse = transaction.ref || transactionData?.transref || transactionData?.transaction_id || transactionData?.reference;
+            const response = await api.post('/resend-transaction', {
+                transref: refToUse,
+                pin: "12345"
+            });
+            console.log('Resend Response:', response);
+            
+            const resData = response.data || response;
+            const statusStr = (resData.status || resData.Status || '').toLowerCase();
+            const isSuccess = statusStr === 'success' || statusStr === 'successful';
+            
+            setResendStatus(isSuccess ? 'success' : 'error');
+            setResendMessage(resData.message || resData.api_response || resData.response || 'Transaction processed.');
+        } catch (error) {
+            console.error('Error resending transaction:', error);
+            setResendStatus('error');
+            setResendMessage(error.message || 'Could not resend transaction.');
+        }
     };
 
 
@@ -545,6 +583,18 @@ export default function TransactionDetails() {
                                 <div class="info-value">${transaction.plan}</div>
                             </div>
                             ` : ''}
+                            ${transaction.customerName && transaction.customerName !== 'N/A' ? `
+                            <div class="info-row">
+                                <div class="info-label">Customer Name</div>
+                                <div class="info-value">${transaction.customerName}</div>
+                            </div>
+                            ` : ''}
+                            ${transaction.customerAddress && transaction.customerAddress !== 'N/A' ? `
+                            <div class="info-row">
+                                <div class="info-label">Address</div>
+                                <div class="info-value">${transaction.customerAddress}</div>
+                            </div>
+                            ` : ''}
                             <div class="info-row">
                                 <div class="info-label">Reference</div>
                                 <div class="info-value">${transaction.ref}</div>
@@ -748,6 +798,12 @@ export default function TransactionDetails() {
                             {transaction.plan !== 'N/A' && (
                                 <DetailRow label="Plan" value={transaction.plan} colors={colors} fonts={fonts} />
                             )}
+                            {transaction.customerName && transaction.customerName !== 'N/A' && (
+                                <DetailRow label="Customer Name" value={transaction.customerName} colors={colors} fonts={fonts} />
+                            )}
+                            {transaction.customerAddress && transaction.customerAddress !== 'N/A' && (
+                                <DetailRow label="Address" value={transaction.customerAddress} colors={colors} fonts={fonts} multiline />
+                            )}
                             <DetailRow label="Reference" value={transaction.ref} colors={colors} fonts={fonts} copyable onCopy={() => handleCopy(transaction.ref, 'Reference')} />
                             {/* <DetailRow label="Session ID" value={transaction.sessionId} colors={colors} fonts={fonts} copyable onCopy={() => handleCopy(transaction.sessionId, 'Session ID')} /> */}
                         </View>
@@ -908,7 +964,18 @@ export default function TransactionDetails() {
 
                     {/* Actions */}
                     <Animated.View style={[styles.actionsContainer, { opacity: fadeAnim }]}>
-
+                        {!isCapturing && (
+                            <TouchableOpacity
+                                style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                                onPress={handleResend}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="refresh" size={20} color="#fff" style={{ marginRight: 8 }} />
+                                <Text style={[styles.actionButtonText, { fontFamily: fonts.inter.semiBold }]}>
+                                    Resend Transaction
+                                </Text>
+                            </TouchableOpacity>
+                        )}
 
                         <View style={styles.actionRow}>
                             <TouchableOpacity
@@ -1065,6 +1132,109 @@ export default function TransactionDetails() {
                                 Cancel
                             </Text>
                         </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Custom Resend Modal */}
+            <Modal
+                visible={resendModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => {
+                    if (resendStatus !== 'loading') {
+                        setResendModalVisible(false);
+                    }
+                }}
+            >
+                <View style={modalStyles.overlay}>
+                    <View style={[modalStyles.container, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+                        {resendStatus === 'loading' ? (
+                            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                                <ActivityIndicator size="large" color={colors.primary} />
+                                <Text style={[modalStyles.message, { color: colors.text, fontFamily: fonts.inter.medium, marginTop: 16 }]}>
+                                    Resending transaction...
+                                </Text>
+                            </View>
+                        ) : (
+                            <>
+                                <View style={[
+                                    modalStyles.iconContainer, 
+                                    { 
+                                        backgroundColor: resendStatus === 'success' 
+                                            ? (colors.success || '#10B981') + '15' 
+                                            : resendStatus === 'error' 
+                                                ? colors.error + '15' 
+                                                : colors.primary + '15' 
+                                    }
+                                ]}>
+                                    <Ionicons 
+                                        name={
+                                            resendStatus === 'success' 
+                                                ? "checkmark-circle" 
+                                                : resendStatus === 'error' 
+                                                    ? "alert-circle" 
+                                                    : "refresh"
+                                        } 
+                                        size={48} 
+                                        color={
+                                            resendStatus === 'success' 
+                                                ? (colors.success || '#10B981') 
+                                                : resendStatus === 'error' 
+                                                    ? colors.error 
+                                                    : colors.primary
+                                        } 
+                                    />
+                                </View>
+
+                                <Text style={[modalStyles.title, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                    {
+                                        resendStatus === 'success' 
+                                            ? "Success" 
+                                            : resendStatus === 'error' 
+                                                ? "Transaction Failed" 
+                                                : "Resend Transaction"
+                                    }
+                                </Text>
+
+                                <Text style={[modalStyles.message, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                    {resendMessage}
+                                </Text>
+
+                                {resendStatus === 'idle' ? (
+                                    <View style={modalStyles.buttonContainer}>
+                                        <TouchableOpacity
+                                            style={[modalStyles.button, { backgroundColor: isDark ? '#2a2a2a' : '#f5f5f5' }]}
+                                            onPress={() => setResendModalVisible(false)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={[modalStyles.cancelButtonText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                                Cancel
+                                            </Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[modalStyles.button, { backgroundColor: colors.primary }]}
+                                            onPress={confirmResend}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={[modalStyles.cancelButtonText, { color: '#fff', fontFamily: fonts.inter.medium }]}>
+                                                Resend
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={[modalStyles.button, { backgroundColor: colors.primary, width: '100%' }]}
+                                        onPress={() => setResendModalVisible(false)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[modalStyles.cancelButtonText, { color: '#fff', fontFamily: fonts.inter.medium }]}>
+                                            Close
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            </>
+                        )}
                     </View>
                 </View>
             </Modal>

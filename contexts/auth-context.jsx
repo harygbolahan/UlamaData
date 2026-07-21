@@ -1,6 +1,8 @@
 import api from "@/services/api";
+import { isBiometricLoginEnabled, isPinLoginEnabled } from "@/services/biometric";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useToast } from "./toast-context";
 
 const AuthContext = createContext(null);
@@ -11,10 +13,69 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { showToast } = useToast();
+  const router = useRouter();
+  const isHandling401 = useRef(false);
 
   useEffect(() => {
     loadStoredAuth();
+    api.setUnauthorizedCallback(handleUnauthenticated);
+
+    return () => {
+      api.setUnauthorizedCallback(null);
+    };
   }, []);
+
+  const handleUnauthenticated = async () => {
+    if (isHandling401.current) return;
+    isHandling401.current = true;
+
+    console.log("🔒 401 Unauthenticated detected: clearing token and redirecting to login/welcome-back");
+
+    try {
+      // Clear token only so email/user_data remain stored for quick re-login
+      await AsyncStorage.removeItem("auth_token");
+      await api.setToken(null);
+
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+
+      showToast("error", "Session expired. Please log in again.");
+
+      // Check biometric authentication
+      const biometricEnabled = await isBiometricLoginEnabled();
+      if (biometricEnabled) {
+        router.replace("/(auth)/biometric-auth");
+        return;
+      }
+
+      // Check PIN authentication
+      const pinLoginEnabled = await isPinLoginEnabled();
+      if (pinLoginEnabled) {
+        router.replace("/(auth)/pin-auth");
+        return;
+      }
+
+      // Check stored email for welcome-back screen
+      const storedEmail =
+        (await AsyncStorage.getItem("user_email")) ||
+        (await AsyncStorage.getItem("email")) ||
+        user?.email;
+
+      if (storedEmail) {
+        router.replace("/(auth)/welcome-back");
+      } else {
+        router.replace("/(auth)/login");
+      }
+    } catch (err) {
+      console.error("Error handling unauthenticated session:", err);
+      router.replace("/(auth)/welcome-back");
+    } finally {
+      setTimeout(() => {
+        isHandling401.current = false;
+      }, 3000);
+    }
+  };
 
   const loadStoredAuth = async () => {
     try {
@@ -98,6 +159,8 @@ export function AuthProvider({ children }) {
         AsyncStorage.setItem("user_data", JSON.stringify(userData)),
         AsyncStorage.setItem("email", userData.email || ""),
         AsyncStorage.setItem("name", userData.name || userData.username || ""),
+        AsyncStorage.setItem("user_email", userData.email || ""),
+        AsyncStorage.setItem("user_name", userData.name || userData.username || ""),
       ]);
 
       setToken(authToken);

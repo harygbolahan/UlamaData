@@ -112,7 +112,7 @@ export default function FundWallet() {
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                    Fund Wallet
+                    Add Money
                 </Text>
                 <TouchableOpacity onPress={loadPaymentMethods}>
                     <Ionicons name="refresh" size={24} color={colors.text} />

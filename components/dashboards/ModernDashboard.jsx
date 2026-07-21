@@ -3,6 +3,7 @@ import { usePayment } from "@/contexts/payment-context";
 import { useToast } from "@/contexts/toast-context";
 import { useTheme } from "@/contexts/theme-context";
 import { useTransactions } from "@/contexts/transactions-context";
+import { useDashboard } from "@/contexts/dashboard-context";
 import { useApiColors } from "@/hooks/use-api-colors";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,6 +36,8 @@ export default function ModernDashboard() {
   const { transactions, loading, fetchTransactions } = useTransactions();
   const { width, height } = useWindowDimensions();
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [activeAccountIndex, setActiveAccountIndex] = useState(0);
+  const { scrollText } = useDashboard();
 
   // Responsive scaling helpers
   const isSmallScreen = width < 375;
@@ -78,7 +81,7 @@ export default function ModernDashboard() {
 
   const virtualAccounts = accountDetails?.virtual_accounts || {};
   const availableAccounts = Object.entries(virtualAccounts).filter(
-    ([_, account]) => account.status === "On",
+    ([_, account]) => account.status === "On" && account.number && account.number !== "" && account.number !== "null",
   );
   let displayAccount = availableAccounts.find(([_, account]) =>
     account.name?.toLowerCase().includes("palm"),
@@ -428,47 +431,95 @@ export default function ModernDashboard() {
             </TouchableOpacity>
           </View>
 
-          {/* Palmpay Row */}
-          <View style={styles.palmpayRow}>
-            {displayAccount ? (
-              <>
-                <Text
-                  style={[
-                    styles.palmpayText,
-                    {
-                      fontFamily: fonts?.inter?.bold || "System",
-                      fontSize: normalize(14),
-                    },
-                  ]}
-                >
-                  {displayAccount[1].name}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => handleCopy(displayAccount[1].number)}
-                >
+          {/* Virtual Accounts Carousel */}
+          {availableAccounts.length > 0 ? (
+            <View style={{ marginTop: normalize(8) }}>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={(event) => {
+                  const slide = Math.round(
+                    event.nativeEvent.contentOffset.x /
+                      (width - dynamicStyles.headerPadding.paddingHorizontal * 2)
+                  );
+                  if (slide !== activeAccountIndex) {
+                    setActiveAccountIndex(slide);
+                  }
+                }}
+                scrollEventThrottle={16}
+                style={{ width: width - dynamicStyles.headerPadding.paddingHorizontal * 2 }}
+              >
+                {availableAccounts.map(([key, account]) => (
                   <View
+                    key={key}
                     style={{
+                      width: width - dynamicStyles.headerPadding.paddingHorizontal * 2,
                       flexDirection: "row",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 6,
+                      paddingRight: 20,
                     }}
                   >
                     <Text
                       style={[
-                        styles.loadingText,
+                        styles.palmpayText,
                         {
                           fontFamily: fonts?.inter?.bold || "System",
-                          fontSize: normalize(14),
+                          fontSize: normalize(18),
                         },
                       ]}
                     >
-                      {displayAccount[1].number}
+                      {account.name}
                     </Text>
-                    <Ionicons name="copy-outline" size={14} color="#fff" />
+                    <TouchableOpacity
+                      onPress={() => handleCopy(account.number)}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.loadingText,
+                            {
+                              fontFamily: fonts?.inter?.bold || "System",
+                              fontSize: normalize(18),
+                            },
+                          ]}
+                        >
+                          {account.number}
+                        </Text>
+                        <Ionicons name="copy-outline" size={18} color="#fff" />
+                      </View>
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
-              </>
-            ) : (
+                ))}
+              </ScrollView>
+              
+              {/* Pagination Dots */}
+              {availableAccounts.length > 1 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: normalize(6) }}>
+                  {availableAccounts.map((_, idx) => (
+                    <View
+                      key={idx}
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: '#fff',
+                        opacity: activeAccountIndex === idx ? 1 : 0.4
+                      }}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          ) : (
+            <View style={styles.palmpayRow}>
               <Text
                 style={[
                   styles.palmpayText,
@@ -477,8 +528,8 @@ export default function ModernDashboard() {
               >
                 No Virtual Account setup
               </Text>
-            )}
-          </View>
+            </View>
+          )}
         </View>
 
         {/* White Overlapping Card */}
@@ -492,13 +543,15 @@ export default function ModernDashboard() {
           ]}
         >
           {/* Action Buttons */}
-          <View style={styles.actionRow}>
+          <View style={[styles.actionRow, { gap: 12 }]}>
             <TouchableOpacity
               style={[
                 styles.actionBox,
                 {
                   backgroundColor: colors.button || colors.primary,
                   paddingVertical: normalize(14),
+                  flex: 1,
+                  justifyContent: 'center',
                 },
               ]}
               onPress={() => router.push("/fund-wallet")}
@@ -518,7 +571,41 @@ export default function ModernDashboard() {
                   },
                 ]}
               >
-                Fund Wallet
+                Add Money
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.actionBox,
+                {
+                  backgroundColor: isDark ? '#2a2a2a' : '#f5f5f5',
+                  paddingVertical: normalize(14),
+                  flex: 1,
+                  justifyContent: 'center',
+                  borderWidth: isDark ? 0 : 1,
+                  borderColor: '#e5e5e5',
+                },
+              ]}
+              onPress={() => router.push("/(tabs)/transactions")}
+            >
+              <Ionicons
+                name="time-outline"
+                size={normalize(18)}
+                color={isDark ? '#fff' : '#333'}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.actionBoxText,
+                  {
+                    fontFamily: fonts?.inter?.medium || "System",
+                    fontSize: normalize(14),
+                    color: isDark ? '#fff' : '#333',
+                  },
+                ]}
+              >
+                History
               </Text>
             </TouchableOpacity>
           </View>
@@ -536,9 +623,7 @@ export default function ModernDashboard() {
                 ]}
                 numberOfLines={1}
               >
-                Welcome to ULAMADATA 🥰...........contact us on
-                WhatsApp.........07025155190.......09076804023........08027080407.........08145047672.......Check
-                balance..... *323#(Data) or *310# (Airtime).{" "}
+                {scrollText || "Welcome to ULAMADATA 🥰...........contact us on WhatsApp.........07025155190.......09076804023........08027080407.........08145047672.......Check balance..... *323#(Data) or *310# (Airtime). "}
               </Text>
             </Animated.View>
           </View>
