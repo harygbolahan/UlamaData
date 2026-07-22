@@ -123,6 +123,46 @@ export default function TransactionSuccessScreen() {
         }
     };
 
+    const extractAddress = (data) => {
+        if (!data) return null;
+        if (typeof data === 'string') {
+            try {
+                const parsed = JSON.parse(data);
+                return extractAddress(parsed);
+            } catch (e) {
+                const match = data.match(/(?:^|[^a-z0-9_])(?:customer_?address|address)\s*[:=]\s*["']?([^"'\n\r,}]+)/i);
+                if (match && match[1]) {
+                    const val = match[1].trim();
+                    if (!val.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) && !val.includes('@')) {
+                        return val;
+                    }
+                }
+                return null;
+            }
+        }
+        if (typeof data === 'object') {
+            const addressKeys = ['customerAddress', 'customer_address', 'address', 'Address', 'customer_Address', 'user_address'];
+            for (const key of addressKeys) {
+                if (data[key] && typeof data[key] === 'string' && data[key].trim().length > 0) {
+                    const val = data[key].trim();
+                    if (!val.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) && !val.includes('@')) {
+                        return val;
+                    }
+                }
+            }
+            const containerKeys = ['api_response', 'api_response_log', 'data', 'details', 'log', 'response', 'result'];
+            for (const key of containerKeys) {
+                if (data[key]) {
+                    const found = extractAddress(data[key]);
+                    if (found) return found;
+                }
+            }
+        }
+        return null;
+    };
+
+    const resolvedAddress = customerAddress || params.address || extractAddress(apiResponse) || extractAddress(params);
+
     const additionalDetails = [];
 
     if (dataSize) {
@@ -152,8 +192,8 @@ export default function TransactionSuccessScreen() {
     if (customerName) {
         additionalDetails.push({ label: 'Customer Name', value: customerName });
     }
-    if (customerAddress) {
-        additionalDetails.push({ label: 'Address', value: customerAddress });
+    if (resolvedAddress) {
+        additionalDetails.push({ label: 'Address', value: resolvedAddress });
     }
     if (iuc) {
         additionalDetails.push({ label: 'Smart Card/IUC', value: iuc });
@@ -195,10 +235,10 @@ export default function TransactionSuccessScreen() {
             console.error('Error parsing data pins:', e);
         }
     }
-    if (oldBalance) {
+    if (oldBalance && !isCapturing) {
         additionalDetails.push({ label: 'Previous Balance', value: `₦${parseFloat(oldBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}` });
     }
-    if (newBalance) {
+    if (newBalance && !isCapturing) {
         additionalDetails.push({ label: 'New Balance', value: `₦${parseFloat(newBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}` });
     }
 
@@ -279,14 +319,16 @@ export default function TransactionSuccessScreen() {
                         }
                     ]}
                 >
-                    <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Amount
-                        </Text>
-                        <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            ₦{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </Text>
-                    </View>
+                    {!isCapturing && (
+                        <View style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
+                                Amount
+                            </Text>
+                            <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                ₦{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </Text>
+                        </View>
+                    )}
 
                     <View style={styles.detailRow}>
                         <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>

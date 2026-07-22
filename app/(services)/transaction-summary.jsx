@@ -702,6 +702,10 @@ export default function TransactionSummaryScreen() {
       if (response.disco_name) successParams.discoName = response.disco_name;
       if (response.meter_type) successParams.meterType = response.meter_type;
 
+      // Extract address if available in response
+      const extractedAddress = response.customerAddress || response.customer_address || response.address || (typeof response.api_response === 'object' ? response.api_response?.customer_address || response.api_response?.address : null);
+      if (extractedAddress) successParams.customerAddress = extractedAddress;
+
       // Add exam-specific fields
       if (response.pins) successParams.pins = JSON.stringify(response.pins);
       if (response.exam_name) successParams.examName = response.exam_name;
@@ -722,7 +726,7 @@ export default function TransactionSummaryScreen() {
     if (planName) successParams.planName = planName;
     if (customerName) successParams.customerName = customerName;
     if (meterType) successParams.meterType = meterType;
-    if (customerAddress) successParams.customerAddress = customerAddress;
+    if (customerAddress && !successParams.customerAddress) successParams.customerAddress = customerAddress;
     if (quantity) successParams.quantity = quantity;
     if (examName) successParams.examName = examName;
 

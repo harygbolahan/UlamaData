@@ -241,9 +241,47 @@ export default function TransactionDetails() {
             serial: serialData,
             electricityToken: electricityToken,
             allPins: allPins, // All PINs for printing
-            customerAddress: data.customerAddress || data.customer_address || data.address || logObj?.customerAddress || logObj?.customer_address || logObj?.address || null,
+            customerAddress: extractAddress(data) || data.customerAddress || data.customer_address || data.address || logObj?.customerAddress || logObj?.customer_address || logObj?.address || null,
             customerName: data.customerName || data.customer_name || logObj?.customerName || logObj?.customer_name || null,
         };
+    };
+
+    const extractAddress = (data) => {
+        if (!data) return null;
+        if (typeof data === 'string') {
+            try {
+                const parsed = JSON.parse(data);
+                return extractAddress(parsed);
+            } catch (e) {
+                const match = data.match(/(?:^|[^a-z0-9_])(?:customer_?address|address)\s*[:=]\s*["']?([^"'\n\r,}]+)/i);
+                if (match && match[1]) {
+                    const val = match[1].trim();
+                    if (!val.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) && !val.includes('@')) {
+                        return val;
+                    }
+                }
+                return null;
+            }
+        }
+        if (typeof data === 'object') {
+            const addressKeys = ['customerAddress', 'customer_address', 'address', 'Address', 'customer_Address', 'user_address'];
+            for (const key of addressKeys) {
+                if (data[key] && typeof data[key] === 'string' && data[key].trim().length > 0) {
+                    const val = data[key].trim();
+                    if (!val.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) && !val.includes('@')) {
+                        return val;
+                    }
+                }
+            }
+            const containerKeys = ['api_response', 'api_response_log', 'data', 'details', 'log', 'response', 'result'];
+            for (const key of containerKeys) {
+                if (data[key]) {
+                    const found = extractAddress(data[key]);
+                    if (found) return found;
+                }
+            }
+        }
+        return null;
     };
 
     const transaction = mapTransactionData(transactionData);
@@ -963,8 +1001,8 @@ export default function TransactionDetails() {
                     )}
 
                     {/* Actions */}
-                    <Animated.View style={[styles.actionsContainer, { opacity: fadeAnim }]}>
-                        {!isCapturing && (
+                    {!isCapturing && (
+                        <Animated.View style={[styles.actionsContainer, { opacity: fadeAnim }]}>
                             <TouchableOpacity
                                 style={[styles.actionButton, { backgroundColor: colors.primary }]}
                                 onPress={handleResend}
@@ -975,32 +1013,32 @@ export default function TransactionDetails() {
                                     Resend Transaction
                                 </Text>
                             </TouchableOpacity>
-                        )}
 
-                        <View style={styles.actionRow}>
-                            <TouchableOpacity
-                                style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
-                                onPress={handleDownload}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="download-outline" size={20} color={colors.text} />
-                                <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                    Download
-                                </Text>
-                            </TouchableOpacity>
+                            <View style={styles.actionRow}>
+                                <TouchableOpacity
+                                    style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
+                                    onPress={handleDownload}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="download-outline" size={20} color={colors.text} />
+                                    <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                        Download
+                                    </Text>
+                                </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
-                                onPress={handleDispute}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="help-circle-outline" size={20} color={colors.text} />
-                                <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
-                                    Support
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </Animated.View>
+                                <TouchableOpacity
+                                    style={[styles.actionButtonSecondary, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}
+                                    onPress={handleDispute}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="help-circle-outline" size={20} color={colors.text} />
+                                    <Text style={[styles.actionButtonSecondaryText, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                        Support
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </Animated.View>
+                    )}
 
                     <View style={{ height: 30 }} />
                 </View>
