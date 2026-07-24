@@ -10,8 +10,19 @@ import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, StatusBar, StyleSheet, TouchableOpacity, View, Modal, Text, ScrollView } from 'react-native';
+import { ActivityIndicator, Image, Linking, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const getImageUrl = (imagePath) => {
+    if (!imagePath || typeof imagePath !== 'string') return null;
+    const trimmed = imagePath.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
+    }
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `https://ulamadata.ng${cleanPath}`;
+};
 
 export default function HomeTab() {
     const { selectedDashboard, isLoading, popupNotification, fetchNotifications } = useDashboard();
@@ -20,6 +31,23 @@ export default function HomeTab() {
     const [refreshing, setRefreshing] = useState(false);
     const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
     const [popupVisible, setPopupVisible] = useState(false);
+
+    const imageUrl = getImageUrl(popupNotification?.image);
+    const [imageAspectRatio, setImageAspectRatio] = useState(16 / 9);
+
+    useEffect(() => {
+        if (imageUrl) {
+            Image.getSize(
+                imageUrl,
+                (width, height) => {
+                    if (width && height) {
+                        setImageAspectRatio(width / height);
+                    }
+                },
+                (error) => console.log('Image getSize error:', error)
+            );
+        }
+    }, [imageUrl]);
 
     useEffect(() => {
         if (popupNotification) {
@@ -84,8 +112,8 @@ export default function HomeTab() {
         return colors.background;
     };
 
-    // Show skeleton on initial load or when refreshing
-    if (isLoading || refreshing) {
+    // Show skeleton on initial load only
+    if (isLoading) {
         return (
             <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: getSafeAreaColor() }]}>
                 <StatusBar 
@@ -145,7 +173,7 @@ export default function HomeTab() {
                                 <Ionicons name="megaphone-outline" size={24} color={colors.primary} />
                             </View>
                             <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts?.inter?.bold || 'System', fontSize: 18, flex: 1 }]}>
-                                {popupNotification?.title || "Announcement"}
+                                {popupNotification?.subject || popupNotification?.title || "Announcement"}
                             </Text>
                             <TouchableOpacity 
                                 style={styles.closeButton} 
@@ -156,19 +184,56 @@ export default function HomeTab() {
                         </View>
                         
                         <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                            <Text style={[styles.modalMessage, { color: colors.text, fontFamily: fonts?.inter?.regular || 'System', fontSize: 14, lineHeight: 22 }]}>
-                                {popupNotification?.msg || popupNotification?.message || popupNotification?.content || ""}
-                            </Text>
+                            {imageUrl ? (
+                                <View style={styles.imageContainer}>
+                                    <Image 
+                                        source={{ uri: imageUrl }} 
+                                        style={[styles.notificationImage, { aspectRatio: imageAspectRatio }]} 
+                                        resizeMode="contain"
+                                    />
+                                </View>
+                            ) : null}
+                            {!!(popupNotification?.msg || popupNotification?.message || popupNotification?.content) && (
+                                <Text style={[styles.modalMessage, { color: colors.text, fontFamily: fonts?.inter?.regular || 'System', fontSize: 14, lineHeight: 22 }]}>
+                                    {popupNotification?.msg || popupNotification?.message || popupNotification?.content}
+                                </Text>
+                            )}
                         </ScrollView>
                         
-                        <TouchableOpacity 
-                            style={[styles.dismissButton, { backgroundColor: colors.primary }]}
-                            onPress={() => setPopupVisible(false)}
-                        >
-                            <Text style={[styles.dismissButtonText, { fontFamily: fonts?.inter?.bold || 'System', color: '#ffffff', fontSize: 16 }]}>
-                                Dismiss
-                            </Text>
-                        </TouchableOpacity>
+                        {popupNotification?.button_url && popupNotification?.button_text ? (
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity 
+                                    style={[styles.dismissButton, { backgroundColor: colors.primary, marginBottom: 8 }]}
+                                    onPress={() => {
+                                        setPopupVisible(false);
+                                        if (popupNotification.button_url) {
+                                            Linking.openURL(popupNotification.button_url).catch(err => console.error("Could not open link", err));
+                                        }
+                                    }}
+                                >
+                                    <Text style={[styles.dismissButtonText, { fontFamily: fonts?.inter?.bold || 'System', color: '#ffffff', fontSize: 16 }]}>
+                                        {popupNotification.button_text}
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                    style={[styles.secondaryButton, { borderColor: isDark ? '#333333' : '#e0e0e0' }]}
+                                    onPress={() => setPopupVisible(false)}
+                                >
+                                    <Text style={[styles.secondaryButtonText, { color: colors.text, fontFamily: fonts?.inter?.bold || 'System', fontSize: 15 }]}>
+                                        Close
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity 
+                                style={[styles.dismissButton, { backgroundColor: colors.primary }]}
+                                onPress={() => setPopupVisible(false)}
+                            >
+                                <Text style={[styles.dismissButtonText, { fontFamily: fonts?.inter?.bold || 'System', color: '#ffffff', fontSize: 16 }]}>
+                                    Dismiss
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
             </Modal>
@@ -214,9 +279,9 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingHorizontal: 20,
-        paddingBottom: 40,
+        paddingBottom: 32,
         paddingTop: 8,
-        maxHeight: '80%',
+        maxHeight: '90%',
     },
     modalHandle: {
         width: 40,
@@ -242,13 +307,41 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     modalBody: {
-        marginBottom: 24,
-        maxHeight: 300,
+        marginBottom: 20,
+        maxHeight: 520,
+    },
+    imageContainer: {
+        width: '100%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 14,
+        backgroundColor: '#f5f5f5',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    notificationImage: {
+        width: '100%',
+    },
+    buttonContainer: {
+        width: '100%',
     },
     dismissButton: {
         borderRadius: 12,
         paddingVertical: 14,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    dismissButtonText: {
+        fontSize: 16,
+    },
+    secondaryButton: {
+        borderRadius: 12,
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    secondaryButtonText: {
+        fontSize: 15,
     },
 });

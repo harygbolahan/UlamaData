@@ -315,41 +315,45 @@ export default function BuyDataScreen() {
                                             styles.planCard,
                                             { 
                                                 backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
-                                                borderColor: isDark ? '#2d2d2d' : '#f0f0f0',
+                                                borderColor: isDark ? '#2d2d2d' : '#ebebeb',
                                             }
                                         ]}
                                         onPress={() => handlePlanSelect(plan)}
-                                        activeOpacity={0.7}
+                                        activeOpacity={0.75}
                                     >
-                                        <View style={[
-                                            styles.planLabel, 
-                                            isDark 
-                                                ? { backgroundColor: colors.primary } 
-                                                : { backgroundColor: colors.primary + '20' }
-                                        ]}>
-                                            <Text style={[
-                                                styles.planLabelText, 
-                                                { fontFamily: fonts.inter.bold },
-                                                isDark ? { color: colors.apiTextColor || '#fff' } : { color: colors.primary }
-                                            ]}>
+                                        {/* Top accent strip + type badge */}
+                                        <View style={[styles.planAccentStrip, { backgroundColor: colors.primary }]}>
+                                            <Text style={[styles.planTypeText, { fontFamily: fonts.inter.bold }]}>
                                                 {plan.type}
                                             </Text>
                                         </View>
 
-                                        <Text style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                            {plan.datasize}
-                                        </Text>
+                                        {/* Card body */}
+                                        <View style={styles.planBody}>
+                                            {/* Data size — hero element */}
+                                            <Text
+                                                style={[styles.planSize, { color: colors.text, fontFamily: fonts.inter.bold }]}
+                                                numberOfLines={1}
+                                                adjustsFontSizeToFit
+                                            >
+                                                {plan.datasize}
+                                            </Text>
 
-                                        <Text style={[
-                                            styles.planPrice, 
-                                            { fontFamily: fonts.inter.bold, color: isDark ? '#fff' : colors.primary }
-                                        ]}>
-                                            ₦{plan.price}
-                                        </Text>
+                                            {/* Price — strong accent */}
+                                            <Text style={[
+                                                styles.planPrice,
+                                                { fontFamily: fonts.inter.bold, color: colors.primary }
+                                            ]}>
+                                                ₦{plan.price}
+                                            </Text>
 
-                                        <Text style={[styles.planDays, { color: colors.icon, fontFamily: fonts.inter.semiBold }]}>
-                                            {plan.day} {plan.day === '1' ? 'day' : 'days'}
-                                        </Text>
+                                            {/* Validity footer pill */}
+                                            <View style={[styles.validityPill, { backgroundColor: isDark ? '#2a2a2a' : colors.primary + '12' }]}>
+                                                <Text style={[styles.validityText, { color: isDark ? colors.icon : colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                                    {plan.day}{plan.day === '1' ? 'd' : 'd'}
+                                                </Text>
+                                            </View>
+                                        </View>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -440,43 +444,58 @@ const styles = StyleSheet.create({
     plansGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 20,
-        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        gap: 8,
+        marginTop: 4,
     },
     planCard: {
-        width: '48%',
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-        borderRadius: 16,
-        minHeight: 135,
-        flexDirection: 'column',
-        justifyContent: 'space-between',
+        width: '31.2%',
+        borderRadius: 12,
+        overflow: 'hidden',
         borderWidth: 1,
-        marginBottom: 12,
+        marginBottom: 8,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
         elevation: 2,
     },
-    planLabel: {
+    planAccentStrip: {
+        width: '100%',
         paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
+        paddingVertical: 5,
+    },
+    planTypeText: {
+        fontSize: 8,
+        color: '#fff',
+        textTransform: 'uppercase',
+        letterSpacing: 0.6,
+    },
+    planBody: {
+        paddingHorizontal: 8,
+        paddingVertical: 10,
+        gap: 4,
+    },
+    planSize: {
+        fontSize: 17,
+        lineHeight: 20,
+        letterSpacing: -0.3,
+    },
+    planPrice: {
+        fontSize: 13,
+        lineHeight: 16,
+    },
+    validityPill: {
         alignSelf: 'flex-start',
+        borderRadius: 20,
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        marginTop: 2,
     },
-    planLabelText: { fontSize: 10, textTransform: 'uppercase' },
-    planSize: { fontSize: 22, lineHeight: 26 },
-    planName: { fontSize: 11, marginBottom: 8, opacity: 0.8, lineHeight: 14 },
-    planPrice: { fontSize: 16 },
-    planDays: { fontSize: 14 },
-    cashbackBadge: {
-        backgroundColor: '#E8F5E9',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
+    validityText: {
+        fontSize: 10,
+        lineHeight: 14,
     },
-    cashbackText: { fontSize: 10, color: '#4CAF50' },
     emptyContainer: {
         paddingVertical: 60,
         alignItems: 'center',

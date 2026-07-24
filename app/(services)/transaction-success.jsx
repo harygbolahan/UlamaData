@@ -1,16 +1,52 @@
-import Button from '@/components/ui/Button';
-import LoadingOverlay from '@/components/ui/LoadingOverlay';
+﻿import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
-import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, ActivityIndicator, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+    Animated,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
-import * as Print from 'expo-print';
+
+// Network brand palette
+const NETWORK_COLORS = {
+    MTN: { bg: '#FFCC00', text: '#000000' },
+    AIRTEL: { bg: '#E40000', text: '#FFFFFF' },
+    GLO: { bg: '#2EAD2E', text: '#FFFFFF' },
+    '9MOBILE': { bg: '#006633', text: '#FFFFFF' },
+    ETISALAT: { bg: '#006633', text: '#FFFFFF' },
+};
+
+function getNetworkBrand(network) {
+    if (!network) return { bg: '#888', text: '#fff' };
+    const key = network.toUpperCase().replace(/\s+/g, '');
+    for (const [k, v] of Object.entries(NETWORK_COLORS)) {
+        if (key.includes(k)) return v;
+    }
+    return { bg: '#555', text: '#fff' };
+}
+
+function DashedDivider({ color }) {
+    return (
+        <View style={[dashedStyles.row]}>
+            {Array.from({ length: 28 }).map((_, i) => (
+                <View key={i} style={[dashedStyles.dash, { backgroundColor: color }]} />
+            ))}
+        </View>
+    );
+}
+
+const dashedStyles = StyleSheet.create({
+    row: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 16, paddingHorizontal: 4 },
+    dash: { width: 5, height: 1.5, borderRadius: 1 },
+});
 
 export default function TransactionSuccessScreen() {
     const params = useLocalSearchParams();
@@ -18,19 +54,17 @@ export default function TransactionSuccessScreen() {
     const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [isCapturing, setIsCapturing] = useState(false);
-    const [resendModalVisible, setResendModalVisible] = useState(false);
-    const [resendStatus, setResendStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
-    const [resendMessage, setResendMessage] = useState('');
-    const scaleAnim = useRef(new Animated.Value(0)).current;
+
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const slideAnim = useRef(new Animated.Value(50)).current;
+    const slideAnim = useRef(new Animated.Value(40)).current;
+    const scaleAnim = useRef(new Animated.Value(0.88)).current;
     const receiptRef = useRef(null);
 
     const {
         service = 'Data Subscription',
-        beneficiary = '08038295877',
-        amount = '400',
-        network = 'MTN',
+        beneficiary = '',
+        amount = '0',
+        network = '',
         planSize,
         validity,
         meterType,
@@ -61,21 +95,76 @@ export default function TransactionSuccessScreen() {
         transref,
     } = params;
 
+    const networkBrand = getNetworkBrand(network || provider || '');
+    const displayTransactionId = requestId || transactionId || `TXN${Date.now().toString().slice(-8)}`;
+    const isDataService =
+        service === 'Data Subscription' ||
+        service === 'Data Pin' ||
+        (service || '').toLowerCase().includes('data');
+
+    const date = new Date().toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+    // Info rows
+    const infoRows = [];
+    infoRows.push({ label: 'Recipient', value: beneficiary || phone || 'N/A' });
+    if (network) infoRows.push({ label: 'Network', value: network });
+    if (customerName) infoRows.push({ label: 'Customer', value: customerName });
+    if (iuc) infoRows.push({ label: 'Smart Card / IUC', value: iuc });
+    if (meterNumber) infoRows.push({ label: 'Meter Number', value: meterNumber });
+    if (meterType) infoRows.push({ label: 'Meter Type', value: meterType });
+    if (discoName || provider) infoRows.push({ label: 'Provider', value: discoName || provider });
+    if (cablePlan || planName) infoRows.push({ label: 'Plan', value: cablePlan || planName });
+    if (validity) infoRows.push({ label: 'Validity', value: validity });
+    if (units) infoRows.push({ label: 'Units', value: units });
+    if (quantity && (service === 'Data Pin' || service === 'Airtime Pin')) {
+        infoRows.push({ label: 'Quantity', value: `${quantity} PIN(s)` });
+    }
+    if (pinSize && service === 'Airtime Pin') {
+        infoRows.push({ label: 'Pin Denomination', value: `₦${pinSize}` });
+    }
+    infoRows.push({ label: 'Transaction ID', value: displayTransactionId });
+    infoRows.push({ label: 'Date', value: date });
+
+    // Balance rows â€” hidden during share capture
+    const balanceRows = [];
+    if (oldBalance) {
+        balanceRows.push({
+            label: 'Prev. Balance',
+            value: `₦${parseFloat(oldBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        });
+    }
+    if (newBalance) {
+        balanceRows.push({
+            label: 'New Balance',
+            value: `₦${parseFloat(newBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        });
+    }
+
+    // PIN/Token highlights
+    const highlightRows = [];
+    if (token) highlightRows.push({ label: 'Token', value: token });
+    if (serial) highlightRows.push({ label: 'Serial Number', value: serial });
+    if (airtimePin) highlightRows.push({ label: 'PIN', value: airtimePin });
+    if (dataPins) {
+        try {
+            const pins = JSON.parse(dataPins);
+            if (Array.isArray(pins)) {
+                pins.forEach((pin, i) => highlightRows.push({ label: `PIN ${i + 1}`, value: pin }));
+            }
+        } catch (_) {}
+    }
+
     const handleShare = async () => {
         try {
-            setIsLoading(true);
             setIsCapturing(true);
-
-            // Wait for UI to update
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Capture the receipt view as image
-            const uri = await captureRef(receiptRef, {
-                format: 'png',
-                quality: 1,
-            });
-
-            // Share the image
+            await new Promise(resolve => setTimeout(resolve, 150));
+            const uri = await captureRef(receiptRef, { format: 'png', quality: 1 });
             if (await Sharing.isAvailableAsync()) {
                 await Sharing.shareAsync(uri, {
                     mimeType: 'image/png',
@@ -90,565 +179,492 @@ export default function TransactionSuccessScreen() {
             showToast('error', 'Failed to share receipt');
         } finally {
             setIsCapturing(false);
-            setIsLoading(false);
         }
     };
-
-    const handleRetry = () => {
-        setResendStatus('idle');
-        setResendMessage('Are you sure you want to resend this transaction?');
-        setResendModalVisible(true);
-    };
-
-    const confirmResend = async () => {
-        setResendStatus('loading');
-        try {
-            const refToUse = transref || transactionId || requestId;
-            const response = await api.post('/resend-transaction', {
-                transref: refToUse,
-                pin: "12345"
-            });
-            console.log('Resend Response:', response);
-            
-            const resData = response.data || response;
-            const statusStr = (resData.status || resData.Status || '').toLowerCase();
-            const isSuccess = statusStr === 'success' || statusStr === 'successful';
-            
-            setResendStatus(isSuccess ? 'success' : 'error');
-            setResendMessage(resData.message || resData.api_response || resData.response || 'Transaction processed.');
-        } catch (error) {
-            console.error('Error resending transaction:', error);
-            setResendStatus('error');
-            setResendMessage(error.message || 'Could not resend transaction.');
-        }
-    };
-
-    const extractAddress = (data) => {
-        if (!data) return null;
-        if (typeof data === 'string') {
-            try {
-                const parsed = JSON.parse(data);
-                return extractAddress(parsed);
-            } catch (e) {
-                const match = data.match(/(?:^|[^a-z0-9_])(?:customer_?address|address)\s*[:=]\s*["']?([^"'\n\r,}]+)/i);
-                if (match && match[1]) {
-                    const val = match[1].trim();
-                    if (!val.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) && !val.includes('@')) {
-                        return val;
-                    }
-                }
-                return null;
-            }
-        }
-        if (typeof data === 'object') {
-            const addressKeys = ['customerAddress', 'customer_address', 'address', 'Address', 'customer_Address', 'user_address'];
-            for (const key of addressKeys) {
-                if (data[key] && typeof data[key] === 'string' && data[key].trim().length > 0) {
-                    const val = data[key].trim();
-                    if (!val.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) && !val.includes('@')) {
-                        return val;
-                    }
-                }
-            }
-            const containerKeys = ['api_response', 'api_response_log', 'data', 'details', 'log', 'response', 'result'];
-            for (const key of containerKeys) {
-                if (data[key]) {
-                    const found = extractAddress(data[key]);
-                    if (found) return found;
-                }
-            }
-        }
-        return null;
-    };
-
-    const resolvedAddress = customerAddress || params.address || extractAddress(apiResponse) || extractAddress(params);
-
-    const additionalDetails = [];
-
-    if (dataSize) {
-        additionalDetails.push({ label: 'Data Size', value: dataSize });
-    }
-    if (dataType) {
-        additionalDetails.push({ label: 'Data Type', value: dataType });
-    }
-    if (airtimeType) {
-        additionalDetails.push({ label: 'Airtime Type', value: airtimeType });
-    }
-    if (planSize && !dataSize) {
-        additionalDetails.push({ label: 'Plan', value: planSize });
-    }
-    if (validity) {
-        additionalDetails.push({ label: 'Validity', value: validity });
-    }
-    if (meterType) {
-        additionalDetails.push({ label: 'Meter Type', value: meterType });
-    }
-    if (discoName || provider) {
-        additionalDetails.push({ label: 'Provider', value: discoName || provider });
-    }
-    if (cablePlan || planName) {
-        additionalDetails.push({ label: 'Cable Plan', value: cablePlan || planName });
-    }
-    if (customerName) {
-        additionalDetails.push({ label: 'Customer Name', value: customerName });
-    }
-    if (resolvedAddress) {
-        additionalDetails.push({ label: 'Address', value: resolvedAddress });
-    }
-    if (iuc) {
-        additionalDetails.push({ label: 'Smart Card/IUC', value: iuc });
-    }
-    if (meterNumber) {
-        additionalDetails.push({ label: 'Meter Number', value: meterNumber });
-    }
-    if (token) {
-        additionalDetails.push({ label: 'Token', value: token, highlight: true });
-    }
-    if (units) {
-        additionalDetails.push({ label: 'Units', value: units });
-    }
-    if (quantity && (service === 'Data Pin' || service === 'Airtime Pin')) {
-        additionalDetails.push({ label: 'Quantity', value: `${quantity} PIN(s)` });
-    }
-    if (pinSize && service === 'Airtime Pin') {
-        additionalDetails.push({ label: 'Pin Size', value: `₦${pinSize}` });
-    }
-    if (serial) {
-        additionalDetails.push({ label: 'Serial Number', value: serial, highlight: true });
-    }
-    if (airtimePin) {
-        additionalDetails.push({ label: 'PIN', value: airtimePin, highlight: true });
-    }
-    if (dataPins) {
-        try {
-            const pins = JSON.parse(dataPins);
-            if (Array.isArray(pins) && pins.length > 0) {
-                pins.forEach((pin, index) => {
-                    additionalDetails.push({ 
-                        label: `PIN ${index + 1}`, 
-                        value: pin, 
-                        highlight: true 
-                    });
-                });
-            }
-        } catch (e) {
-            console.error('Error parsing data pins:', e);
-        }
-    }
-    if (oldBalance && !isCapturing) {
-        additionalDetails.push({ label: 'Previous Balance', value: `₦${parseFloat(oldBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}` });
-    }
-    if (newBalance && !isCapturing) {
-        additionalDetails.push({ label: 'New Balance', value: `₦${parseFloat(newBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}` });
-    }
-
-    const displayTransactionId = requestId || transactionId || `TXN${Date.now().toString().slice(-8)}`;
-    const date = new Date().toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
 
     useEffect(() => {
-        // Simulate initial loading
-        setTimeout(() => setIsLoading(false), 500);
-
-        Animated.sequence([
-            Animated.spring(scaleAnim, {
-                toValue: 1,
-                tension: 50,
-                friction: 7,
-                useNativeDriver: true,
-            }),
-            Animated.parallel([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 400,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 400,
-                    useNativeDriver: true,
-                })
-            ])
+        setTimeout(() => setIsLoading(false), 400);
+        Animated.parallel([
+            Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+            Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+            Animated.spring(scaleAnim, { toValue: 1, tension: 60, friction: 8, useNativeDriver: true }),
         ]).start();
     }, []);
 
+    const dividerColor = isDark ? '#2e2e2e' : '#ddd';
+    const cardBg = isDark ? '#1a1a1a' : '#FFFFFF';
+    const subtleText = isDark ? '#777' : '#9a9a9a';
+    const screenBg = isDark ? '#0d0d0d' : '#F0F0F5';
+
     return (
-        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.screen, { backgroundColor: screenBg }]}>
+            {/* Close button */}
             <TouchableOpacity
-                style={styles.closeButton}
+                style={[styles.closeBtn, { backgroundColor: isDark ? '#2a2a2a' : '#e2e2e6' }]}
                 onPress={() => router.push('/(tabs)/home')}
+                activeOpacity={0.7}
             >
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={18} color={isDark ? '#aaa' : '#555'} />
             </TouchableOpacity>
 
-            <View ref={receiptRef} collapsable={false} style={styles.content}>
-                <Animated.View
-                    style={[
-                        styles.successIconContainer,
-                        {
-                            backgroundColor: colors.primary + '15',
-                            transform: [{ scale: scaleAnim }]
-                        }
-                    ]}
-                >
-                    <Ionicons name="checkmark-circle" size={80} color={colors.primary} />
-                </Animated.View>
-
-                <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-                    <Text style={[styles.title, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                        Transaction Successful!
-                    </Text>
-
-                    <Text style={[styles.subtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                        {apiResponse || `Your ${service.toLowerCase()} was successful`}
-                    </Text>
-                </Animated.View>
-
-                <Animated.View
-                    style={[
-                        styles.detailsCard,
-                        {
-                            backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5',
-                            opacity: fadeAnim,
-                            transform: [{ translateY: slideAnim }]
-                        }
-                    ]}
-                >
-                    {!isCapturing && (
-                        <View style={styles.detailRow}>
-                            <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                Amount
-                            </Text>
-                            <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                ₦{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </Text>
-                        </View>
-                    )}
-
-                    <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Beneficiary
-                        </Text>
-                        <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            {beneficiary}
-                        </Text>
-                    </View>
-
-                    {network && (
-                        <View style={styles.detailRow}>
-                            <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                Network
-                            </Text>
-                            <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                                {network}
-                            </Text>
-                        </View>
-                    )}
-
-                    {additionalDetails.map((detail, index) => (
-                        <View key={index} style={[
-                            styles.detailRow,
-                            detail.highlight && styles.highlightRow,
-                            detail.highlight && { backgroundColor: colors.primary + '10', padding: 12, borderRadius: 8, marginVertical: 4 }
-                        ]}>
-                            <Text style={[
-                                styles.detailLabel, 
-                                { 
-                                    color: detail.highlight ? colors.primary : colors.icon, 
-                                    fontFamily: detail.highlight ? fonts.inter.semiBold : fonts.inter.regular 
-                                }
-                            ]}>
-                                {detail.label}
-                            </Text>
-                            <Text style={[
-                                styles.detailValue, 
-                                { 
-                                    color: detail.highlight ? colors.primary : colors.text, 
-                                    fontFamily: detail.highlight ? fonts.inter.bold : fonts.inter.semiBold 
-                                }
-                            ]}>
-                                {detail.value}
-                            </Text>
-                        </View>
-                    ))}
-
-                    <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Transaction ID
-                        </Text>
-                        <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            {displayTransactionId}
-                        </Text>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                            Date & Time
-                        </Text>
-                        <Text style={[styles.detailValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
-                            {date}
-                        </Text>
-                    </View>
-                </Animated.View>
-
-               
-            </View>
-
-            <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
-                <Button
-                    title="Share Receipt"
-                    onPress={handleShare}
-                    style={{ marginBottom: 12 }}
-                />
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                    <Button
-                        title="Retry/Resend"
-                        onPress={handleRetry}
-                        variant="outline"
-                        style={{ flex: 1 }}
-                    />
-                    <Button
-                        title="Done"
-                        onPress={() => router.push('/(tabs)/home')}
-                        variant="outline"
-                        style={{ flex: 1 }}
-                    />
-                </View>
-            </Animated.View>
-            <LoadingOverlay visible={isLoading} />
-
-            {/* Custom Resend Modal */}
-            <Modal
-                visible={resendModalVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => {
-                    if (resendStatus !== 'loading') {
-                        setResendModalVisible(false);
-                    }
-                }}
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scroll}
             >
-                <View style={modalStyles.overlay}>
-                    <View style={[modalStyles.container, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
-                        {resendStatus === 'loading' ? (
-                            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                                <ActivityIndicator size="large" color={colors.primary} />
-                                <Text style={[modalStyles.message, { color: colors.text, fontFamily: fonts.inter.medium, marginTop: 16 }]}>
-                                    Resending transaction...
+                <Animated.View
+                    style={[
+                        styles.receiptWrapper,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+                        },
+                    ]}
+                >
+                    {/* â”€â”€ Receipt (captured for share) â”€â”€ */}
+                    <View ref={receiptRef} collapsable={false} style={{ backgroundColor: screenBg }}>
+
+                        {/* Top notch row */}
+                        <View style={[styles.notchRow, { backgroundColor: screenBg }]}>
+                            <View style={[styles.notch, { backgroundColor: screenBg }]} />
+                            <DashedDivider color={dividerColor} />
+                            <View style={[styles.notch, { backgroundColor: screenBg }]} />
+                        </View>
+
+                        {/* Receipt body */}
+                        <View style={[styles.receiptBody, { backgroundColor: cardBg }]}>
+
+                            {/* Branding header */}
+                            <View style={styles.brandRow}>
+                                <Text style={[styles.brandName, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                    UlamaData
+                                </Text>
+                                <Text style={[styles.brandSub, { color: subtleText, fontFamily: fonts.inter.regular }]}>
+                                    Transaction Receipt
                                 </Text>
                             </View>
-                        ) : (
-                            <>
-                                <View style={[
-                                    modalStyles.iconContainer, 
-                                    { 
-                                        backgroundColor: resendStatus === 'success' 
-                                            ? (colors.success || '#10B981') + '15' 
-                                            : resendStatus === 'error' 
-                                                ? colors.error + '15' 
-                                                : colors.primary + '15' 
-                                    }
-                                ]}>
-                                    <Ionicons 
-                                        name={
-                                            resendStatus === 'success' 
-                                                ? "checkmark-circle" 
-                                                : resendStatus === 'error' 
-                                                    ? "alert-circle" 
-                                                    : "refresh"
-                                        } 
-                                        size={48} 
-                                        color={
-                                            resendStatus === 'success' 
-                                                ? (colors.success || '#10B981') 
-                                                : resendStatus === 'error' 
-                                                    ? colors.error 
-                                                    : colors.primary
-                                        } 
-                                    />
+
+                            {/* Success badge */}
+                            <View style={styles.centerRow}>
+                                <View style={[styles.successPill, { backgroundColor: '#16A34A' }]}>
+                                    <Ionicons name="checkmark" size={13} color="#fff" />
+                                    <Text style={[styles.successPillText, { fontFamily: fonts.inter.bold }]}>
+                                        {isDataService ? 'Data Purchase Successful' : 'Transaction Successful'}
+                                    </Text>
                                 </View>
+                            </View>
 
-                                <Text style={[modalStyles.title, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                    {
-                                        resendStatus === 'success' 
-                                            ? "Success" 
-                                            : resendStatus === 'error' 
-                                                ? "Transaction Failed" 
-                                                : "Resend Transaction"
-                                    }
-                                </Text>
-
-                                <Text style={[modalStyles.message, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                    {resendMessage}
-                                </Text>
-
-                                {resendStatus === 'idle' ? (
-                                    <View style={modalStyles.buttonContainer}>
-                                        <TouchableOpacity
-                                            style={[modalStyles.button, { backgroundColor: isDark ? '#2a2a2a' : '#f5f5f5' }]}
-                                            onPress={() => setResendModalVisible(false)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={{ color: colors.text, fontFamily: fonts.inter.medium }}>
-                                                Cancel
-                                            </Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[modalStyles.button, { backgroundColor: colors.primary }]}
-                                            onPress={confirmResend}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={{ color: '#fff', fontFamily: fonts.inter.medium }}>
-                                                Resend
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    <TouchableOpacity
-                                        style={[modalStyles.button, { backgroundColor: colors.primary, width: '100%' }]}
-                                        onPress={() => setResendModalVisible(false)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={{ color: '#fff', fontFamily: fonts.inter.medium }}>
-                                            Close
+                            {/* Network badge + Plan hero */}
+                            {(network || provider) ? (
+                                <View style={styles.networkSection}>
+                                    <View style={[styles.networkBadge, { backgroundColor: networkBrand.bg }]}>
+                                        <Text style={[styles.networkBadgeText, { color: networkBrand.text, fontFamily: fonts.inter.bold }]}>
+                                            {(network || provider).toUpperCase()}
                                         </Text>
-                                    </TouchableOpacity>
-                                )}
-                            </>
-                        )}
+                                    </View>
+                                    {(planSize || dataSize) ? (
+                                        <Text style={[styles.planHero, { color: colors.text, fontFamily: fonts.inter.bold }]}>
+                                            {planSize || dataSize}
+                                        </Text>
+                                    ) : null}
+                                </View>
+                            ) : null}
+
+                            {/* Amount â€” hidden when capturing for share */}
+                            {!isCapturing && (
+                                <View style={[styles.amountBox, {
+                                    backgroundColor: colors.primary + '12',
+                                    borderColor: colors.primary + '25',
+                                }]}>
+                                    <Text style={[styles.amountLabel, { color: subtleText, fontFamily: fonts.inter.regular }]}>
+                                        Amount Paid
+                                    </Text>
+                                    <Text style={[styles.amountValue, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                        ₦{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </Text>
+                                </View>
+                            )}
+
+                            <DashedDivider color={dividerColor} />
+
+                            {/* Info rows */}
+                            <View style={styles.infoSection}>
+                                {infoRows.map((row, i) => (
+                                    <View
+                                        key={i}
+                                        style={[
+                                            styles.infoRow,
+                                            i < infoRows.length - 1 && {
+                                                borderBottomWidth: 0.5,
+                                                borderBottomColor: dividerColor,
+                                            },
+                                        ]}
+                                    >
+                                        <Text style={[styles.infoLabel, { color: subtleText, fontFamily: fonts.inter.regular }]}>
+                                            {row.label}
+                                        </Text>
+                                        <Text
+                                            style={[styles.infoValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}
+                                            numberOfLines={2}
+                                        >
+                                            {row.value}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+
+                            {/* Balance rows â€” hidden during capture */}
+                            {!isCapturing && balanceRows.length > 0 && (
+                                <>
+                                    <DashedDivider color={dividerColor} />
+                                    <View style={styles.infoSection}>
+                                        {balanceRows.map((row, i) => (
+                                            <View
+                                                key={i}
+                                                style={[
+                                                    styles.infoRow,
+                                                    i < balanceRows.length - 1 && {
+                                                        borderBottomWidth: 0.5,
+                                                        borderBottomColor: dividerColor,
+                                                    },
+                                                ]}
+                                            >
+                                                <Text style={[styles.infoLabel, { color: subtleText, fontFamily: fonts.inter.regular }]}>
+                                                    {row.label}
+                                                </Text>
+                                                <Text style={[styles.infoValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                                                    {row.value}
+                                                </Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                </>
+                            )}
+
+                            {/* Highlighted PIN / Token rows */}
+                            {highlightRows.length > 0 && (
+                                <>
+                                    <DashedDivider color={dividerColor} />
+                                    <View style={[styles.infoSection, { gap: 8 }]}>
+                                        {highlightRows.map((row, i) => (
+                                            <View
+                                                key={i}
+                                                style={[
+                                                    styles.highlightBox,
+                                                    {
+                                                        backgroundColor: colors.primary + '10',
+                                                        borderColor: colors.primary + '30',
+                                                    },
+                                                ]}
+                                            >
+                                                <Text style={[styles.highlightLabel, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                                    {row.label}
+                                                </Text>
+                                                <Text style={[styles.highlightValue, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                                    {row.value}
+                                                </Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                </>
+                            )}
+
+                            {/* api_response â€” dynamic dial info (e.g. "Dial *461*4# to check balance") */}
+                            {apiResponse && isDataService && (
+                                <>
+                                    <DashedDivider color={dividerColor} />
+                                    <View style={[styles.dialBox, {
+                                        backgroundColor: isDark ? '#0d2010' : '#F0FDF4',
+                                        borderColor: '#16A34A30',
+                                    }]}>
+                                        <Ionicons name="information-circle" size={16} color="#16A34A" style={{ marginTop: 1 }} />
+                                        <Text style={[styles.dialText, {
+                                            color: isDark ? '#4ade80' : '#15803D',
+                                            fontFamily: fonts.inter.regular,
+                                        }]}>
+                                            {apiResponse}
+                                        </Text>
+                                    </View>
+                                </>
+                            )}
+
+                            <DashedDivider color={dividerColor} />
+
+                            {/* Footer branding */}
+                            <View style={styles.footerBrand}>
+                                <Text style={[styles.footerBrandName, { color: colors.primary, fontFamily: fonts.inter.bold }]}>
+                                    UlamaData
+                                </Text>
+                                <Text style={[styles.footerNote, { color: subtleText, fontFamily: fonts.inter.regular }]}>
+                                    This is a computer-generated receipt.{'\n'}For support, contact us via the app.
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Bottom notch row */}
+                        <View style={[styles.notchRow, { backgroundColor: screenBg }]}>
+                            <View style={[styles.notch, { backgroundColor: screenBg }]} />
+                            <DashedDivider color={dividerColor} />
+                            <View style={[styles.notch, { backgroundColor: screenBg }]} />
+                        </View>
                     </View>
-                </View>
-            </Modal>
-        </ScrollView>
+                    {/* â”€â”€ End receipt capture area â”€â”€ */}
+
+                    {/* Action buttons */}
+                    <View style={styles.actions}>
+                        <TouchableOpacity
+                            style={[styles.shareBtn, { backgroundColor: colors.primary }]}
+                            onPress={handleShare}
+                            activeOpacity={0.85}
+                        >
+                            <Ionicons name="share-social-outline" size={19} color="#fff" />
+                            <Text style={[styles.shareBtnText, { fontFamily: fonts.inter.bold }]}>
+                                Share Receipt
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.doneBtn, {
+                                borderColor: colors.primary + '40',
+                                backgroundColor: colors.primary + '10',
+                            }]}
+                            onPress={() => router.push('/(tabs)/home')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.doneBtnText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                Done
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            </ScrollView>
+
+            <LoadingOverlay visible={isLoading} />
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    closeButton: {
-        position: 'absolute',
-        top: 50,
-        right: 20,
-        zIndex: 1,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    content: {
+    screen: {
         flex: 1,
-        paddingHorizontal: 20,
-        paddingTop: 100,
-        alignItems: 'center',
     },
-    successIconContainer: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+    closeBtn: {
+        position: 'absolute',
+        top: 52,
+        right: 20,
+        zIndex: 10,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 24,
     },
-    title: {
-        fontSize: 24,
-        marginBottom: 8,
-        textAlign: 'center',
+    scroll: {
+        paddingTop: 62,
+        paddingHorizontal: 16,
+        paddingBottom: 40,
     },
-    subtitle: {
+    receiptWrapper: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+
+    // Notch rows (receipt paper effect)
+    notchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        zIndex: 2,
+    },
+    notch: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        marginHorizontal: -11,
+        zIndex: 3,
+    },
+
+    // Receipt body
+    receiptBody: {
+        paddingHorizontal: 24,
+        paddingTop: 4,
+        paddingBottom: 4,
+    },
+
+    // Branding
+    brandRow: {
+        alignItems: 'center',
+        paddingTop: 22,
+        paddingBottom: 14,
+        gap: 4,
+    },
+    brandName: {
+        fontSize: 22,
+        letterSpacing: -0.5,
+    },
+    brandSub: {
+        fontSize: 10.5,
+        letterSpacing: 1.4,
+        textTransform: 'uppercase',
+    },
+
+    // Success badge
+    centerRow: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    successPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    successPillText: {
+        fontSize: 12,
+        color: '#fff',
+        letterSpacing: 0.2,
+    },
+
+    // Network + Plan
+    networkSection: {
+        alignItems: 'center',
+        marginBottom: 18,
+        gap: 12,
+    },
+    networkBadge: {
+        paddingHorizontal: 22,
+        paddingVertical: 7,
+        borderRadius: 100,
+    },
+    networkBadgeText: {
         fontSize: 14,
+        letterSpacing: 0.8,
+    },
+    planHero: {
+        fontSize: 21,
         textAlign: 'center',
-        marginBottom: 32,
+        letterSpacing: -0.3,
+        lineHeight: 28,
+    },
+
+    // Amount box
+    amountBox: {
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingVertical: 14,
         paddingHorizontal: 20,
+        alignItems: 'center',
     },
-    detailsCard: {
-        width: '100%',
-        padding: 20,
-        borderRadius: 16,
-        gap: 16,
-        marginBottom: 24,
+    amountLabel: {
+        fontSize: 10.5,
+        textTransform: 'uppercase',
+        letterSpacing: 0.9,
+        marginBottom: 4,
     },
-    detailRow: {
+    amountValue: {
+        fontSize: 28,
+        letterSpacing: -0.5,
+    },
+
+    // Info rows
+    infoSection: {
+        gap: 0,
+    },
+    infoRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    highlightRow: {
-        marginHorizontal: -4,
-    },
-    detailLabel: { fontSize: 14 },
-    detailValue: { fontSize: 14, textAlign: 'right', flex: 1, marginLeft: 16 },
-    actions: {
-        flexDirection: 'row',
-        gap: 32,
-    },
-    actionButton: {
-        alignItems: 'center',
-        gap: 8,
-    },
-    actionIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    actionText: { fontSize: 13 },
-    footer: {
-        padding: 20,
-        paddingBottom: 30,
-    },
-});
-
-const modalStyles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    container: {
-        width: '100%',
-        maxWidth: 400,
-        borderRadius: 20,
-        padding: 24,
-        alignItems: 'center',
-    },
-    iconContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    title: {
-        fontSize: 20,
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    message: {
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: 24,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingVertical: 11,
         gap: 12,
-        width: '100%',
     },
-    button: {
+    infoLabel: {
+        fontSize: 13,
         flex: 1,
-        paddingVertical: 14,
-        borderRadius: 12,
+    },
+    infoValue: {
+        fontSize: 13,
+        textAlign: 'right',
+        flex: 1.6,
+    },
+
+    // Highlight (PIN/Token)
+    highlightBox: {
+        borderRadius: 10,
+        borderWidth: 1,
+        padding: 14,
+        alignItems: 'center',
+        gap: 4,
+    },
+    highlightLabel: {
+        fontSize: 10.5,
+        textTransform: 'uppercase',
+        letterSpacing: 0.9,
+    },
+    highlightValue: {
+        fontSize: 19,
+        letterSpacing: 2,
+    },
+
+    // Dial / api_response info box
+    dialBox: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+        padding: 12,
+        marginBottom: 2,
+    },
+    dialText: {
+        fontSize: 13,
+        flex: 1,
+        lineHeight: 19,
+    },
+
+    // Footer branding
+    footerBrand: {
+        alignItems: 'center',
+        paddingBottom: 22,
+        gap: 6,
+    },
+    footerBrandName: {
+        fontSize: 16,
+        letterSpacing: -0.3,
+    },
+    footerNote: {
+        fontSize: 11,
+        textAlign: 'center',
+        lineHeight: 17,
+    },
+
+    // Action buttons
+    actions: {
+        marginTop: 6,
+        gap: 10,
+    },
+    shareBtn: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: 8,
+        height: 52,
+        borderRadius: 14,
+    },
+    shareBtnText: {
+        fontSize: 15,
+        color: '#fff',
+    },
+    doneBtn: {
+        height: 50,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    doneBtnText: {
+        fontSize: 15,
     },
 });

@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,9 +21,10 @@ import BannerCarousel from "../ui/BannerCarousel";
 export default function CompactDashboard() {
   const { fonts, toggleTheme, isDark } = useTheme();
   const colors = useApiColors();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { transactions, loading, fetchTransactions } = useTransactions();
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const accentColor = colors.primary;
 
   useEffect(() => {
@@ -36,6 +38,12 @@ export default function CompactDashboard() {
     } catch (error) {
       console.error("Error loading transactions:", error);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refreshUser(), loadTransactions()]);
+    setRefreshing(false);
   };
 
   const loadBalanceVisibility = async () => {
@@ -150,7 +158,17 @@ export default function CompactDashboard() {
         barStyle={isDark ? 'light-content' : 'light-content'}
         translucent={false}
       />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         {/* Compact Header */}
         <View style={[styles.header, { backgroundColor: accentColor }]}>
           <View style={styles.headerTop}>

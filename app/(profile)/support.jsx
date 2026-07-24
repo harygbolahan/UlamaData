@@ -74,6 +74,28 @@ export default function SupportScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+                {/* WhatsApp Channel - Hardcoded */}
+                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                    WhatsApp Channel
+                </Text>
+                <TouchableOpacity
+                    style={[styles.whatsappCard, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}
+                    onPress={() => Linking.openURL('https://whatsapp.com/channel/0029VafSKcJ0LKZJjdIBkd3O')}
+                >
+                    <View style={[styles.whatsappIcon, { backgroundColor: '#25D36620' }]}>
+                        <Ionicons name="logo-whatsapp" size={24 * scale} color="#25D366" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.whatsappTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
+                            ULAMADATA UPDATES
+                        </Text>
+                        <Text style={[styles.whatsappSubtitle, { color: colors.textSecondary, fontFamily: fonts.inter.regular }]}>
+                            Follow our WhatsApp channel for updates
+                        </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20 * scale} color={colors.icon} />
+                </TouchableOpacity>
+
                 {/* Social Media Grid */}
                 {isLoading ? (
                     <View style={styles.loadingContainer}>
@@ -203,5 +225,28 @@ const styles = StyleSheet.create({
     optionText: {
         flex: 1,
         fontSize: 14 * scale,
+    },
+    whatsappCard: {
+        marginHorizontal: 20 * scale,
+        padding: 16 * scale,
+        borderRadius: 12 * scale,
+        marginBottom: 12 * scale,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    whatsappIcon: {
+        width: 44 * scale,
+        height: 44 * scale,
+        borderRadius: 22 * scale,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12 * scale,
+    },
+    whatsappTitle: {
+        fontSize: 14 * scale,
+        marginBottom: 2 * scale,
+    },
+    whatsappSubtitle: {
+        fontSize: 12 * scale,
     },
 });

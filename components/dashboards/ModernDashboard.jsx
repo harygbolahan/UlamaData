@@ -15,6 +15,7 @@ import {
   Animated,
   Easing,
   PixelRatio,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -30,12 +31,13 @@ import { useRef } from "react";
 export default function ModernDashboard() {
   const { fonts, toggleTheme, isDark } = useTheme();
   const colors = useApiColors();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { accountDetails } = usePayment();
   const { showToast } = useToast();
   const { transactions, loading, fetchTransactions } = useTransactions();
   const { width, height } = useWindowDimensions();
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeAccountIndex, setActiveAccountIndex] = useState(0);
   const { scrollText } = useDashboard();
 
@@ -106,6 +108,12 @@ export default function ModernDashboard() {
     } catch (error) {
       console.error("Error loading transactions:", error);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refreshUser(), loadTransactions()]);
+    setRefreshing(false);
   };
 
   const loadBalanceVisibility = async () => {
@@ -288,6 +296,14 @@ export default function ModernDashboard() {
           paddingBottom: 20,
           backgroundColor: isDark ? "#121212" : "#f5f5f5",
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#000066']}
+            tintColor={'#000066'}
+          />
+        }
       >
         {/* Header Background */}
         <View

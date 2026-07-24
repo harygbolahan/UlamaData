@@ -6,15 +6,16 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BannerCarousel from '../ui/BannerCarousel';
 
 export default function MinimalDashboard() {
   const { fonts, toggleTheme, isDark } = useTheme();
   const colors = useApiColors();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { transactions, loading, fetchTransactions } = useTransactions();
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadBalanceVisibility();
@@ -27,6 +28,12 @@ export default function MinimalDashboard() {
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refreshUser(), loadTransactions()]);
+    setRefreshing(false);
   };
 
   const loadBalanceVisibility = async () => {
@@ -140,7 +147,17 @@ export default function MinimalDashboard() {
                     barStyle={isDark ? 'light-content' : 'light-content'}
                     translucent={false}
                 />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         {/* Minimal Header */}
         <View style={[styles.header, { backgroundColor: colors.primary }]}>
           <View style={styles.headerContent}>

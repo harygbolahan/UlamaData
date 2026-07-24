@@ -6,15 +6,16 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BannerCarousel from '../ui/BannerCarousel';
 
 export default function DefaultDashboard() {
     const { fonts, toggleTheme, isDark } = useTheme();
     const colors = useApiColors();
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const { transactions, loading, fetchTransactions } = useTransactions();
     const [balanceVisible, setBalanceVisible] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         loadBalanceVisibility();
@@ -27,6 +28,12 @@ export default function DefaultDashboard() {
         } catch (error) {
             console.error('Error loading transactions:', error);
         }
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await Promise.all([refreshUser(), loadTransactions()]);
+        setRefreshing(false);
     };
 
     const loadBalanceVisibility = async () => {
@@ -126,7 +133,17 @@ export default function DefaultDashboard() {
                 barStyle={isDark ? 'light-content' : 'light-content'}
                 translucent={false}
             />
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
+            >
                 {/* Compact Header */}
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
