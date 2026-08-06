@@ -25,7 +25,7 @@ const getImageUrl = (imagePath) => {
 };
 
 export default function HomeTab() {
-    const { selectedDashboard, isLoading, popupNotification, fetchNotifications } = useDashboard();
+    const { selectedDashboard, isLoading, popupNotification, dismissPopupNotification } = useDashboard();
     const { colors, fonts, isDark } = useTheme();
     const { refreshUser, getSupportData } = useAuth();
     const [refreshing, setRefreshing] = useState(false);
@@ -34,6 +34,15 @@ export default function HomeTab() {
 
     const imageUrl = getImageUrl(popupNotification?.image);
     const [imageAspectRatio, setImageAspectRatio] = useState(16 / 9);
+
+    const hasValidContent = popupNotification && (
+        !!imageUrl ||
+        !!popupNotification?.msg ||
+        !!popupNotification?.message ||
+        !!popupNotification?.content ||
+        !!popupNotification?.subject ||
+        !!popupNotification?.title
+    );
 
     useEffect(() => {
         if (imageUrl) {
@@ -50,15 +59,22 @@ export default function HomeTab() {
     }, [imageUrl]);
 
     useEffect(() => {
-        if (popupNotification) {
+        if (hasValidContent) {
             const timer = setTimeout(() => {
                 setPopupVisible(true);
-            }, 800);
+            }, 500);
             return () => clearTimeout(timer);
         } else {
             setPopupVisible(false);
         }
-    }, [popupNotification]);
+    }, [popupNotification, hasValidContent]);
+
+    const handleDismissPopup = () => {
+        setPopupVisible(false);
+        if (dismissPopupNotification) {
+            dismissPopupNotification(popupNotification);
+        }
+    };
 
     const handleWhatsAppSupport = async () => {
         setOpeningWhatsApp(true);
@@ -82,7 +98,7 @@ export default function HomeTab() {
         useCallback(() => {
             const fetchData = async () => {
                 setRefreshing(true);
-                await Promise.all([refreshUser(), fetchNotifications()]);
+                await refreshUser();
                 setRefreshing(false);
             };
             fetchData();
@@ -152,91 +168,93 @@ export default function HomeTab() {
             </TouchableOpacity>
 
             {/* Pop-up Notification Drawer */}
-            <Modal
-                visible={popupVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setPopupVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <TouchableOpacity 
-                        style={styles.modalBackdrop} 
-                        activeOpacity={1} 
-                        onPress={() => setPopupVisible(false)} 
-                    />
-                    <View style={[styles.modalContent, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
-                        {/* Drawer Handle Indicator */}
-                        <View style={[styles.modalHandle, { backgroundColor: isDark ? '#3a3a3a' : '#e5e5e5' }]} />
-                        
-                        <View style={styles.modalHeader}>
-                            <View style={[styles.modalIconContainer, { backgroundColor: colors.primary + '15' }]}>
-                                <Ionicons name="megaphone-outline" size={24} color={colors.primary} />
-                            </View>
-                            <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts?.inter?.bold || 'System', fontSize: 18, flex: 1 }]}>
-                                {popupNotification?.subject || popupNotification?.title || "Announcement"}
-                            </Text>
-                            <TouchableOpacity 
-                                style={styles.closeButton} 
-                                onPress={() => setPopupVisible(false)}
-                            >
-                                <Ionicons name="close" size={20} color={colors.text} />
-                            </TouchableOpacity>
-                        </View>
-                        
-                        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                            {imageUrl ? (
-                                <View style={styles.imageContainer}>
-                                    <Image 
-                                        source={{ uri: imageUrl }} 
-                                        style={[styles.notificationImage, { aspectRatio: imageAspectRatio }]} 
-                                        resizeMode="contain"
-                                    />
+            {popupVisible && hasValidContent && (
+                <Modal
+                    visible={true}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={handleDismissPopup}
+                >
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity 
+                            style={styles.modalBackdrop} 
+                            activeOpacity={1} 
+                            onPress={handleDismissPopup} 
+                        />
+                        <View style={[styles.modalContent, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
+                            {/* Drawer Handle Indicator */}
+                            <View style={[styles.modalHandle, { backgroundColor: isDark ? '#3a3a3a' : '#e5e5e5' }]} />
+                            
+                            <View style={styles.modalHeader}>
+                                <View style={[styles.modalIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                                    <Ionicons name="megaphone-outline" size={24} color={colors.primary} />
                                 </View>
-                            ) : null}
-                            {!!(popupNotification?.msg || popupNotification?.message || popupNotification?.content) && (
-                                <Text style={[styles.modalMessage, { color: colors.text, fontFamily: fonts?.inter?.regular || 'System', fontSize: 14, lineHeight: 22 }]}>
-                                    {popupNotification?.msg || popupNotification?.message || popupNotification?.content}
+                                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: fonts?.inter?.bold || 'System', fontSize: 18, flex: 1 }]}>
+                                    {popupNotification?.subject || popupNotification?.title || "Announcement"}
                                 </Text>
-                            )}
-                        </ScrollView>
-                        
-                        {popupNotification?.button_url && popupNotification?.button_text ? (
-                            <View style={styles.buttonContainer}>
                                 <TouchableOpacity 
-                                    style={[styles.dismissButton, { backgroundColor: colors.primary, marginBottom: 8 }]}
-                                    onPress={() => {
-                                        setPopupVisible(false);
-                                        if (popupNotification.button_url) {
-                                            Linking.openURL(popupNotification.button_url).catch(err => console.error("Could not open link", err));
-                                        }
-                                    }}
+                                    style={styles.closeButton} 
+                                    onPress={handleDismissPopup}
+                                >
+                                    <Ionicons name="close" size={20} color={colors.text} />
+                                </TouchableOpacity>
+                            </View>
+                            
+                            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                                {imageUrl ? (
+                                    <View style={styles.imageContainer}>
+                                        <Image 
+                                            source={{ uri: imageUrl }} 
+                                            style={[styles.notificationImage, { aspectRatio: imageAspectRatio }]} 
+                                            resizeMode="contain"
+                                        />
+                                    </View>
+                                ) : null}
+                                {!!(popupNotification?.msg || popupNotification?.message || popupNotification?.content) && (
+                                    <Text style={[styles.modalMessage, { color: colors.text, fontFamily: fonts?.inter?.regular || 'System', fontSize: 14, lineHeight: 22 }]}>
+                                        {popupNotification?.msg || popupNotification?.message || popupNotification?.content}
+                                    </Text>
+                                )}
+                            </ScrollView>
+                            
+                            {popupNotification?.button_url && popupNotification?.button_text ? (
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity 
+                                        style={[styles.dismissButton, { backgroundColor: colors.primary, marginBottom: 8 }]}
+                                        onPress={() => {
+                                            handleDismissPopup();
+                                            if (popupNotification.button_url) {
+                                                Linking.openURL(popupNotification.button_url).catch(err => console.error("Could not open link", err));
+                                            }
+                                        }}
+                                    >
+                                        <Text style={[styles.dismissButtonText, { fontFamily: fonts?.inter?.bold || 'System', color: '#ffffff', fontSize: 16 }]}>
+                                            {popupNotification.button_text}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        style={[styles.secondaryButton, { borderColor: isDark ? '#333333' : '#e0e0e0' }]}
+                                        onPress={handleDismissPopup}
+                                    >
+                                        <Text style={[styles.secondaryButtonText, { color: colors.text, fontFamily: fonts?.inter?.bold || 'System', fontSize: 15 }]}>
+                                            Close
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <TouchableOpacity 
+                                    style={[styles.dismissButton, { backgroundColor: colors.primary }]}
+                                    onPress={handleDismissPopup}
                                 >
                                     <Text style={[styles.dismissButtonText, { fontFamily: fonts?.inter?.bold || 'System', color: '#ffffff', fontSize: 16 }]}>
-                                        {popupNotification.button_text}
+                                        Dismiss
                                     </Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={[styles.secondaryButton, { borderColor: isDark ? '#333333' : '#e0e0e0' }]}
-                                    onPress={() => setPopupVisible(false)}
-                                >
-                                    <Text style={[styles.secondaryButtonText, { color: colors.text, fontFamily: fonts?.inter?.bold || 'System', fontSize: 15 }]}>
-                                        Close
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <TouchableOpacity 
-                                style={[styles.dismissButton, { backgroundColor: colors.primary }]}
-                                onPress={() => setPopupVisible(false)}
-                            >
-                                <Text style={[styles.dismissButtonText, { fontFamily: fonts?.inter?.bold || 'System', color: '#ffffff', fontSize: 16 }]}>
-                                    Dismiss
-                                </Text>
-                            </TouchableOpacity>
-                        )}
+                            )}
+                        </View>
                     </View>
-                </View>
-            </Modal>
+                </Modal>
+            )}
 
         </SafeAreaView>
     );

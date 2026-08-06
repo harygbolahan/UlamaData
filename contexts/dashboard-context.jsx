@@ -1,7 +1,7 @@
 import api from "@/services/api";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 const DashboardContext = createContext(null);
 
@@ -77,6 +77,7 @@ export function DashboardProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [scrollText, setScrollText] = useState("");
   const [popupNotification, setPopupNotification] = useState(null);
+  const dismissedPopupIdsRef = useRef(new Set());
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState({
     needsUpdate: false,
@@ -94,33 +95,64 @@ export function DashboardProvider({ children }) {
     fetchNotifications();
   }, []);
 
-  const fetchNotifications = async () => {
+  const dismissPopupNotification = (popupToDismiss = popupNotification) => {
+    const target = popupToDismiss || popupNotification;
+    if (target) {
+      const notifId = target.id
+        ? String(target.id)
+        : (target.subject || target.msg || target.message || target.content || "popup");
+
+      dismissedPopupIdsRef.current.add(String(notifId));
+    }
+    setPopupNotification(null);
+  };
+
+  const isPopupValid = (item) => {
+    if (!item || typeof item !== "object") return false;
+    const hasImage = typeof item.image === "string" && item.image.trim().length > 0;
+    const hasText = !!(item.msg || item.message || item.content || item.subject || item.title);
+    return hasImage || hasText;
+  };
+
+  const fetchNotifications = async (force = false) => {
     try {
       const response = await api.get("/get-notification");
       console.log("Notification Response:", response);
       if (response) {
-        if (Array.isArray(response)) {
-          const popup = response.find((item) => item.msgfor === "popup");
-          const scroll = response.find(
-            (item) => item.msgfor === "scroll" || item.msgfor === "scrolll",
+        const rawData = response?.data || response?.notifications || response;
+        let popupItem = null;
+        let scrollItem = null;
+
+        if (Array.isArray(rawData)) {
+          popupItem = rawData.find((item) => item?.msgfor === "popup");
+          scrollItem = rawData.find(
+            (item) => item?.msgfor === "scroll" || item?.msgfor === "scrolll",
           );
-          if (popup) {
-            setPopupNotification(popup);
+        } else if (rawData && typeof rawData === "object") {
+          if (rawData.msgfor === "popup") {
+            popupItem = rawData;
+          } else if (
+            rawData.msgfor === "scroll" ||
+            rawData.msgfor === "scrolll"
+          ) {
+            scrollItem = rawData;
           }
-          if (scroll) {
-            setScrollText(scroll.msg || scroll.message || scroll.content || "");
+        }
+
+        if (scrollItem) {
+          setScrollText(scrollItem.msg || scrollItem.message || scrollItem.content || "");
+        }
+
+        if (popupItem && isPopupValid(popupItem)) {
+          const notifId = popupItem.id
+            ? String(popupItem.id)
+            : (popupItem.subject || popupItem.msg || popupItem.message || popupItem.content || "popup");
+
+          if (force || !dismissedPopupIdsRef.current.has(String(notifId))) {
+            setPopupNotification(popupItem);
           }
         } else {
-          if (response.msgfor === "popup") {
-            setPopupNotification(response);
-          } else if (
-            response.msgfor === "scroll" ||
-            response.msgfor === "scrolll"
-          ) {
-            setScrollText(
-              response.msg || response.message || response.content || "",
-            );
-          }
+          setPopupNotification(null);
         }
       }
     } catch (error) {
@@ -251,6 +283,7 @@ export function DashboardProvider({ children }) {
         scrollText,
         popupNotification,
         setPopupNotification,
+        dismissPopupNotification,
         fetchNotifications,
         needsUpdate,
         updateInfo,
