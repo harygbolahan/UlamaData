@@ -1,4 +1,5 @@
-﻿import LoadingOverlay from '@/components/ui/LoadingOverlay';
+﻿import PinPrintModal from '@/components/pin-print-modal';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,6 +55,7 @@ export default function TransactionSuccessScreen() {
     const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [isCapturing, setIsCapturing] = useState(false);
+    const [showPinPrintModal, setShowPinPrintModal] = useState(false);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(40)).current;
@@ -95,6 +97,7 @@ export default function TransactionSuccessScreen() {
         transref,
     } = params;
 
+    const isRechargeCard = service === 'Airtime Pin' || service === 'Data Pin';
     const networkBrand = getNetworkBrand(network || provider || '');
     const displayTransactionId = requestId || transactionId || `TXN${Date.now().toString().slice(-8)}`;
     const isDataService =
@@ -115,6 +118,7 @@ export default function TransactionSuccessScreen() {
     infoRows.push({ label: 'Recipient', value: beneficiary || phone || 'N/A' });
     if (network) infoRows.push({ label: 'Network', value: network });
     if (customerName) infoRows.push({ label: 'Customer', value: customerName });
+    if (customerAddress) infoRows.push({ label: 'Address', value: customerAddress });
     if (iuc) infoRows.push({ label: 'Smart Card / IUC', value: iuc });
     if (meterNumber) infoRows.push({ label: 'Meter Number', value: meterNumber });
     if (meterType) infoRows.push({ label: 'Meter Type', value: meterType });
@@ -304,7 +308,7 @@ export default function TransactionSuccessScreen() {
                                         </Text>
                                         <Text
                                             style={[styles.infoValue, { color: colors.text, fontFamily: fonts.inter.semiBold }]}
-                                            numberOfLines={2}
+                                            numberOfLines={row.label === 'Address' ? 4 : 2}
                                         >
                                             {row.value}
                                         </Text>
@@ -411,8 +415,30 @@ export default function TransactionSuccessScreen() {
 
                     {/* Action buttons */}
                     <View style={styles.actions}>
+                        {isRechargeCard && (
+                            <TouchableOpacity
+                                style={[styles.shareBtn, { backgroundColor: colors.primary }]}
+                                onPress={() => {
+                                    if (!transref) {
+                                        showToast('info', 'PIN details are not ready yet. Open this transaction from History to print.');
+                                        return;
+                                    }
+                                    setShowPinPrintModal(true);
+                                }}
+                                activeOpacity={0.85}
+                            >
+                                <Ionicons name="download-outline" size={19} color="#fff" />
+                                <Text style={[styles.shareBtnText, { fontFamily: fonts.inter.bold }]}>
+                                    Download / Print Cards
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
                         <TouchableOpacity
-                            style={[styles.shareBtn, { backgroundColor: colors.primary }]}
+                            style={[
+                                styles.shareBtn,
+                                { backgroundColor: isRechargeCard ? colors.primary + 'CC' : colors.primary },
+                            ]}
                             onPress={handleShare}
                             activeOpacity={0.85}
                         >
@@ -439,6 +465,17 @@ export default function TransactionSuccessScreen() {
             </ScrollView>
 
             <LoadingOverlay visible={isLoading} />
+
+            {isRechargeCard && !!transref && (
+                <PinPrintModal
+                    visible={showPinPrintModal}
+                    onClose={() => setShowPinPrintModal(false)}
+                    pinRef={transref}
+                    provider={network || provider}
+                    serviceName={service}
+                    amount={amount}
+                />
+            )}
         </View>
     );
 }

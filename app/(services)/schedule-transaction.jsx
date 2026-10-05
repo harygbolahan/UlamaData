@@ -4,6 +4,7 @@ import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
+import { pickDefaultAirtimeType } from '@/services/airtime-types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -123,7 +124,7 @@ export default function ScheduleTransactionScreen() {
             } else {
                 setTypes(typesData);
                 if (typesData.length > 0) {
-                    setSelectedType(typesData[0].type);
+                    setSelectedType(pickDefaultAirtimeType(typesData));
                 }
             }
         } catch (error) {

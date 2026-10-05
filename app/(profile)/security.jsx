@@ -16,6 +16,7 @@ export default function SecurityScreen() {
         { id: '2', title: 'Change Password', icon: 'key', route: '/(security)/change-password' },
         { id: '3', title: `${Platform.OS === 'ios' ? 'FaceID' : 'Fingerprint'} Login`, icon: Platform.OS === 'ios' ? 'scan' : 'finger-print', route: '/(security)/biometric-login', description: `Login with ${Platform.OS === 'ios' ? 'FaceID' : 'fingerprint'}` },
         { id: '4', title: `${Platform.OS === 'ios' ? 'FaceID' : 'Fingerprint'} for Transactions`, icon: 'shield-checkmark', route: '/(security)/biometric-settings', description: `Use ${Platform.OS === 'ios' ? 'FaceID' : 'fingerprint'} for payments` },
+        { id: '5', title: 'My Devices', icon: 'phone-portrait', route: '/(security)/devices', description: 'Devices signed in to your account' },
     ];
 
     return (

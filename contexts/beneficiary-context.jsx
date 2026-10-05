@@ -1,24 +1,10 @@
 import api from '@/services/api';
+import { detectNetwork } from '@/services/network-detection';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useToast } from './toast-context';
 
 const BeneficiaryContext = createContext();
-
-// Helper function to detect network from phone number prefix
-const detectNetwork = (phoneNumber) => {
-    const prefix = phoneNumber.substring(0, 4);
-    const mtnPrefixes = ['0702', '0704', '0803', '0806', '0703', '0706', '0813', '0816', '0810', '0814', '0903', '0906', '0913', '0707'];
-    const airtelPrefixes = ['0802', '0808', '0708', '0812', '0701', '0901', '0902', '0907', '0912', '0911'];
-    const gloPrefixes = ['0805', '0807', '0705', '0815', '0811', '0905', '0915'];
-    const nineMobilePrefixes = ['0809', '0818', '0817', '0908', '0909'];
-
-    if (mtnPrefixes.includes(prefix)) return 'MTN';
-    if (airtelPrefixes.includes(prefix)) return 'AIRTEL';
-    if (gloPrefixes.includes(prefix)) return 'GLO';
-    if (nineMobilePrefixes.includes(prefix)) return '9MOBILE';
-    return 'UNKNOWN';
-};
 
 export function BeneficiaryProvider({ children }) {
     const [beneficiaries, setBeneficiaries] = useState([]);

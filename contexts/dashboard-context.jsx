@@ -69,6 +69,29 @@ function compareVersions(v1, v2) {
   return 0;
 }
 
+// /get-notification returns the whole notification history, not just what is switched on,
+// so the popup has to be chosen deliberately: the newest popup that is not marked off.
+const OFF_VALUES = ["off", "inactive", "disabled", "0", "false"];
+
+const isMarkedOff = (item) => {
+  for (const key of ["status", "active", "is_active", "enabled"]) {
+    if (item?.[key] !== undefined && item?.[key] !== null) {
+      return OFF_VALUES.includes(String(item[key]).toLowerCase());
+    }
+  }
+  return false;
+};
+
+const pickLatestActivePopup = (items) => {
+  const popups = items.filter((item) => item?.msgfor === "popup" && !isMarkedOff(item));
+  if (popups.length === 0) return null;
+  const time = (item) => {
+    const t = new Date(String(item?.updated_at || "").replace(" ", "T")).getTime();
+    return isNaN(t) ? 0 : t;
+  };
+  return popups.reduce((latest, item) => (time(item) > time(latest) ? item : latest));
+};
+
 export function DashboardProvider({ children }) {
   const [selectedDashboard, setSelectedDashboard] = useState(
     DASHBOARD_TYPES.DEFAULT,
@@ -124,7 +147,7 @@ export function DashboardProvider({ children }) {
         let scrollItem = null;
 
         if (Array.isArray(rawData)) {
-          popupItem = rawData.find((item) => item?.msgfor === "popup");
+          popupItem = pickLatestActivePopup(rawData);
           scrollItem = rawData.find(
             (item) => item?.msgfor === "scroll" || item?.msgfor === "scrolll",
           );

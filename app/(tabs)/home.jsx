@@ -8,10 +8,13 @@ import { useAuth } from '@/contexts/auth-context';
 import { DASHBOARD_TYPES, useDashboard } from '@/contexts/dashboard-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const POPUP_SHOWN_KEY = 'popup_shown_for_session';
 
 const getImageUrl = (imagePath) => {
     if (!imagePath || typeof imagePath !== 'string') return null;
@@ -25,12 +28,14 @@ const getImageUrl = (imagePath) => {
 };
 
 export default function HomeTab() {
-    const { selectedDashboard, isLoading, popupNotification, dismissPopupNotification } = useDashboard();
+    const { selectedDashboard, isLoading, popupNotification, dismissPopupNotification, fetchNotifications } = useDashboard();
     const { colors, fonts, isDark } = useTheme();
-    const { refreshUser, getSupportData } = useAuth();
+    const { refreshUser, getSupportData, token } = useAuth();
     const [refreshing, setRefreshing] = useState(false);
     const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
     const [popupVisible, setPopupVisible] = useState(false);
+    // The popup is shown once per login. Each login issues a new token, so the token marks the session.
+    const [popupAllowed, setPopupAllowed] = useState(false);
 
     const imageUrl = getImageUrl(popupNotification?.image);
     const [imageAspectRatio, setImageAspectRatio] = useState(16 / 9);
@@ -59,15 +64,40 @@ export default function HomeTab() {
     }, [imageUrl]);
 
     useEffect(() => {
-        if (hasValidContent) {
+        if (!token) return;
+        const sessionKey = token.slice(-16);
+        let cancelled = false;
+        (async () => {
+            try {
+                const shownFor = await AsyncStorage.getItem(POPUP_SHOWN_KEY);
+                if (cancelled || shownFor === sessionKey) {
+                    setPopupAllowed(false);
+                    return;
+                }
+                setPopupAllowed(true);
+                // A previous login may have dismissed the popup, so fetch it again for this one
+                fetchNotifications?.(true);
+            } catch (error) {
+                setPopupAllowed(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [token]);
+
+    useEffect(() => {
+        if (popupAllowed && hasValidContent) {
             const timer = setTimeout(() => {
                 setPopupVisible(true);
+                if (token) {
+                    AsyncStorage.setItem(POPUP_SHOWN_KEY, token.slice(-16)).catch(() => {});
+                }
+                setPopupAllowed(false);
             }, 500);
             return () => clearTimeout(timer);
-        } else {
+        } else if (!hasValidContent) {
             setPopupVisible(false);
         }
-    }, [popupNotification, hasValidContent]);
+    }, [popupNotification, hasValidContent, popupAllowed]);
 
     const handleDismissPopup = () => {
         setPopupVisible(false);

@@ -1,10 +1,12 @@
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
+import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+    ActivityIndicator,
     Animated,
     Dimensions,
     KeyboardAvoidingView,
@@ -21,14 +23,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 375;
 
+const RESEND_COOLDOWN_SECONDS = 60;
+const MIN_PASSWORD_LENGTH = 8;
+
 export default function ForgotPasswordScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { showToast } = useToast();
     const router = useRouter();
+    const [step, setStep] = useState('email'); // 'email' -> 'reset'
     const [email, setEmail] = useState('');
-    const [emailSent, setEmailSent] = useState(false);
+    const [code, setCode] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -38,19 +48,93 @@ export default function ForgotPasswordScreen() {
         }).start();
     }, []);
 
-    const handleResetPassword = () => {
-        if (!email) {
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [cooldown]);
+
+    const requestCode = async () => {
+        const trimmedEmail = email.trim();
+        if (!trimmedEmail) {
             showToast('warning', 'Please enter your email address');
             return;
         }
-        setEmailSent(true);
-        Animated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 50,
-            friction: 7,
-            useNativeDriver: true,
-        }).start();
+        if (submitting) return;
+
+        setSubmitting(true);
+        try {
+            await api.forgotPassword(trimmedEmail);
+            setEmail(trimmedEmail);
+            setCooldown(RESEND_COOLDOWN_SECONDS);
+            setStep('reset');
+            showToast('success', 'A verification code has been sent to your email');
+        } catch (error) {
+            if (error.status === 429) setCooldown(RESEND_COOLDOWN_SECONDS);
+            showToast('error', error.message || 'Could not send the code. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
     };
+
+    const resendCode = async () => {
+        if (cooldown > 0 || submitting) return;
+        await requestCode();
+    };
+
+    const handleReset = async () => {
+        if (code.trim().length < 4) {
+            showToast('warning', 'Enter the code sent to your email');
+            return;
+        }
+        if (password.length < MIN_PASSWORD_LENGTH) {
+            showToast('warning', `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+            return;
+        }
+        if (password !== confirmPassword) {
+            showToast('warning', 'Passwords do not match');
+            return;
+        }
+        if (submitting) return;
+
+        setSubmitting(true);
+        try {
+            await api.resetPassword({
+                email,
+                code: code.trim(),
+                password,
+                passwordConfirmation: confirmPassword,
+            });
+            showToast('success', 'Password updated. Please log in with your new password.');
+            router.replace('/(auth)/login');
+        } catch (error) {
+            showToast('error', error.message || 'Could not reset your password. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const inputWrapperStyle = {
+        backgroundColor: isDark ? colors.card : colors.background,
+        borderColor: colors.border,
+    };
+
+    const renderButton = (label, onPress) => (
+        <Pressable style={styles.actionButton} onPress={onPress} disabled={submitting}>
+            <LinearGradient
+                colors={[colors.primary, colors.primary + 'DD']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.gradientButton, submitting && { opacity: 0.7 }]}
+            >
+                {submitting ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={[styles.buttonText, { fontFamily: fonts.inter.bold }]}>{label}</Text>
+                )}
+            </LinearGradient>
+        </Pressable>
+    );
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -67,41 +151,39 @@ export default function ForgotPasswordScreen() {
             >
                     <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                         {/* Header */}
-                        <Pressable style={styles.backButton} onPress={() => router.back()}>
-                                <Ionicons name="arrow-back" size={24} color={colors.text} />
-                            </Pressable>
+                        <Pressable
+                            style={styles.backButton}
+                            onPress={() => (step === 'reset' ? setStep('email') : router.back())}
+                        >
+                            <Ionicons name="arrow-back" size={24} color={colors.text} />
+                        </Pressable>
                         <View style={styles.header}>
-                            
-                            <View style={[styles.iconWrapper, { 
-                                backgroundColor: emailSent ? colors.success + '15' : colors.primary + '15' 
+                            <View style={[styles.iconWrapper, {
+                                backgroundColor: colors.primary + '15'
                             }]}>
-                                <Ionicons 
-                                    name={emailSent ? 'checkmark-circle' : 'lock-closed'} 
-                                    size={isSmallScreen ? 32 : 40} 
-                                    color={emailSent ? colors.success : colors.primary} 
+                                <Ionicons
+                                    name={step === 'reset' ? 'shield-checkmark' : 'lock-closed'}
+                                    size={isSmallScreen ? 32 : 40}
+                                    color={colors.primary}
                                 />
                             </View>
                             <Text style={[styles.title, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                {emailSent ? 'Check Your Email' : 'Forgot Password?'}
+                                {step === 'reset' ? 'Reset Password' : 'Forgot Password?'}
                             </Text>
                             <Text style={[styles.subtitle, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                {emailSent
-                                    ? 'We sent a password reset link to your email'
-                                    : 'Enter your email to receive a reset link'}
+                                {step === 'reset'
+                                    ? `Enter the code we sent to ${email} and choose a new password`
+                                    : 'Enter your email and we will send you a verification code'}
                             </Text>
                         </View>
 
-                        {/* Content */}
-                        {!emailSent ? (
+                        {step === 'email' ? (
                             <View style={styles.form}>
                                 <View style={styles.inputGroup}>
                                     <Text style={[styles.label, { color: colors.text, fontFamily: fonts.inter.medium }]}>
                                         Email Address
                                     </Text>
-                                    <View style={[styles.inputWrapper, {
-                                        backgroundColor: isDark ? colors.card : colors.background,
-                                        borderColor: colors.border,
-                                    }]}>
+                                    <View style={[styles.inputWrapper, inputWrapperStyle]}>
                                         <Ionicons name="mail-outline" size={20} color={colors.icon} style={styles.inputIcon} />
                                         <TextInput
                                             style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
@@ -112,63 +194,96 @@ export default function ForgotPasswordScreen() {
                                             keyboardType="email-address"
                                             autoCapitalize="none"
                                             autoCorrect={false}
+                                            onSubmitEditing={requestCode}
                                         />
                                     </View>
                                 </View>
 
-                                <Pressable style={styles.actionButton} onPress={handleResetPassword}>
-                                    <LinearGradient
-                                        colors={[colors.primary, colors.primary + 'DD']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        style={styles.gradientButton}
-                                    >
-                                        <Text style={[styles.buttonText, { fontFamily: fonts.inter.bold }]}>
-                                            Send Reset Link
-                                        </Text>
-                                    </LinearGradient>
-                                </Pressable>
+                                {renderButton('Send Code', requestCode)}
                             </View>
                         ) : (
-                            <Animated.View style={[styles.successContent, { transform: [{ scale: scaleAnim }] }]}>
-                                <View style={[styles.successCard, {
-                                    backgroundColor: isDark ? colors.card : colors.background,
-                                    borderColor: colors.success + '30',
-                                }]}>
-                                    <Ionicons name="mail" size={isSmallScreen ? 48 : 56} color={colors.success} />
-                                    <Text style={[styles.successTitle, { color: colors.text, fontFamily: fonts.inter.bold }]}>
-                                        Email Sent Successfully!
+                            <View style={styles.form}>
+                                <View style={styles.inputGroup}>
+                                    <Text style={[styles.label, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                        Verification Code
                                     </Text>
-                                    <Text style={[styles.successText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                        We've sent a password reset link to
-                                    </Text>
-                                    <Text style={[styles.emailText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
-                                        {email}
-                                    </Text>
-                                    <Text style={[styles.infoText, { color: colors.icon, fontFamily: fonts.inter.regular }]}>
-                                        Please check your inbox and follow the instructions to reset your password.
-                                    </Text>
+                                    <View style={[styles.inputWrapper, inputWrapperStyle]}>
+                                        <Ionicons name="keypad-outline" size={20} color={colors.icon} style={styles.inputIcon} />
+                                        <TextInput
+                                            style={[styles.input, styles.codeInput, { color: colors.text, fontFamily: fonts.inter.semiBold }]}
+                                            placeholder="123456"
+                                            placeholderTextColor={colors.icon + '80'}
+                                            value={code}
+                                            onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
+                                            keyboardType="number-pad"
+                                            maxLength={6}
+                                            textContentType="oneTimeCode"
+                                            autoComplete="sms-otp"
+                                        />
+                                    </View>
                                 </View>
 
-                                <Pressable style={styles.actionButton} onPress={() => router.back()}>
-                                    <LinearGradient
-                                        colors={[colors.primary, colors.primary + 'DD']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        style={styles.gradientButton}
-                                    >
-                                        <Text style={[styles.buttonText, { fontFamily: fonts.inter.bold }]}>
-                                            Back to Login
-                                        </Text>
-                                    </LinearGradient>
-                                </Pressable>
+                                <View style={styles.inputGroup}>
+                                    <Text style={[styles.label, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                        New Password
+                                    </Text>
+                                    <View style={[styles.inputWrapper, inputWrapperStyle]}>
+                                        <Ionicons name="lock-closed-outline" size={20} color={colors.icon} style={styles.inputIcon} />
+                                        <TextInput
+                                            style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                                            placeholder="At least 8 characters"
+                                            placeholderTextColor={colors.icon + '80'}
+                                            value={password}
+                                            onChangeText={setPassword}
+                                            secureTextEntry={!showPassword}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                        />
+                                        <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
+                                            <Ionicons
+                                                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                                                size={20}
+                                                color={colors.icon}
+                                            />
+                                        </Pressable>
+                                    </View>
+                                </View>
 
-                                <Pressable style={styles.resendButton} onPress={() => setEmailSent(false)}>
-                                    <Text style={[styles.resendText, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
-                                        Didn't receive the email? Resend
+                                <View style={styles.inputGroup}>
+                                    <Text style={[styles.label, { color: colors.text, fontFamily: fonts.inter.medium }]}>
+                                        Confirm Password
+                                    </Text>
+                                    <View style={[styles.inputWrapper, inputWrapperStyle]}>
+                                        <Ionicons name="lock-closed-outline" size={20} color={colors.icon} style={styles.inputIcon} />
+                                        <TextInput
+                                            style={[styles.input, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                                            placeholder="Re-enter new password"
+                                            placeholderTextColor={colors.icon + '80'}
+                                            value={confirmPassword}
+                                            onChangeText={setConfirmPassword}
+                                            secureTextEntry={!showPassword}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                            onSubmitEditing={handleReset}
+                                        />
+                                    </View>
+                                </View>
+
+                                {renderButton('Reset Password', handleReset)}
+
+                                <Pressable
+                                    style={styles.resendButton}
+                                    onPress={resendCode}
+                                    disabled={cooldown > 0 || submitting}
+                                >
+                                    <Text style={[
+                                        styles.resendText,
+                                        { color: cooldown > 0 ? colors.icon : colors.primary, fontFamily: fonts.inter.semiBold },
+                                    ]}>
+                                        {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't receive the code? Resend"}
                                     </Text>
                                 </Pressable>
-                            </Animated.View>
+                            </View>
                         )}
                     </Animated.View>
             </ScrollView>
@@ -246,6 +361,10 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: isSmallScreen ? 14 : 15,
     },
+    codeInput: {
+        letterSpacing: 6,
+        fontSize: isSmallScreen ? 16 : 18,
+    },
     actionButton: {
         borderRadius: 12,
         overflow: 'hidden',
@@ -259,39 +378,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: isSmallScreen ? 15 : 16,
         paddingHorizontal: 20
-
-    },
-    successContent: {
-        alignItems: 'center',
-    },
-    successCard: {
-        padding: isSmallScreen ? 24 : 28,
-        borderRadius: 16,
-        alignItems: 'center',
-        marginBottom: isSmallScreen ? 20 : 24,
-        borderWidth: 1.5,
-        width: '100%',
-    },
-    successTitle: {
-        fontSize: isSmallScreen ? 20 : 24,
-        marginTop: isSmallScreen ? 16 : 20,
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    successText: {
-        fontSize: isSmallScreen ? 13 : 14,
-        textAlign: 'center',
-        marginBottom: 6,
-    },
-    emailText: {
-        fontSize: isSmallScreen ? 14 : 16,
-        textAlign: 'center',
-        marginBottom: isSmallScreen ? 12 : 16,
-    },
-    infoText: {
-        fontSize: isSmallScreen ? 12 : 13,
-        textAlign: 'center',
-        lineHeight: 20,
     },
     resendButton: {
         marginTop: isSmallScreen ? 12 : 16,

@@ -286,6 +286,11 @@ export default function TransactionDetails() {
 
     const transaction = mapTransactionData(transactionData);
 
+    // The print modal fetches PINs by transaction ref, so only the ref and the purchase type matter here
+    const isPinPurchase = /(airtime|data).*pin|recharge/i.test(transaction?.type || '');
+    const canPrintPins = !!transaction?.ref && transaction?.status !== 'Failed'
+        && (isPinPurchase || (transaction.allPins?.length ?? 0) > 0);
+
     useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -881,22 +886,19 @@ export default function TransactionDetails() {
                     )}
 
                     {/* PIN/Serial Section - Airtime PIN */}
-                    {transaction.pin && transaction.pin !== null && transaction.pin !== '' && (
+                    {canPrintPins && (
                         <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
                             <View style={styles.sectionHeader}>
-
-                                {transaction.allPins && transaction.allPins.length > 0 && (
-                                    <TouchableOpacity
-                                        style={[styles.printBadge, { backgroundColor: colors.primary }]}
-                                        onPress={() => setShowPinPrintModal(true)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Ionicons name="print" size={14} color="#fff" />
-                                        <Text style={[styles.printBadgeText, { fontFamily: fonts.inter.semiBold }]}>
-                                            Print {transaction.allPins.length > 1 ? `${transaction.allPins.length} PINs` : 'PIN'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
+                                <TouchableOpacity
+                                    style={[styles.printBadge, { backgroundColor: colors.primary }]}
+                                    onPress={() => setShowPinPrintModal(true)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="print" size={14} color="#fff" />
+                                    <Text style={[styles.printBadgeText, { fontFamily: fonts.inter.semiBold }]}>
+                                        Print {transaction.allPins?.length > 1 ? `${transaction.allPins.length} PINs` : 'PIN'}
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
 
                             {/* <View style={[styles.tokenCard, { 
@@ -1278,7 +1280,7 @@ export default function TransactionDetails() {
             </Modal>
 
             {/* PIN Print Modal */}
-            {transaction && transaction.pin && (
+            {canPrintPins && (
                 <PinPrintModal
                     visible={showPinPrintModal}
                     onClose={() => setShowPinPrintModal(false)}

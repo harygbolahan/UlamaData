@@ -4,7 +4,7 @@
     "slug": "ulamadata",
     "version": "3.5.1",
     "orientation": "portrait",
-    "icon": "./assets/images/Ulama.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "ulamadata",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -20,10 +20,8 @@
       "package": "com.ulamadatanigeria.ulamadata",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/Ulama.png",
-        "backgroundImage": "./assets/images/Ulama.png",
-        "monochromeImage": "./assets/images/Ulama.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/images/icon.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -57,7 +55,13 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-asset",
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

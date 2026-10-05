@@ -4,6 +4,7 @@ import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
+import { pickDefaultAirtimeType } from '@/services/airtime-types';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -48,7 +49,7 @@ export default function BuyAirtimeScreen() {
             const types = await fetchAirtimeTypes(selectedNetwork ? { network: selectedNetwork.name } : undefined);
             setAirtimeTypes(types);
             if (types.length > 0) {
-                setSelectedType(types[0].type);
+                setSelectedType(pickDefaultAirtimeType(types));
             }
         } catch (error) {
             showToast('error', error.message || 'Failed to load airtime types');

@@ -1,5 +1,5 @@
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -22,6 +22,14 @@ import { ToastProvider } from '@/contexts/toast-context';
 import { TransactionsProvider } from '@/contexts/transactions-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
+// Release builds: console output is serialised over the bridge and slows the app down,
+// and the logs contain request data that should not be written to the device log.
+if (!__DEV__) {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
 
 SplashScreen.preventAutoHideAsync();
 

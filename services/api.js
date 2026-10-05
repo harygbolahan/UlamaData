@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { getDeviceInfo, getDeviceSignature } from './device';
 
 const BASE_URL = 'https://ulamadata.ng/app';
 
@@ -26,32 +27,41 @@ const formatLogJson = (data) => {
   }
 };
 
-// Request interceptor to add token and log requests
+// Token held in memory so each request does not wait on AsyncStorage.
+// undefined = not loaded yet, null = no token.
+let cachedToken;
+
+const readToken = async () => {
+  if (cachedToken === undefined) {
+    cachedToken = await AsyncStorage.getItem('auth_token');
+  }
+  return cachedToken;
+};
+
+// Request interceptor to add token (and log requests in development only)
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('auth_token');
+    const [token, deviceSignature] = await Promise.all([readToken(), getDeviceSignature()]);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers['X-Device-Signature'] = deviceSignature;
 
-    // Log request with separator and formatted JSON
-    console.log(`\n${LOG_SEPARATOR}`);
-    console.log(`🚀 API REQUEST [${config.method?.toUpperCase()}] -> ${config.baseURL || ''}${config.url || ''}`);
-    console.log('Headers:\n' + formatLogJson(config.headers));
-    if (config.params) {
-      console.log('Params:\n' + formatLogJson(config.params));
+    if (__DEV__) {
+      console.log(`\n${LOG_SEPARATOR}`);
+      console.log(`🚀 API REQUEST [${config.method?.toUpperCase()}] -> ${config.baseURL || ''}${config.url || ''}`);
+      if (config.params) {
+        console.log('Params:\n' + formatLogJson(config.params));
+      }
+      console.log(`${LOG_SEPARATOR}\n`);
     }
-    if (config.data) {
-      console.log('Body:\n' + formatLogJson(config.data));
-    }
-    console.log(`${LOG_SEPARATOR}\n`);
 
     return config;
   },
   (error) => {
-    console.error(`\n${LOG_SEPARATOR}`);
-    console.error('❌ Request Error:\n' + formatLogJson(error));
-    console.error(`${LOG_SEPARATOR}\n`);
+    if (__DEV__) {
+      console.error('❌ Request Error:', error?.message);
+    }
     return Promise.reject(error);
   }
 );
@@ -65,11 +75,9 @@ export const setUnauthorizedCallback = (callback) => {
 // Response interceptor for error handling and logging
 apiClient.interceptors.response.use(
   (response) => {
-    // Log successful response with separator and formatted JSON
-    console.log(`\n${LOG_SEPARATOR}`);
-    console.log(`✅ API RESPONSE [${response.status}] <- ${response.config?.url}`);
-    console.log('Data:\n' + formatLogJson(response.data));
-    console.log(`${LOG_SEPARATOR}\n`);
+    if (__DEV__) {
+      console.log(`✅ API RESPONSE [${response.status}] <- ${response.config?.url}`);
+    }
 
     // Check if body indicates 401 unauthenticated
     if (
@@ -98,23 +106,26 @@ apiClient.interceptors.response.use(
         onUnauthorizedCallback(error.response.data);
       }
 
-      console.error(`\n${LOG_SEPARATOR}`);
-      console.error(`❌ API ERROR RESPONSE [${error.response.status}] <- ${error.config?.url}`);
-      console.error('Message:', error.response.data?.message || 'An error occurred');
-      console.error('Data:\n' + formatLogJson(error.response.data));
-      console.error(`${LOG_SEPARATOR}\n`);
+      if (__DEV__) {
+        console.error(`❌ API ERROR RESPONSE [${error.response.status}] <- ${error.config?.url}`);
+        console.error('Message:', error.response.data?.message || 'An error occurred');
+      }
 
       // Server responded with error
+      const fieldErrors = error.response.data?.errors;
+      const firstFieldError = fieldErrors && typeof fieldErrors === 'object'
+        ? [].concat(Object.values(fieldErrors)[0] || [])[0]
+        : null;
+
       throw {
         status: error.response.status,
-        message: error.response.data?.message || 'An error occurred',
+        message: firstFieldError || error.response.data?.message || 'An error occurred',
         data: error.response.data,
       };
     } else if (error.request) {
-      console.error(`\n${LOG_SEPARATOR}`);
-      console.error(`❌ NETWORK ERROR <- ${error.config?.url}`);
-      console.error('Message: No response received. Please check your connection.');
-      console.error(`${LOG_SEPARATOR}\n`);
+      if (__DEV__) {
+        console.error(`❌ NETWORK ERROR <- ${error.config?.url}`);
+      }
 
       // Request made but no response
       throw {
@@ -123,9 +134,9 @@ apiClient.interceptors.response.use(
         data: null,
       };
     } else {
-      console.error(`\n${LOG_SEPARATOR}`);
-      console.error('❌ REQUEST SETUP ERROR:', error.message);
-      console.error(`${LOG_SEPARATOR}\n`);
+      if (__DEV__) {
+        console.error('❌ REQUEST SETUP ERROR:', error.message);
+      }
 
       // Something else happened
       throw {
@@ -139,6 +150,7 @@ apiClient.interceptors.response.use(
 
 // Token management
 export const setToken = async (token) => {
+  cachedToken = token || null;
   if (token) {
     await AsyncStorage.setItem('auth_token', token);
   } else {
@@ -147,16 +159,35 @@ export const setToken = async (token) => {
 };
 
 export const getToken = async () => {
-  return await AsyncStorage.getItem('auth_token');
+  return await readToken();
 };
 
 // Auth endpoints
 export const register = async (userData) => {
-  return apiClient.post('/register', userData);
+  return apiClient.post('/register', { device_info: getDeviceInfo(), ...userData });
 };
 
 export const login = async (credentials) => {
-  return apiClient.post('/login', credentials);
+  return apiClient.post('/login', { device_info: getDeviceInfo(), ...credentials });
+};
+
+// Security settings and the list of devices linked to the account
+export const getSecuritySettings = async () => {
+  return apiClient.get('/security-settings');
+};
+
+// Password reset: the backend emails a 6-digit code, then accepts it with the new password
+export const forgotPassword = async (email) => {
+  return apiClient.post('/forgot-password', { email });
+};
+
+export const resetPassword = async ({ email, code, password, passwordConfirmation }) => {
+  return apiClient.post('/reset-password', {
+    email,
+    code,
+    password,
+    password_confirmation: passwordConfirmation,
+  });
 };
 
 // Generic HTTP methods
@@ -208,6 +239,9 @@ export default {
   getToken,
   register,
   login,
+  forgotPassword,
+  resetPassword,
+  getSecuritySettings,
   get,
   post,
   put,

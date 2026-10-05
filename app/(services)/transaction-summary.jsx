@@ -669,7 +669,14 @@ export default function TransactionSummaryScreen() {
       amount,
       network: network || provider,
       transactionId: response?.transaction_id || Date.now().toString(),
-      transref: response?.transref || response?.transaction_id || response?.reference || "",
+      transref:
+        response?.transref ||
+        response?.transRef ||
+        response?.ref ||
+        response?.data?.transref ||
+        response?.transaction_id ||
+        response?.reference ||
+        "",
     };
 
     // Add API response data if available

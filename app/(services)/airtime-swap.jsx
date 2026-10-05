@@ -6,6 +6,7 @@ import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { authenticateWithBiometric, isBiometricAvailable, isBiometricEnabled } from '@/services/biometric';
+import { forgetTransferPin, getSavedTransferPin, saveTransferPin } from '@/services/swap-pin-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
@@ -47,6 +48,14 @@ export default function AirtimeSwapScreen() {
     const [otp, setOtp] = useState('');
     const [otpIdentifier, setOtpIdentifier] = useState('');
     const [transferPin, setTransferPin] = useState('');
+    // Saved transfer PIN ({ phone, pin }) and the number the user chose to re-enter it for.
+    // Both are tied to a number, so they stop applying as soon as the number changes.
+    const [savedPin, setSavedPin] = useState(null);
+    const [changingFor, setChangingFor] = useState(null);
+    const savedTransferPin = savedPin && savedPin.phone === phoneNumber ? savedPin.pin : null;
+    const changingTransferPin = changingFor === phoneNumber;
+    // The PIN actually sent: the saved one unless the user is replacing it
+    const effectiveTransferPin = savedTransferPin && !changingTransferPin ? savedTransferPin : transferPin;
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [bankName, setBankName] = useState('');
@@ -66,6 +75,18 @@ export default function AirtimeSwapScreen() {
             loadSwapDetails();
         }
     }, [selectedNetwork]);
+
+    // Pick up the transfer PIN already saved for this sender number
+    useEffect(() => {
+        if (phoneNumber.length !== 11) return;
+        let cancelled = false;
+
+        getSavedTransferPin(phoneNumber).then((pin) => {
+            if (!cancelled) setSavedPin(pin ? { phone: phoneNumber, pin } : null);
+        });
+
+        return () => { cancelled = true; };
+    }, [phoneNumber]);
 
     useEffect(() => {
         const checkBiometric = async () => {
@@ -143,7 +164,7 @@ export default function AirtimeSwapScreen() {
         }
 
         if (swapMethod === 'auto') {
-            if (!transferPin) {
+            if (!effectiveTransferPin) {
                 Alert.alert('Error', 'Please enter your SIM transfer PIN');
                 return;
             }
@@ -263,7 +284,7 @@ export default function AirtimeSwapScreen() {
                     '1',
                     phoneNumber,
                     otp,
-                    transferPin,
+                    effectiveTransferPin,
                     pin
                 );
 
@@ -274,6 +295,11 @@ export default function AirtimeSwapScreen() {
                     await updateUser({ ...user, balance: response.new_balance });
                 } else if (response.balance) {
                     await updateUser({ ...user, balance: response.balance });
+                }
+
+                // The swap went through, so this transfer PIN is good: remember it for this number
+                if (effectiveTransferPin && effectiveTransferPin !== savedTransferPin) {
+                    await saveTransferPin(phoneNumber, effectiveTransferPin);
                 }
 
                 setProcessing(false);
@@ -349,8 +375,11 @@ export default function AirtimeSwapScreen() {
             const errorMessage = error.message || 'Transaction failed';
             showToast('error', errorMessage);
 
-            if (errorMessage.toLowerCase().includes('pin')) {
-                return false;
+            // The network rejected the saved transfer PIN: forget it so the user can enter the right one
+            if (swapMethod === 'auto' && savedTransferPin && errorMessage.toLowerCase().includes('transfer')) {
+                await forgetTransferPin(phoneNumber);
+                setSavedPin(null);
+                setTransferPin('');
             }
 
             return false;
@@ -461,18 +490,37 @@ export default function AirtimeSwapScreen() {
                             <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                                 SIM Transfer PIN
                             </Text>
-                            <View style={[styles.input, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
-                                <TextInput
-                                    placeholder="Enter your 4-digit transfer PIN"
-                                    placeholderTextColor={colors.icon}
-                                    value={transferPin}
-                                    onChangeText={setTransferPin}
-                                    keyboardType="numeric"
-                                    maxLength={4}
-                                    secureTextEntry
-                                    style={[styles.inputText, { color: colors.text, fontFamily: fonts.inter.regular }]}
-                                />
-                            </View>
+                            {savedTransferPin && !changingTransferPin ? (
+                                <View style={[styles.input, styles.savedPinRow, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                                    <Ionicons name="checkmark-circle" size={20} color={colors.success || '#4CAF50'} />
+                                    <Text style={[styles.savedPinText, { color: colors.text, fontFamily: fonts.inter.regular }]}>
+                                        Saved transfer PIN for {phoneNumber}  ••••
+                                    </Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setTransferPin('');
+                                            setChangingFor(phoneNumber);
+                                        }}
+                                    >
+                                        <Text style={[styles.savedPinChange, { color: colors.primary, fontFamily: fonts.inter.semiBold }]}>
+                                            Change
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <View style={[styles.input, { backgroundColor: isDark ? '#1f1f1f' : '#f5f5f5' }]}>
+                                    <TextInput
+                                        placeholder="Enter your 4-digit transfer PIN"
+                                        placeholderTextColor={colors.icon}
+                                        value={transferPin}
+                                        onChangeText={setTransferPin}
+                                        keyboardType="numeric"
+                                        maxLength={4}
+                                        secureTextEntry
+                                        style={[styles.inputText, { color: colors.text, fontFamily: fonts.inter.regular }]}
+                                    />
+                                </View>
+                            )}
                         </>
                     )}
 
@@ -621,7 +669,7 @@ export default function AirtimeSwapScreen() {
                 </ScrollView>
 
                 {/* Continue Button */}
-                {(selectedNetwork && phoneNumber.length === 11 && amount && (swapMethod === 'auto' ? transferPin : (bankName && accountNumber.length === 10 && accountName))) && (
+                {(selectedNetwork && phoneNumber.length === 11 && amount && (swapMethod === 'auto' ? effectiveTransferPin : (bankName && accountNumber.length === 10 && accountName))) && (
                     <View style={[styles.footer, { backgroundColor: colors.background }]}>
                         <TouchableOpacity
                             style={[
@@ -996,6 +1044,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
     },
+    savedPinRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    savedPinText: { flex: 1, fontSize: 13 },
+    savedPinChange: { fontSize: 13 },
     stepNumber: {
         width: 24,
         height: 24,

@@ -1,5 +1,9 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useAuth } from './auth-context';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
+
+// Remote push was removed from Expo Go in SDK 53; importing expo-notifications there logs an error
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 const NotificationContext = createContext();
 
@@ -48,6 +52,11 @@ export const NotificationProvider = ({ children }) => {
   }, [user?.id]);
 
   useEffect(() => {
+    if (isExpoGo) {
+      setError('Push notifications require a development build.');
+      return;
+    }
+
     // Try to load notification modules
     let Notifications = null;
     let Device = null;

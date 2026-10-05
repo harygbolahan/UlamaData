@@ -2,6 +2,8 @@ import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Asset } from 'expo-asset';
+import { File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useState } from 'react';
@@ -90,11 +92,18 @@ export default function PinPrintModal({ visible, onClose, pinRef, provider, serv
             assetModule = require('@/assets/networks/mtn.png');
         }
         
-        // Get the resolved asset source
-        const resolvedAsset = Image.resolveAssetSource(assetModule);
-        
-        // Return the file:// URI directly - expo-print can handle it
-        return resolvedAsset.uri;
+        // Embed the logo as a data URI. In release builds the bundled asset URI is not loadable
+        // from the print HTML, so linking to it leaves a broken image on the cards.
+        try {
+            const asset = Asset.fromModule(assetModule);
+            if (!asset.localUri) await asset.downloadAsync();
+            const base64 = await new File(asset.localUri || asset.uri).base64();
+            return `data:image/png;base64,${base64}`;
+        } catch (err) {
+            console.error('Could not embed network logo:', err);
+            // 1x1 transparent pixel so the card still renders without the logo
+            return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        }
     };
 
     const generatePinHTML = async () => {
@@ -212,11 +221,24 @@ ${pages.map((pagePins, pageIndex) => `<div class="page"${pageIndex === pages.len
             setIsGenerating(true);
             const html = await generatePinHTML();
             const { uri } = await Print.printToFileAsync({ html, base64: false });
-            
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Save PIN Cards' });
+
+            try {
+                // Copy to a named file in the app cache so the share sheet gets a readable
+                // path (and a sensible file name) regardless of where the printer wrote it
+                const target = new File(Paths.cache, `PIN-Cards-${String(pinRef).replace(/[^\w-]/g, '')}.pdf`);
+                await new File(uri).copy(target, { overwrite: true });
+
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(target.uri, { mimeType: 'application/pdf', dialogTitle: 'Save PIN Cards', UTI: 'com.adobe.pdf' });
+                    showToast('success', 'PDF generated successfully');
+                    return;
+                }
+            } catch (shareError) {
+                console.error('Could not share PDF, falling back to the print dialog:', shareError);
             }
-            showToast('success', 'PDF generated successfully');
+
+            // Sharing is unavailable or refused the file: the system print dialog can still "Save as PDF"
+            await Print.printAsync({ html });
         } catch (error) {
             console.error('Error generating PDF:', error);
             showToast('error', 'Failed to generate PDF');

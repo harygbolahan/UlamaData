@@ -1,5 +1,6 @@
 import { useBeneficiaries } from '@/contexts/beneficiary-context';
 import { useTheme } from '@/contexts/theme-context';
+import { detectNetwork } from '@/services/network-detection';
 import { Ionicons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import { useEffect, useState } from 'react';
@@ -100,6 +101,14 @@ export default function NetworkSelector({
 
     const handlePhoneNumberChange = (text) => {
         onPhoneNumberChange(text);
+
+        // Switch to the matching network as soon as the prefix is typed or pasted.
+        // Cable and electricity reuse this component for smartcard / meter numbers, so skip them.
+        if (beneficiaryType !== 'topup' || !onNetworkSelect) return;
+        const detected = detectNetwork(text);
+        if (detected === 'UNKNOWN' || selectedNetwork?.name?.toUpperCase() === detected) return;
+        const match = networks.find(n => n.name.toUpperCase() === detected);
+        if (match) onNetworkSelect(match);
     };
 
     const handleSelectSuggestion = (beneficiary) => {
@@ -152,7 +161,7 @@ export default function NetworkSelector({
                 
                 // Ensure it's 11 digits
                 if (phoneNumber.length === 11) {
-                    onPhoneNumberChange(phoneNumber);
+                    handlePhoneNumberChange(phoneNumber);
                 } else {
                     Alert.alert(
                         'Invalid Phone Number',
