@@ -2,7 +2,7 @@
   "expo": {
     "name": "UlamaData",
     "slug": "ulamadata",
-    "version": "3.5.1",
+    "version": "3.5.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ulamadata",

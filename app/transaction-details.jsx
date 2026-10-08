@@ -3,9 +3,11 @@ import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { useTransactions } from '@/contexts/transactions-context';
 import api from '@/services/api';
+import { extractElectricityDetails } from '@/services/electricity';
+import { generateElectricityReceiptHTML } from '@/services/electricity-receipt';
+import { sharePdfFromHtml } from '@/services/share-pdf';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import * as Print from 'expo-print';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
@@ -197,6 +199,10 @@ export default function TransactionDetails() {
             category = 'Vouchers';
         }
 
+        // Electricity details live in api_response_log; `token` is only a display string
+        const isElectricity = serviceName.toLowerCase().includes('electric');
+        const electricity = isElectricity ? extractElectricityDetails(data) : null;
+
         // Calculate breakdown
         const vat = amount * 0.075; // 7.5% VAT
         const fee = profit;
@@ -227,7 +233,7 @@ export default function TransactionDetails() {
             walletBalanceBefore: `₦${oldBalance.toLocaleString()}`,
             walletBalanceAfter: `₦${newBalance.toLocaleString()}`,
             description: data.servicedesc || 'N/A',
-            beneficiary: phone,
+            beneficiary: electricity?.meterNumber || phone,
             beneficiaryName: 'N/A',
             channel: 'Mobile App',
             deviceInfo: 'Mobile Device',
@@ -239,10 +245,13 @@ export default function TransactionDetails() {
             // Special fields
             pin: pinData,
             serial: serialData,
-            electricityToken: electricityToken,
+            isElectricity,
+            electricityToken: electricity?.token || electricityToken,
+            units: electricity?.units || null,
+            disco: electricity?.disco || null,
             allPins: allPins, // All PINs for printing
-            customerAddress: extractAddress(data) || data.customerAddress || data.customer_address || data.address || logObj?.customerAddress || logObj?.customer_address || logObj?.address || null,
-            customerName: data.customerName || data.customer_name || logObj?.customerName || logObj?.customer_name || null,
+            customerAddress: electricity ? electricity.customerAddress : extractAddress(data) || data.customerAddress || data.customer_address || data.address || logObj?.customerAddress || logObj?.customer_address || logObj?.address || null,
+            customerName: electricity ? electricity.customerName : data.customerName || data.customer_name || logObj?.customerName || logObj?.customer_name || null,
         };
     };
 
@@ -387,16 +396,7 @@ export default function TransactionDetails() {
             // Generate HTML for PDF (reuse the same HTML from downloadAsPDF)
             const html = generateReceiptHTML();
 
-            // Generate PDF
-            const { uri } = await Print.printToFileAsync({ html });
-
-            // Share the PDF
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(uri, {
-                    mimeType: 'application/pdf',
-                    dialogTitle: 'Share Receipt',
-                });
-            }
+            await sharePdfFromHtml(html, { fileName: `Receipt-${transaction.ref}`, dialogTitle: 'Share Receipt' });
         } catch (error) {
             console.error('Error sharing as PDF:', error);
             showToast('error', 'Failed to share receipt as PDF');
@@ -448,6 +448,20 @@ export default function TransactionDetails() {
     };
 
     const generateReceiptHTML = () => {
+        if (transaction.isElectricity) {
+            return generateElectricityReceiptHTML({
+                token: transaction.electricityToken,
+                units: transaction.units,
+                meterNumber: transaction.beneficiary,
+                disco: transaction.disco,
+                customerName: transaction.customerName,
+                customerAddress: transaction.customerAddress,
+                amount: transactionData?.amount,
+                reference: transaction.ref,
+                date: `${transaction.date} • ${transaction.time}`,
+                status: transaction.status,
+            }, colors.primary);
+        }
         return `
                 <!DOCTYPE html>
                 <html>
@@ -644,7 +658,7 @@ export default function TransactionDetails() {
                             </div>
                         </div>
 
-                        ${transactionData?.token ? `
+                        ${transactionData?.token && !transaction.isElectricity ? `
                         <div class="divider"></div>
                         <div class="token-section">
                             <div class="token-label">Exam Token</div>
@@ -695,16 +709,7 @@ export default function TransactionDetails() {
             // Generate HTML for PDF
             const html = generateReceiptHTML();
 
-            // Generate PDF
-            const { uri } = await Print.printToFileAsync({ html });
-
-            // Share the PDF
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(uri, {
-                    mimeType: 'application/pdf',
-                    dialogTitle: 'Save Receipt',
-                });
-            }
+            await sharePdfFromHtml(html, { fileName: `Receipt-${transaction.ref}`, dialogTitle: 'Save Receipt' });
 
             showToast('success', 'Receipt saved as PDF');
         } catch (error) {
@@ -837,7 +842,10 @@ export default function TransactionDetails() {
                             <DetailRow label="Service" value={transaction.type} colors={colors} fonts={fonts} />
                             <DetailRow label="Category" value={transaction.category} colors={colors} fonts={fonts} />
                             <DetailRow label="Description" value={transaction.description} colors={colors} fonts={fonts} multiline />
-                            <DetailRow label="Phone Number" value={transaction.beneficiary} colors={colors} fonts={fonts} />
+                            <DetailRow label={transaction.isElectricity ? 'Meter Number' : 'Phone Number'} value={transaction.beneficiary} colors={colors} fonts={fonts} />
+                            {transaction.units && (
+                                <DetailRow label="Units" value={`${transaction.units} kWh`} colors={colors} fonts={fonts} />
+                            )}
                             {transaction.plan !== 'N/A' && (
                                 <DetailRow label="Plan" value={transaction.plan} colors={colors} fonts={fonts} />
                             )}
@@ -853,7 +861,7 @@ export default function TransactionDetails() {
                     </Animated.View>
 
                     {/* Token/PIN Section - Exam Token */}
-                    {transactionData?.token && transactionData.token !== null && transactionData.token !== '' && (
+                    {transactionData?.token && !transaction.isElectricity && (
                         <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
                             <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: fonts.inter.semiBold }]}>
                                 Exam Token

@@ -2,7 +2,7 @@ import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Asset } from 'expo-asset';
+import { NETWORK_LOGO_DATA_URIS } from '@/constants/network-logos';
 import { File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -77,33 +77,13 @@ export default function PinPrintModal({ visible, onClose, pinRef, provider, serv
 
     const getImageBase64 = async () => {
         const network = getNetworkFromPins();
-        
-        // Map network to asset and get resolved source
-        let assetModule;
-        if (network.includes('mtn')) {
-            assetModule = require('@/assets/networks/mtn.png');
-        } else if (network.includes('airtel')) {
-            assetModule = require('@/assets/networks/airtel.png');
-        } else if (network.includes('glo')) {
-            assetModule = require('@/assets/networks/glo.png');
-        } else if (network.includes('9mobile')) {
-            assetModule = require('@/assets/networks/9mobile.png');
-        } else {
-            assetModule = require('@/assets/networks/mtn.png');
-        }
-        
-        // Embed the logo as a data URI. In release builds the bundled asset URI is not loadable
-        // from the print HTML, so linking to it leaves a broken image on the cards.
-        try {
-            const asset = Asset.fromModule(assetModule);
-            if (!asset.localUri) await asset.downloadAsync();
-            const base64 = await new File(asset.localUri || asset.uri).base64();
-            return `data:image/png;base64,${base64}`;
-        } catch (err) {
-            console.error('Could not embed network logo:', err);
-            // 1x1 transparent pixel so the card still renders without the logo
-            return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        }
+
+        // Use pre-encoded data URIs: reading the bundled PNG at runtime fails in release builds,
+        // which left the print/PDF cards with an empty logo circle.
+        if (network.includes('airtel')) return NETWORK_LOGO_DATA_URIS.airtel;
+        if (network.includes('glo')) return NETWORK_LOGO_DATA_URIS.glo;
+        if (network.includes('9mobile') || network.includes('etisalat')) return NETWORK_LOGO_DATA_URIS['9mobile'];
+        return NETWORK_LOGO_DATA_URIS.mtn;
     };
 
     const generatePinHTML = async () => {

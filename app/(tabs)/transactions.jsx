@@ -2,10 +2,9 @@ import DatePicker from '@/components/ui/DatePicker';
 import { useServices } from '@/contexts/services-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useTransactions } from '@/contexts/transactions-context';
+import { sharePdfFromHtml } from '@/services/share-pdf';
 import { Ionicons } from '@expo/vector-icons';
-import * as Print from 'expo-print';
 import { router, useFocusEffect } from 'expo-router';
-import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -260,20 +259,10 @@ export default function TransactionsTab() {
                 </html>
             `;
 
-            const { uri } = await Print.printToFileAsync({ html: htmlContent });
-
-            console.log('PDF generated with', mappedTransactions.length, 'transactions');
-
-            const canShare = await Sharing.isAvailableAsync();
-            if (canShare) {
-                await Sharing.shareAsync(uri, {
-                    mimeType: 'application/pdf',
-                    dialogTitle: `Share Transaction History (${mappedTransactions.length} transactions)`,
-                    UTI: 'com.adobe.pdf'
-                });
-            } else {
-                Alert.alert('Success', `PDF generated successfully with ${mappedTransactions.length} transactions!`);
-            }
+            await sharePdfFromHtml(htmlContent, {
+                fileName: 'Transaction-History',
+                dialogTitle: `Share Transaction History (${mappedTransactions.length} transactions)`,
+            });
 
             // Close modal after successful download
             setShowDownloadModal(false);

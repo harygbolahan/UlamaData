@@ -34,7 +34,7 @@ A Nigerian VTU / bill-payment mobile app ("UlamaData"). Users fund a wallet and 
 | Other Expo modules | contacts, image-picker, notifications, print, sharing, clipboard, web-browser, haptics, `react-native-webview`, `react-native-view-shot` |
 | Build | EAS (`eas.json`: development, preview, preview-local, production) |
 
-Identifiers: app name `UlamaData`, version `3.5.1`, scheme `ulamadata`, iOS bundle `com.ulamadatanigeria.app`, Android package `com.ulamadatanigeria.ulamadata`, EAS project `96673f18-391e-40af-9335-4f7be14a81e5`. The bundle ids differ between platforms. Keep them as-is for store continuity.
+Identifiers: app name `UlamaData`, version `3.5.2`, scheme `ulamadata`, iOS bundle `com.ulamadatanigeria.app`, Android package `com.ulamadatanigeria.ulamadata`, EAS project `96673f18-391e-40af-9335-4f7be14a81e5`. The bundle ids differ between platforms. Keep them as-is for store continuity.
 
 Permissions and native capabilities in use: contacts (contact picker), photo library (KYC, chat), Face ID / biometrics, push notifications, clipboard, sharing and printing. `app.json` only declares contacts and Face ID strings, so the rebuild must add photo-library and camera usage strings and the biometric plugin.
 

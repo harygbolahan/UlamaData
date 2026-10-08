@@ -14,6 +14,8 @@ import {
     View,
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
+import { generateElectricityReceiptHTML } from '@/services/electricity-receipt';
+import { sharePdfFromHtml } from '@/services/share-pdf';
 import { captureRef } from 'react-native-view-shot';
 
 // Network brand palette
@@ -98,6 +100,9 @@ export default function TransactionSuccessScreen() {
     } = params;
 
     const isRechargeCard = service === 'Airtime Pin' || service === 'Data Pin';
+    const isElectricity = service === 'Electricity Bill';
+    // The purchase response's request-id is the same ref History uses to fetch printable PINs
+    const pinRef = transref || requestId;
     const networkBrand = getNetworkBrand(network || provider || '');
     const displayTransactionId = requestId || transactionId || `TXN${Date.now().toString().slice(-8)}`;
     const isDataService =
@@ -125,7 +130,7 @@ export default function TransactionSuccessScreen() {
     if (discoName || provider) infoRows.push({ label: 'Provider', value: discoName || provider });
     if (cablePlan || planName) infoRows.push({ label: 'Plan', value: cablePlan || planName });
     if (validity) infoRows.push({ label: 'Validity', value: validity });
-    if (units) infoRows.push({ label: 'Units', value: units });
+    if (units) infoRows.push({ label: 'Units', value: isElectricity ? `${units} kWh` : units });
     if (quantity && (service === 'Data Pin' || service === 'Airtime Pin')) {
         infoRows.push({ label: 'Quantity', value: `${quantity} PIN(s)` });
     }
@@ -152,7 +157,7 @@ export default function TransactionSuccessScreen() {
 
     // PIN/Token highlights
     const highlightRows = [];
-    if (token) highlightRows.push({ label: 'Token', value: token });
+    if (token) highlightRows.push({ label: isElectricity ? 'Meter Token' : 'Token', value: token });
     if (serial) highlightRows.push({ label: 'Serial Number', value: serial });
     if (airtimePin) highlightRows.push({ label: 'PIN', value: airtimePin });
     if (dataPins) {
@@ -181,6 +186,31 @@ export default function TransactionSuccessScreen() {
         } catch (error) {
             console.error('Error sharing receipt:', error);
             showToast('error', 'Failed to share receipt');
+        } finally {
+            setIsCapturing(false);
+        }
+    };
+
+    const handleElectricityReceipt = async () => {
+        try {
+            setIsCapturing(true);
+            const html = generateElectricityReceiptHTML({
+                token,
+                units,
+                meterNumber: meterNumber || beneficiary,
+                meterType,
+                disco: discoName || provider || network,
+                customerName,
+                customerAddress,
+                amount,
+                reference: displayTransactionId,
+                date,
+                status: 'Completed',
+            }, colors.primary);
+            await sharePdfFromHtml(html, { fileName: `Electricity-Receipt-${displayTransactionId}`, dialogTitle: 'Electricity Receipt' });
+        } catch (error) {
+            console.error('Error generating electricity receipt:', error);
+            showToast('error', 'Failed to generate receipt');
         } finally {
             setIsCapturing(false);
         }
@@ -419,7 +449,7 @@ export default function TransactionSuccessScreen() {
                             <TouchableOpacity
                                 style={[styles.shareBtn, { backgroundColor: colors.primary }]}
                                 onPress={() => {
-                                    if (!transref) {
+                                    if (!pinRef) {
                                         showToast('info', 'PIN details are not ready yet. Open this transaction from History to print.');
                                         return;
                                     }
@@ -434,10 +464,24 @@ export default function TransactionSuccessScreen() {
                             </TouchableOpacity>
                         )}
 
+                        {isElectricity && (
+                            <TouchableOpacity
+                                style={[styles.shareBtn, { backgroundColor: colors.primary }]}
+                                onPress={handleElectricityReceipt}
+                                disabled={isCapturing}
+                                activeOpacity={0.85}
+                            >
+                                <Ionicons name="document-text-outline" size={19} color="#fff" />
+                                <Text style={[styles.shareBtnText, { fontFamily: fonts.inter.bold }]}>
+                                    Download Receipt
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
                         <TouchableOpacity
                             style={[
                                 styles.shareBtn,
-                                { backgroundColor: isRechargeCard ? colors.primary + 'CC' : colors.primary },
+                                { backgroundColor: isRechargeCard || isElectricity ? colors.primary + 'CC' : colors.primary },
                             ]}
                             onPress={handleShare}
                             activeOpacity={0.85}
@@ -466,11 +510,11 @@ export default function TransactionSuccessScreen() {
 
             <LoadingOverlay visible={isLoading} />
 
-            {isRechargeCard && !!transref && (
+            {isRechargeCard && !!pinRef && (
                 <PinPrintModal
                     visible={showPinPrintModal}
                     onClose={() => setShowPinPrintModal(false)}
-                    pinRef={transref}
+                    pinRef={pinRef}
                     provider={network || provider}
                     serviceName={service}
                     amount={amount}

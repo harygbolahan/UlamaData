@@ -77,6 +77,7 @@ apiClient.interceptors.response.use(
   (response) => {
     if (__DEV__) {
       console.log(`✅ API RESPONSE [${response.status}] <- ${response.config?.url}`);
+      console.log(JSON.stringify(response.data, null, 2));
     }
 
     // Check if body indicates 401 unauthenticated

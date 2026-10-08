@@ -8,6 +8,7 @@ import { useBeneficiaries } from "@/contexts/beneficiary-context";
 import { useServices } from "@/contexts/services-context";
 import { useTheme } from "@/contexts/theme-context";
 import { useToast } from "@/contexts/toast-context";
+import { extractElectricityDetails, isRealAddress } from "@/services/electricity";
 import {
   authenticateWithBiometric,
   isBiometricAvailable,
@@ -674,6 +675,7 @@ export default function TransactionSummaryScreen() {
         response?.transRef ||
         response?.ref ||
         response?.data?.transref ||
+        response?.["request-id"] ||
         response?.transaction_id ||
         response?.reference ||
         "",
@@ -734,6 +736,21 @@ export default function TransactionSummaryScreen() {
     if (customerName) successParams.customerName = customerName;
     if (meterType) successParams.meterType = meterType;
     if (customerAddress && !successParams.customerAddress) successParams.customerAddress = customerAddress;
+
+    // Electricity responses carry the real token/units/name/address in api_response_log, and the
+    // top-level address can be a status message ("TRANSACTION SUCCESSFUL")
+    if (service === "electricity") {
+      const details = extractElectricityDetails(response, {
+        customerName,
+        customerAddress,
+        meterNumber: successParams.meterNumber || beneficiary,
+      });
+      if (details.token) successParams.token = details.token;
+      if (details.units) successParams.units = details.units;
+      if (details.customerName) successParams.customerName = details.customerName;
+      if (details.customerAddress) successParams.customerAddress = details.customerAddress;
+      else if (!isRealAddress(successParams.customerAddress)) delete successParams.customerAddress;
+    }
     if (quantity) successParams.quantity = quantity;
     if (examName) successParams.examName = examName;
 
